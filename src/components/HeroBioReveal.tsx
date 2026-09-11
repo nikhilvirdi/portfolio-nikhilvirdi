@@ -14,94 +14,28 @@ const LINES = [
   "track of what we were even doing mid-project.",
 ];
 
-interface HighlightDef {
-  phrase: string;
-  className: string;
-}
-
-const HIGHLIGHTS: HighlightDef[] = [
-  { phrase: "I'm Nik", className: "bg-[#0284c7]/45" },
-  { phrase: "chai", className: "bg-[#78350f]/60" },
-  { phrase: "sleepless nights", className: "bg-[#ca8a04]/45" },
-  { phrase: "sky companion", className: "bg-[#52525b]/50" },
-  { phrase: "memory tool", className: "bg-[#be123c]/35" },
-];
-
-interface Segment {
-  text: string;
-  startIndex: number;
-  highlightClass?: string;
-}
-
 interface ParsedLine {
   lineIdx: number;
-  segments: Segment[];
+  startIndex: number;
+  chars: string[];
 }
 
-function parseLineSegments(lines: string[], highlights: HighlightDef[]) {
+function parseLines(lines: string[]) {
   let globalCharIndex = 0;
-  const parsedLines: ParsedLine[] = [];
-
+  const parsed: ParsedLine[] = [];
   for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-    const lineText = lines[lineIdx];
-    const matches: { phrase: string; className: string; start: number; end: number }[] = [];
-
-    for (const h of highlights) {
-      const idx = lineText.indexOf(h.phrase);
-      if (idx !== -1) {
-        matches.push({
-          phrase: h.phrase,
-          className: h.className,
-          start: idx,
-          end: idx + h.phrase.length,
-        });
-      }
-    }
-    matches.sort((a, b) => a.start - b.start);
-
-    const segments: Segment[] = [];
-    let curr = 0;
-    for (const m of matches) {
-      if (m.start > curr) {
-        const text = lineText.slice(curr, m.start);
-        segments.push({
-          text,
-          startIndex: globalCharIndex,
-        });
-        globalCharIndex += text.length;
-      }
-      const text = lineText.slice(m.start, m.end);
-      segments.push({
-        text,
-        highlightClass: m.className,
-        startIndex: globalCharIndex,
-      });
-      globalCharIndex += text.length;
-      curr = m.end;
-    }
-
-    if (curr < lineText.length) {
-      const text = lineText.slice(curr);
-      segments.push({
-        text,
-        startIndex: globalCharIndex,
-      });
-      globalCharIndex += text.length;
-    }
-
-    parsedLines.push({
+    const chars = Array.from(lines[lineIdx]);
+    parsed.push({
       lineIdx,
-      segments,
+      startIndex: globalCharIndex,
+      chars,
     });
+    globalCharIndex += chars.length;
   }
-
-  return { parsedLines, totalChars: globalCharIndex };
+  return { parsedLines: parsed, totalChars: globalCharIndex };
 }
 
-const { parsedLines: PARSED_LINES, totalChars: TOTAL_CHARS } = parseLineSegments(
-  LINES,
-  HIGHLIGHTS,
-);
+const { parsedLines: PARSED_LINES, totalChars: TOTAL_CHARS } = parseLines(LINES);
 
 // Total accumulated wheel deltaY needed to fully reveal all characters.
 // ~30 mouse-wheel clicks or equivalent trackpad distance.
@@ -185,51 +119,19 @@ export default function HeroBioReveal() {
     };
   }, []);
 
-  const isComplete = revealed >= TOTAL_CHARS;
-
   return (
     <h1 className="font-heading text-[38px] font-bold leading-tight max-w-none w-full tracking-tight">
       {PARSED_LINES.map((pl, lineIdx) => (
         <Fragment key={lineIdx}>
           <span className="inline-block whitespace-nowrap">
-            {pl.segments.map((segment) => {
-              const chars = Array.from(segment.text);
-              if (!segment.highlightClass) {
-                return (
-                  <span key={segment.startIndex}>
-                    {chars.map((char, charIdx) => {
-                      const i = segment.startIndex + charIdx;
-                      return (
-                        <span
-                          key={i}
-                          style={{ color: i < revealed ? '#f2f2f0' : '#71717a' }}
-                        >
-                          {char}
-                        </span>
-                      );
-                    })}
-                  </span>
-                );
-              }
-
+            {pl.chars.map((char, charIdx) => {
+              const i = pl.startIndex + charIdx;
               return (
                 <span
-                  key={segment.startIndex}
-                  className={`box-decoration-clone transition-colors duration-700 ease-out ${
-                    isComplete ? segment.highlightClass : 'bg-transparent'
-                  }`}
+                  key={i}
+                  style={{ color: i < revealed ? '#f2f2f0' : '#71717a' }}
                 >
-                  {chars.map((char, charIdx) => {
-                    const i = segment.startIndex + charIdx;
-                    return (
-                      <span
-                        key={i}
-                        style={{ color: i < revealed ? '#f2f2f0' : '#71717a' }}
-                      >
-                        {char}
-                      </span>
-                    );
-                  })}
+                  {char}
                 </span>
               );
             })}
