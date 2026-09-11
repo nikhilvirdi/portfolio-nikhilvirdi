@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 const TEXT =
-  "Yo gng! I'm Nik. I genuinely can't function without chai. It's less a drink and more a personality trait at this point. I do my best thinking during the kind of sleepless nights most people would call a bad idea. I've built a PR watchdog, a bug-hunting testing library, and a live sky companion that shows you what's actually happening above you right now. Currently tinkering with a memory tool that helps keep track of what we were even doing mid-project. Outside of building things, I run Riyasat-e-Duggar, where I document the culture and history of the trans-Himalayan region, something I'll call a side chic of mine.";
+  "Yo gng! I'm Nik. I genuinely can't function without chai. It's less a drink and more a personality trait at this point. I do my best thinking during the kind of sleepless nights most people would call a bad idea. I've built a PR watchdog, a bug-hunting testing library, and a live sky companion that shows you what's actually happening above you right now. Currently tinkering with a memory tool that helps keep track of what we were even doing mid-project.";
 
 const CHARS = Array.from(TEXT);
 const TOTAL_CHARS = CHARS.length;
@@ -92,7 +92,7 @@ export default function HeroBioReveal() {
   }, []);
 
   return (
-    <h1 className="font-heading text-[46px] font-bold leading-tight max-w-[92%] tracking-tight">
+    <h1 className="font-heading text-[38px] font-bold leading-tight max-w-[92%] tracking-tight">
       {CHARS.map((char, i) => (
         <span
           key={i}
