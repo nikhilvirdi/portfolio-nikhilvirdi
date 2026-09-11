@@ -7,13 +7,13 @@ export default function ScrollIntercept() {
   const hasTriggeredRef = useRef(false);
 
   useEffect(() => {
-    const scrollEl = document.querySelector('main') as HTMLElement | null;
-
     const lockScroll = () => {
-      if (scrollEl) scrollEl.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
     };
     const unlockScroll = () => {
-      if (scrollEl) scrollEl.style.overflow = 'auto';
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
     };
 
     const handleWheel = (e: WheelEvent) => {
@@ -22,6 +22,7 @@ export default function ScrollIntercept() {
 
       hasTriggeredRef.current = true;
       e.stopPropagation();
+      e.preventDefault();
       lockScroll();
 
       // Mount overlay in its start position (off-screen below)
@@ -46,10 +47,11 @@ export default function ScrollIntercept() {
       });
     };
 
-    scrollEl?.addEventListener('wheel', handleWheel, { passive: false, capture: true });
+    window.addEventListener('wheel', handleWheel, { passive: false, capture: true });
 
     return () => {
-      scrollEl?.removeEventListener('wheel', handleWheel, { capture: true } as EventListenerOptions);
+      window.removeEventListener('wheel', handleWheel, { capture: true } as EventListenerOptions);
+      unlockScroll();
     };
   }, []);
 
