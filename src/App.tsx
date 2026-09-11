@@ -57,7 +57,7 @@ export default function App() {
           </aside>
 
           {/* Hero heading text */}
-          <div className="flex-1 pt-[19vh] pb-20 px-16 bg-background">
+          <div className="flex-1 pt-[19vh] pb-20 pr-16 pl-12 bg-background">
             <HeroBioReveal />
           </div>
         </section>
