@@ -2,6 +2,8 @@ import { lazy, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import CustomCursor from './components/CustomCursor';
+import ScrollIntercept from './components/ScrollIntercept';
+import HeroBioReveal from './components/HeroBioReveal';
 
 const AvatarModel = lazy(() => import('./components/AvatarModel'));
 
@@ -9,38 +11,48 @@ export default function App() {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground font-body">
       <CustomCursor />
+      <ScrollIntercept />
       {/* Left region: fixed position, does not scroll, roughly 28% viewport width, full viewport height */}
-      <aside className="fixed left-0 top-0 h-screen w-[28vw] bg-background flex items-center justify-center overflow-hidden">
-        <Suspense
-          fallback={
-            <div className="font-tag text-muted text-sm font-medium tracking-widest uppercase">
-              Loading...
-            </div>
-          }
-        >
-          <Canvas
-            className="w-full h-full"
-            camera={{ position: [0, 0, 2.5], fov: 45 }}
-            style={{ width: '100%', height: '100%' }}
+      <aside className="fixed left-0 top-0 h-screen w-[28vw] bg-background flex flex-col items-center justify-center overflow-hidden">
+        {/* 3D avatar fills most of the sidebar */}
+        <div className="flex-1 w-full min-h-0">
+          <Suspense
+            fallback={
+              <div className="w-full h-full flex items-center justify-center font-tag text-muted text-sm font-medium tracking-widest uppercase">
+                Loading...
+              </div>
+            }
           >
-            <ambientLight intensity={1.5} />
-            <directionalLight position={[5, 5, 5]} intensity={1.5} />
-            <directionalLight position={[-5, 5, -5]} intensity={0.8} />
-            <directionalLight position={[0, -5, 2]} intensity={0.4} />
-            <Suspense
-              fallback={
-                <Html center>
-                  <span className="font-tag text-muted text-sm font-medium tracking-widest uppercase">
-                    Loading...
-                  </span>
-                </Html>
-              }
+            <Canvas
+              className="w-full h-full"
+              camera={{ position: [0, 0, 1.92], fov: 45 }}
+              style={{ width: '100%', height: '100%' }}
             >
-              <AvatarModel />
-            </Suspense>
-            <OrbitControls enableZoom={false} enablePan={false} enableRotate={true} />
-          </Canvas>
-        </Suspense>
+              <ambientLight intensity={1.5} />
+              <directionalLight position={[5, 5, 5]} intensity={1.5} />
+              <directionalLight position={[-5, 5, -5]} intensity={0.8} />
+              <directionalLight position={[0, -5, 2]} intensity={0.4} />
+              <Suspense
+                fallback={
+                  <Html center>
+                    <span className="font-tag text-muted text-sm font-medium tracking-widest uppercase">
+                      Loading...
+                    </span>
+                  </Html>
+                }
+              >
+                <AvatarModel />
+              </Suspense>
+              <OrbitControls enableZoom={false} enablePan={false} enableRotate={true} />
+            </Canvas>
+          </Suspense>
+        </div>
+        {/* Name tag sits immediately below the canvas */}
+        <div className="py-3 text-center">
+          <span className="font-heading text-2xl font-semibold tracking-tight text-foreground">
+            Nikhil Virdi
+          </span>
+        </div>
       </aside>
 
       {/* Right region: takes remaining width, full viewport height, scrolls independently */}
@@ -48,16 +60,9 @@ export default function App() {
         {/* Hero section */}
         <section
           id="hero"
-          className="py-20 px-16 bg-background"
+          className="pt-[19vh] pb-20 px-16 bg-background"
         >
-          <div>
-            <h1 className="font-heading text-5xl font-bold tracking-tight text-foreground">
-              Nikhil Virdi
-            </h1>
-            <p>
-              Yo gng! I'm Nik. I genuinely can't function without chai. It's less a drink and more a personality trait at this point. I do my best thinking during the kind of sleepless nights most people would call a bad idea. I've built a little watchdog that quietly keeps an eye on pull requests so nothing sketchy slips through unnoticed, a testing library that hunts down bugs I'd never have thought to check for myself, and a live sky companion that tells you what's actually happening in space above you right now. Currently tinkering with a memory tool that helps keep track of what we were even doing mid-project. Outside of building things, I run Riyasat-e-Duggar, where I document the culture and history of the trans-Himalayan region, something I'll call a side chic of mine.
-            </p>
-          </div>
+          <HeroBioReveal />
         </section>
 
         {/* About section */}
