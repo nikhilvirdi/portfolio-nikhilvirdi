@@ -113,10 +113,20 @@ interface FloatingIconProps {
   mouseX: React.RefObject<number>;
   mouseY: React.RefObject<number>;
   containerRef: React.RefObject<HTMLElement | null>;
+  isBubbleActive: boolean;
 }
 
-function FloatingIcon({ item, mouseX, mouseY, containerRef }: FloatingIconProps) {
-  const [isRepelling, setIsRepelling] = useState(false);
+function FloatingIcon({
+  item,
+  mouseX,
+  mouseY,
+  containerRef,
+  isBubbleActive,
+}: FloatingIconProps) {
+  const [flipBelow, setFlipBelow] = useState(item.y < 28);
+  const [shiftX, setShiftX] = useState<'left' | 'right' | 'center'>(
+    item.x < 20 ? 'right' : item.x > 80 ? 'left' : 'center'
+  );
   const offsetX = useMotionValue(0);
   const offsetY = useMotionValue(0);
   const springX = useSpring(offsetX, { damping: 20, stiffness: 200 });
@@ -124,7 +134,9 @@ function FloatingIcon({ item, mouseX, mouseY, containerRef }: FloatingIconProps)
 
   useEffect(() => {
     let animId: number;
-    let isRepellingRef = false;
+    let flipBelowRef = item.y < 28;
+    let shiftXRef: 'left' | 'right' | 'center' =
+      item.x < 20 ? 'right' : item.x > 80 ? 'left' : 'center';
     const REPEL_RADIUS = 150;
     const MAX_PUSH = 85;
 
@@ -159,9 +171,20 @@ function FloatingIcon({ item, mouseX, mouseY, containerRef }: FloatingIconProps)
           offsetY.set(0);
         }
 
-        if (repelling !== isRepellingRef) {
-          isRepellingRef = repelling;
-          setIsRepelling(repelling);
+        const currentX = baseCenterX + (repelling ? offsetX.get() : 0);
+        const currentY = baseCenterY + (repelling ? offsetY.get() : 0);
+
+        const shouldFlip = currentY < 140;
+        if (shouldFlip !== flipBelowRef) {
+          flipBelowRef = shouldFlip;
+          setFlipBelow(shouldFlip);
+        }
+
+        const shouldShift: 'left' | 'right' | 'center' =
+          currentX < 130 ? 'right' : contRect.width - currentX < 130 ? 'left' : 'center';
+        if (shouldShift !== shiftXRef) {
+          shiftXRef = shouldShift;
+          setShiftX(shouldShift);
         }
       }
       animId = requestAnimationFrame(checkRepel);
@@ -171,10 +194,17 @@ function FloatingIcon({ item, mouseX, mouseY, containerRef }: FloatingIconProps)
     return () => cancelAnimationFrame(animId);
   }, [containerRef, item.x, item.y, mouseX, mouseY, offsetX, offsetY]);
 
+  const shiftClass =
+    shiftX === 'right'
+      ? 'translate-x-8'
+      : shiftX === 'left'
+      ? '-translate-x-8'
+      : 'translate-x-0';
+
   return (
     <motion.div
       className={`absolute select-none pointer-events-auto cursor-default -translate-x-1/2 -translate-y-1/2 ${
-        isRepelling ? 'z-40' : 'z-10'
+        isBubbleActive ? 'z-40' : 'z-10'
       }`}
       style={{
         left: `${item.x}%`,
@@ -198,21 +228,58 @@ function FloatingIcon({ item, mouseX, mouseY, containerRef }: FloatingIconProps)
         className="relative text-foreground/80 hover:text-foreground transition-colors flex flex-col items-center"
       >
         <AnimatePresence>
-          {isRepelling && item.message && (
+          {isBubbleActive && item.message && (
             <motion.div
-              initial={{ opacity: 0, y: 8, scale: 0.85 }}
+              initial={{ opacity: 0, y: flipBelow ? -8 : 8, scale: 0.85 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 6, scale: 0.85 }}
+              exit={{ opacity: 0, y: flipBelow ? -6 : 6, scale: 0.85 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
-              className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center z-50 w-max max-w-[200px]"
+              className={`absolute ${
+                flipBelow ? 'top-full mt-1' : 'bottom-full mb-1'
+              } left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center z-50 w-max`}
             >
-              {/* Main thought-cloud bubble */}
-              <div className="relative bg-zinc-900/95 text-foreground text-xs px-3.5 py-2 rounded-2xl border border-white/20 shadow-2xl backdrop-blur-md text-center font-body leading-snug whitespace-normal">
+              {flipBelow && (
+                /* Small triangular tail pointing UP toward the icon */
+                <svg
+                  viewBox="0 0 16 10"
+                  className="w-4 h-2.5 -mb-[1px] pointer-events-none overflow-visible rotate-180 z-20"
+                >
+                  <polygon points="0,-1 16,-1 8,9" fill="#000000" />
+                  <path
+                    d="M 0,0 L 8,9 L 16,0"
+                    fill="none"
+                    stroke="#ffffff"
+                    strokeWidth="1"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+
+              {/* Simple rectangle with slightly rounded corners */}
+              <div
+                className={`relative bg-black text-white text-xs font-tag font-medium px-3.5 py-2 rounded-md border border-white shadow-[0_0_15px_rgba(255,255,255,0.15)] text-center leading-snug whitespace-normal max-w-[210px] z-10 transition-transform duration-150 ${shiftClass}`}
+              >
                 {item.message}
               </div>
-              {/* Trailing cloud dots */}
-              <div className="w-2.5 h-2.5 rounded-full bg-zinc-900/95 border border-white/20 mt-1 shadow-sm" />
-              <div className="w-1.5 h-1.5 rounded-full bg-zinc-900/95 border border-white/20 mt-0.5 shadow-sm" />
+
+              {!flipBelow && (
+                /* Small triangular tail pointing DOWN toward the icon */
+                <svg
+                  viewBox="0 0 16 10"
+                  className="w-4 h-2.5 -mt-[1px] pointer-events-none overflow-visible z-20"
+                >
+                  <polygon points="0,-1 16,-1 8,9" fill="#000000" />
+                  <path
+                    d="M 0,0 L 8,9 L 16,0"
+                    fill="none"
+                    stroke="#ffffff"
+                    strokeWidth="1"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -238,6 +305,45 @@ export default function TechStackFloating() {
   const mouseX = useRef<number>(-9999);
   const mouseY = useRef<number>(-9999);
   const [items] = useState<TechItem[]>(generateFloatingItems);
+  const [activeBubbleName, setActiveBubbleName] = useState<string | null>(null);
+
+  useEffect(() => {
+    let animId: number;
+    let currentActiveRef: string | null = null;
+    const REPEL_RADIUS = 150;
+
+    const updateClosest = () => {
+      if (containerRef.current) {
+        const mx = mouseX.current;
+        const my = mouseY.current;
+        let closestName: string | null = null;
+
+        if (mx !== -9999 && my !== -9999) {
+          const contRect = containerRef.current.getBoundingClientRect();
+          let minDist = REPEL_RADIUS;
+
+          for (const item of items) {
+            const baseCenterX = (item.x / 100) * contRect.width;
+            const baseCenterY = (item.y / 100) * contRect.height;
+            const dist = Math.hypot(baseCenterX - mx, baseCenterY - my);
+            if (dist < minDist) {
+              minDist = dist;
+              closestName = item.name;
+            }
+          }
+        }
+
+        if (closestName !== currentActiveRef) {
+          currentActiveRef = closestName;
+          setActiveBubbleName(closestName);
+        }
+      }
+      animId = requestAnimationFrame(updateClosest);
+    };
+
+    animId = requestAnimationFrame(updateClosest);
+    return () => cancelAnimationFrame(animId);
+  }, [items]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
@@ -249,6 +355,7 @@ export default function TechStackFloating() {
   const handleMouseLeave = () => {
     mouseX.current = -9999;
     mouseY.current = -9999;
+    setActiveBubbleName(null);
   };
 
   return (
@@ -274,6 +381,7 @@ export default function TechStackFloating() {
             mouseX={mouseX}
             mouseY={mouseY}
             containerRef={containerRef}
+            isBubbleActive={activeBubbleName === item.name}
           />
         ))}
       </div>
