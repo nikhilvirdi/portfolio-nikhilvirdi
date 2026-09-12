@@ -126,14 +126,12 @@ export default function App() {
         {/* Contact section */}
         <section
           id="contact"
-          className="py-20 px-16 bg-background"
+          className="pt-10 pb-16 px-16 bg-background"
         >
-          <ul>
-            <li>GitHub: github.com/nikhilvirdi</li>
-            <li>LinkedIn: [REPLACE ME]</li>
-            <li>Email: [REPLACE ME]</li>
-            <li>Resume: [REPLACE ME — link to PDF]</li>
-          </ul>
+          <h2 className="font-heading text-5xl font-bold tracking-tight text-foreground mb-6">
+            Contact
+          </h2>
+          <ContactGrid />
         </section>
       </main>
     </div>
