@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAnimate } from 'framer-motion';
 import { Github, Linkedin, Mail, FileText } from 'lucide-react';
-import { SiNpm, SiApachemaven } from 'react-icons/si';
+import { SiNpm } from 'react-icons/si';
 
 const NO_CLIP = 'polygon(0 0, 100% 0, 100% 100%, 0% 100%)';
 const BOTTOM_RIGHT_CLIP = 'polygon(0 0, 100% 0, 0 0, 0% 100%)';
@@ -27,10 +27,17 @@ interface LinkBoxProps {
   Icon: React.ComponentType<{ className?: string }>;
   href: string;
   className?: string;
+  style?: React.CSSProperties;
   iconClassName?: string;
 }
 
-const LinkBox = ({ Icon, href, className, iconClassName = 'text-lg sm:text-xl md:text-2xl' }: LinkBoxProps) => {
+const LinkBox = ({
+  Icon,
+  href,
+  className,
+  style,
+  iconClassName = 'text-xs sm:text-sm md:text-base',
+}: LinkBoxProps) => {
   const [scope, animate] = useAnimate();
 
   const getNearestSide = (e: any) => {
@@ -69,6 +76,7 @@ const LinkBox = ({ Icon, href, className, iconClassName = 'text-lg sm:text-xl md
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className={className}
+      style={style}
     >
       <Icon className={iconClassName} />
       <div
@@ -82,52 +90,71 @@ const LinkBox = ({ Icon, href, className, iconClassName = 'text-lg sm:text-xl md
   );
 };
 
+const MavenIcon = ({ className }: { className?: string }) => (
+  <img
+    src="/icons/contact/maven.png"
+    alt="Maven Central"
+    className={`w-[1em] h-[1em] object-contain pointer-events-none inline-block ${className || ''}`}
+  />
+);
+
 export default function ContactGrid() {
   return (
-    <div className="w-full border border-white/10 bg-black">
-      {/* Row 1 (2 columns, taller cells) */}
-      <div className="grid grid-cols-2 divide-x divide-white/10 border-b border-white/10">
-        <LinkBox
-          Icon={Github}
-          href="https://github.com/nikhilvirdi"
-          className="relative grid place-content-center bg-black text-foreground overflow-hidden h-20 sm:h-24 [&_svg]:w-[1em] [&_svg]:h-[1em] [&_svg]:pointer-events-none"
-          iconClassName="text-xl sm:text-2xl md:text-[1.65rem]"
-        />
-        <LinkBox
-          Icon={Linkedin}
-          href="https://linkedin.com/in/nikhil-virdi-819nv"
-          className="relative grid place-content-center bg-black text-foreground overflow-hidden h-20 sm:h-24 [&_svg]:w-[1em] [&_svg]:h-[1em] [&_svg]:pointer-events-none"
-          iconClassName="text-xl sm:text-2xl md:text-[1.65rem]"
-        />
-      </div>
-
-      {/* Row 2 (4 columns) */}
-      <div className="grid grid-cols-4 divide-x divide-white/10">
-        <LinkBox
-          Icon={Mail}
-          href="mailto:nkvir2468@gmail.com"
-          className="relative grid place-content-center bg-black text-foreground overflow-hidden h-14 sm:h-16 [&_svg]:w-[1em] [&_svg]:h-[1em] [&_svg]:pointer-events-none"
-          iconClassName="text-base sm:text-lg md:text-xl"
-        />
-        <LinkBox
-          Icon={FileText}
-          href="https://drive.google.com/file/d/1b5M8mg647Y988meZGTPLvF1MelJrUlLT/view?usp=drive_link"
-          className="relative grid place-content-center bg-black text-foreground overflow-hidden h-14 sm:h-16 [&_svg]:w-[1em] [&_svg]:h-[1em] [&_svg]:pointer-events-none"
-          iconClassName="text-base sm:text-lg md:text-xl"
-        />
-        <LinkBox
-          Icon={SiNpm}
-          href="https://www.npmjs.com/~nikhilvirdi"
-          className="relative grid place-content-center bg-black text-foreground overflow-hidden h-14 sm:h-16 [&_svg]:w-[1em] [&_svg]:h-[1em] [&_svg]:pointer-events-none"
-          iconClassName="text-base sm:text-lg md:text-xl"
-        />
-        <LinkBox
-          Icon={SiApachemaven}
-          href="https://central.sonatype.com/namespace/io.github.nikhilvirdi"
-          className="relative grid place-content-center bg-black text-foreground overflow-hidden h-14 sm:h-16 [&_svg]:w-[1em] [&_svg]:h-[1em] [&_svg]:pointer-events-none"
-          iconClassName="text-base sm:text-lg md:text-xl"
-        />
-      </div>
+    <div
+      className="w-full border border-white/10 bg-white/10 gap-[1px]"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gridTemplateRows: 'repeat(3, minmax(45px, auto))',
+        gridTemplateAreas: `
+          "github github linkedin linkedin"
+          "github github email    resume"
+          "npm    maven  maven    resume"
+        `,
+      }}
+    >
+      <LinkBox
+        Icon={Github}
+        href="https://github.com/nikhilvirdi"
+        style={{ gridArea: 'github' }}
+        className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full [&_svg]:w-[1em] [&_svg]:h-[1em] [&_svg]:pointer-events-none"
+        iconClassName="text-base sm:text-lg md:text-xl"
+      />
+      <LinkBox
+        Icon={Linkedin}
+        href="https://linkedin.com/in/nikhil-virdi-819nv"
+        style={{ gridArea: 'linkedin' }}
+        className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full [&_svg]:w-[1em] [&_svg]:h-[1em] [&_svg]:pointer-events-none"
+        iconClassName="text-xs sm:text-sm md:text-base"
+      />
+      <LinkBox
+        Icon={Mail}
+        href="mailto:nkvir2468@gmail.com"
+        style={{ gridArea: 'email' }}
+        className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full [&_svg]:w-[1em] [&_svg]:h-[1em] [&_svg]:pointer-events-none"
+        iconClassName="text-xs sm:text-sm"
+      />
+      <LinkBox
+        Icon={FileText}
+        href="https://drive.google.com/file/d/1b5M8mg647Y988meZGTPLvF1MelJrUlLT/view?usp=drive_link"
+        style={{ gridArea: 'resume' }}
+        className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full [&_svg]:w-[1em] [&_svg]:h-[1em] [&_svg]:pointer-events-none"
+        iconClassName="text-xs sm:text-sm md:text-base"
+      />
+      <LinkBox
+        Icon={SiNpm}
+        href="https://www.npmjs.com/~nikhilvirdi"
+        style={{ gridArea: 'npm' }}
+        className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full [&_svg]:w-[1em] [&_svg]:h-[1em] [&_svg]:pointer-events-none"
+        iconClassName="text-xs sm:text-sm"
+      />
+      <LinkBox
+        Icon={MavenIcon}
+        href="https://central.sonatype.com/namespace/io.github.nikhilvirdi"
+        style={{ gridArea: 'maven' }}
+        className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full [&_svg]:w-[1em] [&_svg]:h-[1em] [&_svg]:pointer-events-none"
+        iconClassName="text-xs sm:text-sm md:text-base"
+      />
     </div>
   );
 }
