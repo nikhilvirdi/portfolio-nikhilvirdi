@@ -6,6 +6,9 @@ import ScrollIntercept from './components/ScrollIntercept';
 import HeroBioReveal from './components/HeroBioReveal';
 import TechStackFloating from './components/TechStackFloating';
 import ProjectsGrid from './components/ProjectsGrid';
+import GitHubActivity from './components/GitHubActivity';
+import CodingActivity from './components/CodingActivity';
+import ContactGrid from './components/ContactGrid';
 
 const AvatarModel = lazy(() => import('./components/AvatarModel'));
 
@@ -106,6 +109,18 @@ export default function App() {
           <h1 className="font-heading text-5xl font-bold tracking-tight text-foreground">
             GitHub Activity
           </h1>
+          <GitHubActivity />
+        </section>
+
+        {/* Coding Activity section */}
+        <section
+          id="coding-activity"
+          className="py-20 px-16 bg-background"
+        >
+          <h2 className="font-heading text-5xl font-bold tracking-tight text-foreground">
+            Coding Activity
+          </h2>
+          <CodingActivity />
         </section>
 
         {/* Contact section */}
