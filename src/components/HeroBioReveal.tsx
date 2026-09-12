@@ -1,6 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 
-// LOCKED LAYOUT — avatar position, heading line breaks, alignment, and spacing are finalized. Do not modify without explicit instruction referencing this lock.
 const LINES = [
   "Yo gng! I'm Nik. I genuinely can't function",
   "without chai. It's less a drink and more a",
@@ -9,10 +8,11 @@ const LINES = [
   "most people would call a bad idea.",
   "I've built a PR watchdog, a bug-hunting",
   "property-based testing library, and",
-  "a live sky companion that shows you what's actually",
-  "happening above you right now. Currently",
-  "tinkering with a memory tool that helps keep",
-  "track of what we were even doing mid-project.",
+  "a live sky companion that shows you",
+  "what's actually happening above you",
+  "right now. Currently tinkering with a memory",
+  "tool that helps keep track of what we",
+  "were even doing mid-project.",
 ];
 
 interface ParsedLine {
@@ -51,14 +51,27 @@ export default function HeroBioReveal() {
   const doneAndPassedRef = useRef(false); // true once fully revealed and scrolled away
 
   useEffect(() => {
+    const scrollEl = (document.getElementById('main-scroll-pane') || document.querySelector('main')) as HTMLElement | null;
+
+    const getScrollTop = () => {
+      if (scrollEl) return scrollEl.scrollTop;
+      return window.scrollY || document.documentElement.scrollTop || 0;
+    };
+
     const handleWheel = (e: WheelEvent) => {
       // Let ScrollIntercept's white-overlay effect run unimpeded
-      if (document.body.style.overflow === 'hidden' || document.documentElement.style.overflow === 'hidden') return;
+      if (
+        (scrollEl && scrollEl.style.overflow === 'hidden') ||
+        document.body.style.overflow === 'hidden' ||
+        document.documentElement.style.overflow === 'hidden'
+      ) {
+        return;
+      }
 
       // Once fully revealed and user has scrolled past hero: never re-engage
       if (doneAndPassedRef.current) return;
 
-      const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+      const scrollTop = getScrollTop();
 
       // If the page has scrolled away from hero (scrollTop > small threshold)
       if (scrollTop > 80) {
@@ -111,17 +124,26 @@ export default function HeroBioReveal() {
       // let the browser handle scrolling normally
     };
 
+    const handleScroll = () => {
+      const scrollTop = getScrollTop();
+      if (scrollTop > 80 && revealedRef.current >= TOTAL_CHARS) {
+        doneAndPassedRef.current = true;
+      }
+    };
+
+    scrollEl?.addEventListener('wheel', handleWheel, { passive: false, capture: true });
+    scrollEl?.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('wheel', handleWheel, { passive: false, capture: true });
 
     return () => {
-      window.removeEventListener('wheel', handleWheel, {
-        capture: true,
-      } as EventListenerOptions);
+      scrollEl?.removeEventListener('wheel', handleWheel, { capture: true } as EventListenerOptions);
+      scrollEl?.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('wheel', handleWheel, { capture: true } as EventListenerOptions);
     };
   }, []);
 
   return (
-    <h1 className="font-heading text-[38px] font-bold leading-tight max-w-none w-full tracking-tight">
+    <h1 className="font-heading text-[35px] font-bold leading-tight max-w-none w-full tracking-tight">
       {PARSED_LINES.map((pl, lineIdx) => (
         <Fragment key={lineIdx}>
           <span className="inline-block whitespace-nowrap">

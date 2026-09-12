@@ -11,58 +11,59 @@ const AvatarModel = lazy(() => import('./components/AvatarModel'));
 
 export default function App() {
   return (
-    <div className="min-h-screen w-full bg-background text-foreground font-body">
+    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground font-body">
       <CustomCursor />
       <ScrollIntercept />
 
-      <main className="w-full">
-        {/* LOCKED LAYOUT — avatar position, heading line breaks, alignment, and spacing are finalized. Do not modify without explicit instruction referencing this lock. */}
+      {/* Persistent fixed left sidebar */}
+      <aside className="fixed left-0 top-0 h-screen w-[28vw] bg-background flex flex-col items-center justify-center overflow-hidden z-20">
+        {/* 3D avatar fills the sidebar */}
+        <div className="w-full h-full">
+          <Suspense
+            fallback={
+              <div className="w-full h-full flex items-center justify-center font-tag text-muted text-sm font-medium tracking-widest uppercase">
+                Loading...
+              </div>
+            }
+          >
+            <Canvas
+              className="w-full h-full"
+              camera={{ position: [0, 0, 1.92], fov: 45 }}
+              style={{ width: '100%', height: '100%' }}
+            >
+              <ambientLight intensity={1.5} />
+              <directionalLight position={[5, 5, 5]} intensity={1.5} />
+              <directionalLight position={[-5, 5, -5]} intensity={0.8} />
+              <directionalLight position={[0, -5, 2]} intensity={0.4} />
+              <Suspense
+                fallback={
+                  <Html center>
+                    <span className="font-tag text-muted text-sm font-medium tracking-widest uppercase">
+                      Loading...
+                    </span>
+                  </Html>
+                }
+              >
+                <AvatarModel />
+              </Suspense>
+              <OrbitControls enableZoom={false} enablePan={false} enableRotate={true} />
+            </Canvas>
+          </Suspense>
+        </div>
+
+      </aside>
+
+      {/* Right scrollable pane: margin-left 28vw, width 72vw, height 100vh, overflow-y auto */}
+      <main
+        id="main-scroll-pane"
+        className="ml-[28vw] h-screen w-[72vw] overflow-y-auto bg-background"
+      >
         {/* Hero section */}
         <section
           id="hero"
-          className="min-h-screen w-full flex flex-row bg-background"
+          className="min-h-screen pt-[19vh] pb-20 pr-16 pl-12 bg-background"
         >
-          {/* Avatar element alongside Hero section content only */}
-          <aside className="w-[28vw] h-screen shrink-0 bg-background flex flex-col items-center justify-center overflow-hidden self-start">
-            {/* 3D avatar fills most of the sidebar */}
-            <div className="flex-1 w-full min-h-0">
-              <Suspense
-                fallback={
-                  <div className="w-full h-full flex items-center justify-center font-tag text-muted text-sm font-medium tracking-widest uppercase">
-                    Loading...
-                  </div>
-                }
-              >
-                <Canvas
-                  className="w-full h-full"
-                  camera={{ position: [0, 0, 1.92], fov: 45 }}
-                  style={{ width: '100%', height: '100%' }}
-                >
-                  <ambientLight intensity={1.5} />
-                  <directionalLight position={[5, 5, 5]} intensity={1.5} />
-                  <directionalLight position={[-5, 5, -5]} intensity={0.8} />
-                  <directionalLight position={[0, -5, 2]} intensity={0.4} />
-                  <Suspense
-                    fallback={
-                      <Html center>
-                        <span className="font-tag text-muted text-sm font-medium tracking-widest uppercase">
-                          Loading...
-                        </span>
-                      </Html>
-                    }
-                  >
-                    <AvatarModel />
-                  </Suspense>
-                  <OrbitControls enableZoom={false} enablePan={false} enableRotate={true} />
-                </Canvas>
-              </Suspense>
-            </div>
-          </aside>
-
-          {/* Hero heading text */}
-          <div className="flex-1 pt-[19vh] pb-20 pr-16 pl-12 bg-background">
-            <HeroBioReveal />
-          </div>
+          <HeroBioReveal />
         </section>
 
         {/* About section */}

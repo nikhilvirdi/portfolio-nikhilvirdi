@@ -7,11 +7,20 @@ export default function ScrollIntercept() {
   const hasTriggeredRef = useRef(false);
 
   useEffect(() => {
+    const scrollEl = (document.getElementById('main-scroll-pane') || document.querySelector('main')) as HTMLElement | null;
+
     const lockScroll = () => {
+      if (scrollEl) {
+        scrollEl.style.overflow = 'hidden';
+      }
       document.body.style.overflow = 'hidden';
       document.documentElement.style.overflow = 'hidden';
     };
+
     const unlockScroll = () => {
+      if (scrollEl) {
+        scrollEl.style.overflow = '';
+      }
       document.body.style.overflow = '';
       document.documentElement.style.overflow = '';
     };
@@ -45,6 +54,12 @@ export default function ScrollIntercept() {
           }, 750);
         });
       });
+
+      // Safety fallback to guarantee screen is never stuck white
+      setTimeout(() => {
+        setPhase('done');
+        unlockScroll();
+      }, 2500);
     };
 
     window.addEventListener('wheel', handleWheel, { passive: false, capture: true });
