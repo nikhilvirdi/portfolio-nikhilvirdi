@@ -60,6 +60,11 @@ const BASE_TECH_DEFS: TechDef[] = [
   { name: 'GitHub Actions', svg: githubactionsSvg, message: "i run his CI so he doesn't have to remember to" },
   { name: 'Git', svg: gitSvg, message: "i remember every mistake he's ever committed, literally" },
   { name: 'GitHub', svg: githubSvg, invert: true, message: "home of way too many repos, only some of them finished" },
+  {
+    name: 'JWT',
+    svg: '/icons/jwt.png',
+    message: "he has hardly used me in any of the projects as of now",
+  },
 ];
 
 function generateFloatingItems(): TechItem[] {
@@ -365,7 +370,7 @@ export default function TechStackFloating() {
     >
       <div className="px-16">
         <h2 className="font-heading text-5xl font-bold tracking-tight text-foreground">
-          Tech Stack
+          <span className="bg-[#1D4FD8] box-decoration-clone">Tech Stack</span>
         </h2>
       </div>
       <div
