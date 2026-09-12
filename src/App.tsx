@@ -4,6 +4,7 @@ import { OrbitControls, Html } from '@react-three/drei';
 import CustomCursor from './components/CustomCursor';
 import ScrollIntercept from './components/ScrollIntercept';
 import HeroBioReveal from './components/HeroBioReveal';
+import TechStackFloating from './components/TechStackFloating';
 
 const AvatarModel = lazy(() => import('./components/AvatarModel'));
 
@@ -14,6 +15,7 @@ export default function App() {
       <ScrollIntercept />
 
       <main className="w-full">
+        {/* LOCKED LAYOUT — avatar position, heading line breaks, alignment, and spacing are finalized. Do not modify without explicit instruction referencing this lock. */}
         {/* Hero section */}
         <section
           id="hero"
@@ -62,17 +64,10 @@ export default function App() {
           </div>
         </section>
 
-        {/* Name tag positioned after Hero and before About */}
-        <div className="pt-12 pb-6 px-16 bg-background">
-          <span className="font-heading text-2xl font-semibold tracking-tight text-foreground">
-            Nikhil Virdi
-          </span>
-        </div>
-
         {/* About section */}
         <section
           id="about"
-          className="py-20 px-16 bg-background"
+          className="pt-12 pb-20 px-16 bg-background"
         >
           <h2 className="font-heading text-5xl font-bold tracking-tight text-foreground">
             About Nikhil Virdi
@@ -88,24 +83,7 @@ export default function App() {
         </section>
 
         {/* Tech Stack section */}
-        <section
-          id="tech-stack"
-          className="py-20 px-16 bg-background"
-        >
-          <ul>
-            <li>Java</li>
-            <li>TypeScript</li>
-            <li>Node.js</li>
-            <li>Express</li>
-            <li>PostgreSQL</li>
-            <li>Prisma</li>
-            <li>Redis</li>
-            <li>Docker</li>
-            <li>AWS</li>
-            <li>GitHub Actions</li>
-            <li>Nginx</li>
-          </ul>
-        </section>
+        <TechStackFloating />
 
         {/* Projects section */}
         <section

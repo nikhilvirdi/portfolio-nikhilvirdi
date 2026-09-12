@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 
+// LOCKED LAYOUT — avatar position, heading line breaks, alignment, and spacing are finalized. Do not modify without explicit instruction referencing this lock.
 const LINES = [
   "Yo gng! I'm Nik. I genuinely can't function",
   "without chai. It's less a drink and more a",
