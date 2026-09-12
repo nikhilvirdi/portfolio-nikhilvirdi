@@ -3,10 +3,75 @@
 @tailwind utilities;
 
 @layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #27272a #000000;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #000000;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #27272a;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3f3f46;
+  }
+
   body {
     @apply bg-background text-foreground font-body;
     margin: 0;
     padding: 0;
     overflow-x: hidden;
   }
+
+  .react-activity-calendar__tooltip,
+  .react-activity-calendar__tooltip[data-color-scheme='dark'] {
+    font-family: 'Manrope', sans-serif !important;
+    background-color: #18181b !important;
+    color: #f2f2f0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 4px !important;
+    font-size: 12px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+    padding: 6px 10px !important;
+    pointer-events: none !important;
+    z-index: 50 !important;
+  }
+
+  .react-activity-calendar__tooltip-arrow {
+    fill: #18181b !important;
+  }
+
+  /* Full-width responsive GitHub Activity calendar */
+  .react-activity-calendar {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .react-activity-calendar__scroll-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .react-activity-calendar__calendar {
+    width: 100% !important;
+    height: auto !important;
+    display: block !important;
+  }
+
+  .react-activity-calendar__footer {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+  }
 }
+

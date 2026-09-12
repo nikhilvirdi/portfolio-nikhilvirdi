@@ -125,27 +125,6 @@ const PROJECTS: Project[] = [
   },
 ];
 
-const STATUS_CONFIG: Record<
-  ProjectStatus,
-  { text: string; dot: string }
-> = {
-  Shipped: {
-    text: 'text-accent-green',
-    dot: 'bg-accent-green',
-  },
-  Live: {
-    text: 'text-accent-green',
-    dot: 'bg-accent-green',
-  },
-  'In Progress': {
-    text: 'text-accent-amber',
-    dot: 'bg-accent-amber',
-  },
-  Reference: {
-    text: 'text-zinc-400',
-    dot: 'bg-zinc-400',
-  },
-};
 
 interface CarouselCardProps {
   project: Project;
@@ -298,15 +277,19 @@ export default function ProjectsGrid() {
         setSelectedProject(null);
       }
     };
+    const mainEl = document.getElementById('main-scroll-pane') || document.querySelector('main');
     if (selectedProject) {
       window.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
+      if (mainEl) mainEl.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
+      if (mainEl) mainEl.style.overflow = '';
     }
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = '';
+      if (mainEl) mainEl.style.overflow = '';
     };
   }, [selectedProject]);
 
@@ -377,29 +360,45 @@ export default function ProjectsGrid() {
               className="w-full max-w-5xl border border-white/10 p-6 sm:p-8 overflow-y-auto max-h-[90vh] flex flex-col space-y-6"
               style={{ backgroundColor: '#000000' }}
             >
-              {/* Header row: project name on left, status indicator + close button on right */}
+              {/* Header row: project name on left, links pills + close button on right */}
               <div className="flex items-center justify-between gap-4 pb-2">
                 <h3 className="font-heading text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
                   {selectedProject.title}
                 </h3>
 
-                <div className="flex items-center gap-4 shrink-0">
-                  <span
-                    className={`inline-flex items-center gap-1.5 text-xs font-tag font-medium ${
-                      STATUS_CONFIG[selectedProject.status].text
-                    }`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        STATUS_CONFIG[selectedProject.status].dot
-                      }`}
-                    />
-                    {selectedProject.status}
-                  </span>
+                <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
+                  {selectedProject.links && selectedProject.links.length > 0 && (
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      {selectedProject.links.map((link) => (
+                        <a
+                          key={link.url}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-tag font-medium text-foreground bg-transparent border border-white/20 hover:border-white/50 hover:bg-white/5 transition-colors"
+                        >
+                          <span>{link.label}</span>
+                          <svg
+                            className="w-3.5 h-3.5 opacity-70"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                            <polyline points="15 3 21 3 21 9" />
+                            <line x1="10" y1="14" x2="21" y2="3" />
+                          </svg>
+                        </a>
+                      ))}
+                    </div>
+                  )}
                   <button
                     type="button"
                     onClick={() => setSelectedProject(null)}
-                    className="text-zinc-400 hover:text-white transition-colors p-1 leading-none text-xl"
+                    className="text-zinc-400 hover:text-white transition-colors p-1 leading-none text-xl ml-1"
                     aria-label="Close modal"
                   >
                     ✕
@@ -410,24 +409,38 @@ export default function ProjectsGrid() {
               {/* Frame area (top of modal) */}
               {selectedProject.liveUrl ? (
                 /* Live interactive iframe for projects with liveUrl: centered, clean edge with no border/bezel */
-                <div className="w-full flex justify-center overflow-hidden">
+                <div
+                  className={`w-full flex justify-center ${
+                    selectedProject.title === 'GridLab'
+                      ? 'overflow-y-auto'
+                      : 'overflow-hidden'
+                  }`}
+                >
                   <div
-                    className={`w-full max-w-3xl bg-black overflow-hidden ${
+                    className={`relative w-full max-w-3xl bg-black ${
                       selectedProject.title === 'GridLab'
-                        ? 'h-[620px] sm:h-[720px]'
-                        : 'aspect-video'
+                        ? 'overflow-y-auto'
+                        : selectedProject.title === 'CI/CD Pipeline Anatomy'
+                        ? 'aspect-video overflow-hidden'
+                        : 'overflow-hidden'
                     }`}
-                    style={{
-                      overflow: 'hidden',
-                      ...(selectedProject.title === 'GridLab'
-                        ? {}
-                        : { aspectRatio: '16 / 9' }),
-                    }}
+                    style={
+                      selectedProject.title === 'CI/CD Pipeline Anatomy'
+                        ? { overflow: 'hidden', aspectRatio: '16 / 9' }
+                        : selectedProject.title === 'GridLab'
+                        ? { height: '720px', overflow: 'auto' }
+                        : { height: '600px', overflow: 'hidden' }
+                    }
                   >
                     <iframe
                       src={selectedProject.liveUrl}
                       title={`${selectedProject.title} live application`}
                       className="w-full h-full border-0 block"
+                      style={
+                        selectedProject.title === 'CI/CD Pipeline Anatomy'
+                          ? { position: 'absolute', inset: 0, width: '100%', height: '100%', aspectRatio: '16 / 9' }
+                          : { width: '100%', height: '100%' }
+                      }
                     />
                   </div>
                 </div>
@@ -483,39 +496,7 @@ export default function ProjectsGrid() {
                   </div>
                 )}
 
-                {selectedProject.links && selectedProject.links.length > 0 && (
-                  <div>
-                    <h5 className="font-tag text-xs font-semibold uppercase tracking-widest text-muted mb-3">
-                      LINKS
-                    </h5>
-                    <div className="flex flex-wrap gap-3">
-                      {selectedProject.links.map((link) => (
-                        <a
-                          key={link.url}
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-tag font-medium text-foreground bg-transparent border border-white/20 hover:border-white/50 hover:bg-white/5 transition-colors"
-                        >
-                          <span>{link.label}</span>
-                          <svg
-                            className="w-3.5 h-3.5 opacity-70"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                            <polyline points="15 3 21 3 21 9" />
-                            <line x1="10" y1="14" x2="21" y2="3" />
-                          </svg>
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
+
               </div>
             </motion.div>
           </motion.div>
