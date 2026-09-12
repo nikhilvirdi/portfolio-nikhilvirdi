@@ -5,7 +5,9 @@ export default function AvatarModel() {
 
   return (
     <Center>
-      <primitive object={scene} />
+      <group rotation={[0, -Math.PI / 2, 0]}>
+        <primitive object={scene} />
+      </group>
     </Center>
   );
 }
