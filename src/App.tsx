@@ -5,6 +5,7 @@ import CustomCursor from './components/CustomCursor';
 import ScrollIntercept from './components/ScrollIntercept';
 import HeroBioReveal from './components/HeroBioReveal';
 import TechStackFloating from './components/TechStackFloating';
+import ProjectsGrid from './components/ProjectsGrid';
 
 const AvatarModel = lazy(() => import('./components/AvatarModel'));
 
@@ -90,16 +91,10 @@ export default function App() {
           id="projects"
           className="py-20 px-16 bg-background"
         >
-          <ul>
-            <li>RedFlag-CI — GitHub App that scans PRs for risky AI-agent config changes — Shipped</li>
-            <li>JHusk — Property-based testing library for Java, published on Maven Central — Shipped</li>
-            <li>ASTRA-NET — Real-time sky observation web app — Live</li>
-            <li>GridLab — Pathfinding algorithm visualizer, 7 algorithms — Shipped</li>
-            <li>Stenod — Local memory daemon for AI coding sessions — In Progress</li>
-            <li>Cockpit — Local dev utility for tracking git repo status and service ports — Shipped</li>
-            <li>Network Intrusion Detection MLP — PyTorch classifier on NSL-KDD dataset — Shipped</li>
-            <li>CI/CD Pipeline Anatomy — Interactive diagram explaining CI/CD pipeline structure — Reference</li>
-          </ul>
+          <h2 className="font-heading text-5xl font-bold tracking-tight text-foreground mb-8">
+            Projects
+          </h2>
+          <ProjectsGrid />
         </section>
 
         {/* GitHub Activity section */}
