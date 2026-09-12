@@ -1,7 +1,6 @@
 import React from 'react';
 import { useAnimate } from 'framer-motion';
-import { Github, Linkedin, Mail, FileText } from 'lucide-react';
-import { SiNpm } from 'react-icons/si';
+import { FileText } from 'lucide-react';
 
 const NO_CLIP = 'polygon(0 0, 100% 0, 100% 100%, 0% 100%)';
 const BOTTOM_RIGHT_CLIP = 'polygon(0 0, 100% 0, 0 0, 0% 100%)';
@@ -24,21 +23,22 @@ const EXIT_KEYFRAMES: Record<string, string[]> = {
 };
 
 interface LinkBoxProps {
-  Icon: React.ComponentType<{ className?: string }>;
+  Icon: React.ComponentType;
+  HoverIcon?: React.ComponentType;
   href: string;
   className?: string;
   style?: React.CSSProperties;
-  iconClassName?: string;
 }
 
 const LinkBox = ({
   Icon,
+  HoverIcon,
   href,
   className,
   style,
-  iconClassName = 'text-xs sm:text-sm md:text-base',
 }: LinkBoxProps) => {
   const [scope, animate] = useAnimate();
+  const ActiveHoverIcon = HoverIcon || Icon;
 
   const getNearestSide = (e: any) => {
     const box = e.target.getBoundingClientRect();
@@ -78,23 +78,79 @@ const LinkBox = ({
       className={className}
       style={style}
     >
-      <Icon className={iconClassName} />
+      <Icon />
       <div
         ref={scope}
         style={{ clipPath: BOTTOM_RIGHT_CLIP }}
         className="absolute inset-0 grid place-content-center bg-white text-black transition-colors duration-300"
       >
-        <Icon className={iconClassName} />
+        <ActiveHoverIcon />
       </div>
     </a>
   );
 };
 
-const MavenIcon = ({ className }: { className?: string }) => (
+const GithubIcon = () => (
   <img
-    src="/icons/contact/maven.png"
+    src="/icons/contact/github.png"
+    alt="GitHub"
+    loading="eager"
+    decoding="async"
+    className="h-7 sm:h-8 w-auto max-w-[85%] object-contain pointer-events-none inline-block"
+  />
+);
+
+const GithubHoverIcon = () => (
+  <img
+    src="/icons/contact/github-hover.png"
+    alt="GitHub"
+    loading="eager"
+    decoding="async"
+    className="h-7 sm:h-8 w-auto max-w-[85%] object-contain pointer-events-none inline-block"
+  />
+);
+
+const LinkedinIcon = () => (
+  <img
+    src="/icons/contact/linkedin.png"
+    alt="LinkedIn"
+    loading="eager"
+    decoding="async"
+    className="h-5 sm:h-6 w-auto max-w-[85%] object-contain pointer-events-none inline-block"
+  />
+);
+
+const EmailIcon = () => (
+  <img
+    src="/icons/contact/email.png"
+    alt="Email"
+    loading="eager"
+    decoding="async"
+    className="h-5 sm:h-6 w-auto max-w-[85%] object-contain pointer-events-none inline-block"
+  />
+);
+
+const ResumeIcon = () => (
+  <FileText className="h-6 w-6 sm:h-7 sm:w-7 pointer-events-none inline-block" />
+);
+
+const NpmIcon = () => (
+  <img
+    src="/icons/contact/npm.png"
+    alt="npm"
+    loading="eager"
+    decoding="async"
+    className="h-5 sm:h-6 w-auto max-w-[85%] object-contain pointer-events-none inline-block"
+  />
+);
+
+const MavenIcon = () => (
+  <img
+    src="/icons/contact/maven.svg"
     alt="Maven Central"
-    className={`w-[1em] h-[1em] object-contain pointer-events-none inline-block ${className || ''}`}
+    loading="eager"
+    decoding="async"
+    className="h-5 sm:h-6 w-auto max-w-[85%] object-contain pointer-events-none inline-block"
   />
 );
 
@@ -114,46 +170,41 @@ export default function ContactGrid() {
       }}
     >
       <LinkBox
-        Icon={Github}
+        Icon={GithubIcon}
+        HoverIcon={GithubHoverIcon}
         href="https://github.com/nikhilvirdi"
         style={{ gridArea: 'github' }}
-        className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full [&_svg]:w-[1em] [&_svg]:h-[1em] [&_svg]:pointer-events-none"
-        iconClassName="text-base sm:text-lg md:text-xl"
+        className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full"
       />
       <LinkBox
-        Icon={Linkedin}
+        Icon={LinkedinIcon}
         href="https://linkedin.com/in/nikhil-virdi-819nv"
         style={{ gridArea: 'linkedin' }}
-        className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full [&_svg]:w-[1em] [&_svg]:h-[1em] [&_svg]:pointer-events-none"
-        iconClassName="text-xs sm:text-sm md:text-base"
+        className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full"
       />
       <LinkBox
-        Icon={Mail}
+        Icon={EmailIcon}
         href="mailto:nkvir2468@gmail.com"
         style={{ gridArea: 'email' }}
-        className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full [&_svg]:w-[1em] [&_svg]:h-[1em] [&_svg]:pointer-events-none"
-        iconClassName="text-xs sm:text-sm"
+        className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full"
       />
       <LinkBox
-        Icon={FileText}
+        Icon={ResumeIcon}
         href="https://drive.google.com/file/d/1b5M8mg647Y988meZGTPLvF1MelJrUlLT/view?usp=drive_link"
         style={{ gridArea: 'resume' }}
-        className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full [&_svg]:w-[1em] [&_svg]:h-[1em] [&_svg]:pointer-events-none"
-        iconClassName="text-xs sm:text-sm md:text-base"
+        className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full"
       />
       <LinkBox
-        Icon={SiNpm}
+        Icon={NpmIcon}
         href="https://www.npmjs.com/~nikhilvirdi"
         style={{ gridArea: 'npm' }}
-        className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full [&_svg]:w-[1em] [&_svg]:h-[1em] [&_svg]:pointer-events-none"
-        iconClassName="text-xs sm:text-sm"
+        className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full"
       />
       <LinkBox
         Icon={MavenIcon}
         href="https://central.sonatype.com/namespace/io.github.nikhilvirdi"
         style={{ gridArea: 'maven' }}
-        className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full [&_svg]:w-[1em] [&_svg]:h-[1em] [&_svg]:pointer-events-none"
-        iconClassName="text-xs sm:text-sm md:text-base"
+        className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full"
       />
     </div>
   );
