@@ -172,7 +172,7 @@ function CarouselCard({
         width: `${faceWidth}px`,
         height: `${faceHeight}px`,
         transform: `rotateY(${angle}deg) translateZ(${radius}px)`,
-        backgroundColor: 'rgba(0, 0, 0, 0.55)',
+        backgroundColor: 'rgba(0, 0, 0, 0)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -226,8 +226,8 @@ export default function ProjectsGrid() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Initial rotation offset of -90 puts JHusk, ASTRA-NET, Stenod in front
-  const rotation = useMotionValue(-90);
+  // Initial rotation offset of -135 puts Stenod in front
+  const rotation = useMotionValue(-135);
   const springRotation = useSpring(rotation, {
     stiffness: 100,
     damping: 30,
