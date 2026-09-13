@@ -18,6 +18,8 @@ export default {
         heading: ['Geist', 'sans-serif'],
         body: ['Jost', 'sans-serif'],
         tag: ['Manrope', 'sans-serif'],
+        outfit: ['Outfit', 'sans-serif'],
+        'font-outfit': ['Outfit', 'sans-serif'],
       },
     },
   },

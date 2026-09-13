@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
+import { setHeroProgress } from '../utils/heroScroll';
 
 const LINES = [
   "Yo gng! I'm Nik. I genuinely can't function",
@@ -51,6 +52,7 @@ export default function HeroBioReveal() {
   const doneAndPassedRef = useRef(false); // true once fully revealed and scrolled away
 
   useEffect(() => {
+    setHeroProgress(accRef.current / TOTAL_SCROLL_PX);
     const scrollEl = (document.getElementById('main-scroll-pane') || document.querySelector('main')) as HTMLElement | null;
 
     const getScrollTop = () => {
@@ -97,6 +99,7 @@ export default function HeroBioReveal() {
           Math.round((newAcc / TOTAL_SCROLL_PX) * TOTAL_CHARS),
         );
         accRef.current = newAcc;
+        setHeroProgress(newAcc / TOTAL_SCROLL_PX);
         if (newRevealed !== currentRevealed) {
           revealedRef.current = newRevealed;
           setRevealed(newRevealed);
@@ -113,6 +116,7 @@ export default function HeroBioReveal() {
           Math.round((newAcc / TOTAL_SCROLL_PX) * TOTAL_CHARS),
         );
         accRef.current = newAcc;
+        setHeroProgress(newAcc / TOTAL_SCROLL_PX);
         if (newRevealed !== currentRevealed) {
           revealedRef.current = newRevealed;
           setRevealed(newRevealed);

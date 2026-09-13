@@ -78,10 +78,10 @@ export default function App() {
             About Nikhil Virdi
           </h2>
           <div className="mt-8 max-w-3xl space-y-6">
-            <p className="font-heading text-lg font-normal leading-relaxed text-foreground">
+            <p className="font-outfit text-[22px] font-normal leading-relaxed text-foreground">
               I'm Nikhil, though most people just call me Nik. I grew up in Jammu, Jammu and Kashmir, and I'm now in Bangalore pursuing my degree in Computer Science Engineering, currently in my third year. Java is my favorite programming language by far, and most of my backend work happens in Node.js with Express.js. Frontend has never pulled me in the same way backend has. I also kind of larp having DevOps knowledge, when really it's just Docker, CI/CD pipelines, and Nginx. I'm genuinely interested in system design though, and I enjoy sketching out architecture diagrams on draw.io. Lately, I've been deep in AI engineering, including deep learning, large language models, and generative AI, though core machine learning isn't really my focus.
             </p>
-            <p className="font-heading text-lg font-normal leading-relaxed text-foreground">
+            <p className="font-outfit text-[22px] font-normal leading-relaxed text-foreground">
               Outside of code, I run Riyasat-e-Duggar, a page where I try to show the real side of my motherland, the trans-Himalayan region I come from. I'm 20 as of now, and I run on chai. I genuinely enjoy writing documentation on Notion about whatever I'm learning, it's oddly satisfying. Cricket can keep me talking for hours without my losing interest, and whenever I'm bored, I end up falling down random Wikipedia rabbit holes simply because something caught my curiosity. Everyone says I overcomplain about things, and honestly, they might be right. Jk, I'm a chill human.
             </p>
           </div>
