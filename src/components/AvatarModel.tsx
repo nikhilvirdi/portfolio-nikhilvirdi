@@ -4,13 +4,19 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF, Center } from '@react-three/drei';
 import { getHeroProgress } from '../utils/heroScroll';
 
-export default function AvatarModel() {
+interface AvatarModelProps {
+  hasActiveTech?: boolean;
+}
+
+export default function AvatarModel({ hasActiveTech = false }: AvatarModelProps) {
   const { scene } = useGLTF('/models/avatar.glb');
   const { gl } = useThree();
 
   const groupRef = useRef<THREE.Group | null>(null);
 
   // Constants
+  const BASE_ROTATION_X = (5 * Math.PI) / 180; // ~5° permanent forward lean
+  const HOVER_PITCH_ANGLE = (6 * Math.PI) / 180; // ~6° added pitch toward viewer when active
   const BASE_ROTATION_Y = -Math.PI / 2; // -90° resting rotation facing viewer
   const MAX_TURN_ANGLE = (22.5 * Math.PI) / 180; // ~+22.5° turn toward Hero headline
   const BOB_SPEED = Math.PI * 0.5; // ~4 second period (2 * PI / 4 = 0.5 * PI)
@@ -22,6 +28,11 @@ export default function AvatarModel() {
   const clickTimeRef = useRef<number>(-999);
   const currentScaleY = useRef<number>(1);
   const currentScaleXZ = useRef<number>(1);
+  const activeTechRef = useRef(hasActiveTech);
+
+  useEffect(() => {
+    activeTechRef.current = hasActiveTech;
+  }, [hasActiveTech]);
 
   // Trigger squash-and-stretch on click of avatar or canvas
   const triggerBounce = () => {
@@ -60,14 +71,27 @@ export default function AvatarModel() {
     const group = groupRef.current;
     if (!group) return;
 
-    // ── 1. Whole-body turn toward headline tied to scroll ──
+    // ── 1. Forward lean on X-axis (baseline forward lean + hover pitch towards viewer) ──
+    const isHoverActive = activeTechRef.current;
+    const targetRotationX = BASE_ROTATION_X + (isHoverActive ? HOVER_PITCH_ANGLE : 0);
+    group.rotation.x = THREE.MathUtils.lerp(
+      group.rotation.x,
+      targetRotationX,
+      Math.min(1, delta * 12)
+    );
+
+    // ── 2. Whole-body turn toward headline tied to scroll, returning to neutral once reveal completes ──
     const progress = getHeroProgress();
-    const targetRotationY = BASE_ROTATION_Y + progress * MAX_TURN_ANGLE;
-    // Responsive smooth lerp to target angle
+    const isCompleted = progress >= 0.999;
+    const targetRotationY = isCompleted
+      ? BASE_ROTATION_Y
+      : BASE_ROTATION_Y + progress * MAX_TURN_ANGLE;
+
+    const lerpSpeedY = isCompleted ? 5 : 10;
     group.rotation.y = THREE.MathUtils.lerp(
       group.rotation.y,
       targetRotationY,
-      Math.min(1, delta * 10)
+      Math.min(1, delta * lerpSpeedY)
     );
 
     // ── 2. Idle breathing bob (always running) ──
@@ -119,7 +143,7 @@ export default function AvatarModel() {
     <Center>
       <group
         ref={groupRef}
-        rotation={[0, BASE_ROTATION_Y, 0]}
+        rotation={[BASE_ROTATION_X, BASE_ROTATION_Y, 0]}
         onClick={(e) => {
           e.stopPropagation();
           triggerBounce();
