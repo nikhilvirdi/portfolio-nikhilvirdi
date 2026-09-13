@@ -154,6 +154,26 @@ const MavenIcon = () => (
   />
 );
 
+const LeetcodeIcon = () => (
+  <img
+    src="/icons/contact/leetcode.png"
+    alt="LeetCode"
+    loading="eager"
+    decoding="async"
+    className="h-5 sm:h-6 w-auto max-w-[85%] object-contain pointer-events-none inline-block"
+  />
+);
+
+const LeetcodeHoverIcon = () => (
+  <img
+    src="/icons/contact/leetcode-hover.png"
+    alt="LeetCode"
+    loading="eager"
+    decoding="async"
+    className="h-5 sm:h-6 w-auto max-w-[85%] object-contain pointer-events-none inline-block"
+  />
+);
+
 export default function ContactGrid() {
   return (
     <div
@@ -166,7 +186,7 @@ export default function ContactGrid() {
         gridTemplateAreas: `
           "github github linkedin linkedin"
           "github github email    resume"
-          "npm    maven  maven    resume"
+          "npm    maven  leetcode resume"
         `,
       }}
     >
@@ -205,6 +225,13 @@ export default function ContactGrid() {
         Icon={MavenIcon}
         href="https://central.sonatype.com/namespace/io.github.nikhilvirdi"
         style={{ gridArea: 'maven' }}
+        className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full"
+      />
+      <LinkBox
+        Icon={LeetcodeIcon}
+        HoverIcon={LeetcodeHoverIcon}
+        href="https://leetcode.com/u/nikhilvirdi/"
+        style={{ gridArea: 'leetcode' }}
         className="relative grid place-content-center bg-black text-foreground overflow-hidden w-full h-full"
       />
     </div>
