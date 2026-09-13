@@ -20,6 +20,8 @@ export default {
         tag: ['Manrope', 'sans-serif'],
         outfit: ['Outfit', 'sans-serif'],
         'font-outfit': ['Outfit', 'sans-serif'],
+        oxygen: ['Oxygen', 'sans-serif'],
+        'font-oxygen': ['Oxygen', 'sans-serif'],
       },
     },
   },

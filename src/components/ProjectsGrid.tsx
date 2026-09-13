@@ -126,6 +126,12 @@ const PROJECTS: Project[] = [
 ];
 
 
+const LOGO_LESS_PROJECT_TITLES = [
+  'Cockpit',
+  'Network Intrusion Detection MLP',
+  'CI/CD Pipeline Anatomy',
+];
+
 interface CarouselCardProps {
   project: Project;
   index: number;
@@ -204,7 +210,13 @@ function CarouselCard({
             className="max-h-[48%] max-w-[72%] object-contain select-none pointer-events-none"
           />
         ) : (
-          <h3 className="font-heading text-lg font-semibold text-foreground text-center px-4 leading-snug select-none">
+          <h3
+            className={`${
+              LOGO_LESS_PROJECT_TITLES.includes(project.title)
+                ? 'font-oxygen font-bold'
+                : 'font-heading font-semibold'
+            } text-lg text-foreground text-center px-4 leading-snug select-none`}
+          >
             {project.title}
           </h3>
         )}
@@ -510,7 +522,13 @@ export default function ProjectsGrid() {
             >
               {/* Header row: project name on left, links pills + close button on right */}
               <div className="flex items-center justify-between gap-4 pb-2">
-                <h3 className="font-heading text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+                <h3
+                  className={`${
+                    LOGO_LESS_PROJECT_TITLES.includes(selectedProject.title)
+                      ? 'font-oxygen'
+                      : 'font-heading'
+                  } text-2xl sm:text-3xl font-medium text-foreground tracking-tight`}
+                >
                   {selectedProject.title}
                 </h3>
 
@@ -592,7 +610,13 @@ export default function ProjectsGrid() {
                       className="max-h-[180px] sm:max-h-[220px] max-w-[85%] object-contain select-none"
                     />
                   ) : (
-                    <h4 className="font-heading text-3xl sm:text-4xl font-bold text-foreground text-center px-6 max-w-lg leading-snug">
+                    <h4
+                      className={`${
+                        LOGO_LESS_PROJECT_TITLES.includes(selectedProject.title)
+                          ? 'font-oxygen'
+                          : 'font-heading'
+                      } text-3xl sm:text-4xl font-bold text-foreground text-center px-6 max-w-lg leading-snug`}
+                    >
                       {selectedProject.title}
                     </h4>
                   )}
@@ -603,7 +627,7 @@ export default function ProjectsGrid() {
               <div className="space-y-8 pt-4">
                 {selectedProject.whatItIs && (
                   <div>
-                    <h4 className="font-heading text-xl sm:text-2xl font-bold text-foreground tracking-tight mb-2.5">
+                    <h4 className="font-heading text-xl sm:text-2xl font-medium text-foreground tracking-tight mb-2.5">
                       What it is
                     </h4>
                     <p className="font-body text-base text-foreground/90 leading-relaxed">
@@ -614,7 +638,7 @@ export default function ProjectsGrid() {
 
                 {selectedProject.whatItDoes && (
                   <div>
-                    <h4 className="font-heading text-xl sm:text-2xl font-bold text-foreground tracking-tight mb-2.5">
+                    <h4 className="font-heading text-xl sm:text-2xl font-medium text-foreground tracking-tight mb-2.5">
                       What it does
                     </h4>
                     <p className="font-body text-base text-foreground/90 leading-relaxed">
@@ -625,7 +649,7 @@ export default function ProjectsGrid() {
 
                 {selectedProject.howItWorks && (
                   <div>
-                    <h4 className="font-heading text-xl sm:text-2xl font-bold text-foreground tracking-tight mb-2.5">
+                    <h4 className="font-heading text-xl sm:text-2xl font-medium text-foreground tracking-tight mb-2.5">
                       How it works
                     </h4>
                     <p className="font-body text-base text-foreground/90 leading-relaxed">
