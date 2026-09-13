@@ -76,7 +76,7 @@ export default function App() {
         {/* About section */}
         <section
           id="about"
-          className="pt-12 pb-20 px-16 bg-background"
+          className="pt-12 pb-16 px-16 bg-background"
         >
           <h2 className="font-heading text-5xl font-bold tracking-tight text-foreground">
             About Nikhil Virdi
@@ -97,7 +97,7 @@ export default function App() {
         {/* Projects section */}
         <section
           id="projects"
-          className="py-20 px-16 bg-background"
+          className="py-16 px-16 bg-background"
         >
           <h2 className="font-heading text-5xl font-bold tracking-tight text-foreground mb-8">
             Projects
@@ -108,7 +108,7 @@ export default function App() {
         {/* GitHub Activity section */}
         <section
           id="github-activity"
-          className="py-20 px-16 bg-background"
+          className="py-16 px-16 bg-background"
         >
           <h1 className="font-heading text-5xl font-bold tracking-tight text-foreground">
             GitHub Activity
@@ -119,7 +119,7 @@ export default function App() {
         {/* Coding Activity section */}
         <section
           id="coding-activity"
-          className="py-20 px-16 bg-background"
+          className="py-16 px-16 bg-background"
         >
           <h2 className="font-heading text-5xl font-bold tracking-tight text-foreground">
             Coding Activity
@@ -130,7 +130,7 @@ export default function App() {
         {/* Contact section */}
         <section
           id="contact"
-          className="pt-10 pb-16 px-16 bg-background"
+          className="pt-16 pb-16 px-16 bg-background"
         >
           <h2 className="font-heading text-5xl font-bold tracking-tight text-foreground mb-6">
             Contact
