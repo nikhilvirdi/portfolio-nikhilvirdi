@@ -452,7 +452,7 @@ export default function ProjectsGrid() {
   return (
     <div
       ref={containerRef}
-      className="relative w-[844px] max-w-full py-6 flex flex-col items-center justify-center select-none"
+      className="relative w-[844px] max-w-full pt-6 flex flex-col items-center justify-center select-none"
       style={{ width: '844px' }}
     >
       {/* Outer carousel container with fixed height 380px */}
