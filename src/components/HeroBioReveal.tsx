@@ -2,6 +2,7 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import { setHeroProgress } from '../utils/heroScroll';
 
 const LINES = [
+  "",
   "Yo gng! I'm Nik. I genuinely can't function",
   "without chai. It's less a drink and more a",
   "personality trait at this point. I do my best",
@@ -151,17 +152,21 @@ export default function HeroBioReveal() {
       {PARSED_LINES.map((pl, lineIdx) => (
         <Fragment key={lineIdx}>
           <span className="inline-block whitespace-nowrap">
-            {pl.chars.map((char, charIdx) => {
-              const i = pl.startIndex + charIdx;
-              return (
-                <span
-                  key={i}
-                  style={{ color: i < revealed ? '#f2f2f0' : '#71717a' }}
-                >
-                  {char}
-                </span>
-              );
-            })}
+            {pl.chars.length === 0 ? (
+              '\u00A0'
+            ) : (
+              pl.chars.map((char, charIdx) => {
+                const i = pl.startIndex + charIdx;
+                return (
+                  <span
+                    key={i}
+                    style={{ color: i < revealed ? '#f2f2f0' : '#71717a' }}
+                  >
+                    {char}
+                  </span>
+                );
+              })
+            )}
           </span>
           {lineIdx < PARSED_LINES.length - 1 && <br />}
         </Fragment>
