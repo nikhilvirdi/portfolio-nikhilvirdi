@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import CustomCursor from './components/CustomCursor';
@@ -9,10 +9,13 @@ import ProjectsGrid from './components/ProjectsGrid';
 import GitHubActivity from './components/GitHubActivity';
 import CodingActivity from './components/CodingActivity';
 import ContactGrid from './components/ContactGrid';
+import AvatarThoughtBubble from './components/AvatarThoughtBubble';
 
 const AvatarModel = lazy(() => import('./components/AvatarModel'));
 
 export default function App() {
+  const [activeTechMessage, setActiveTechMessage] = useState<string | null>(null);
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground font-body">
       <CustomCursor />
@@ -20,6 +23,7 @@ export default function App() {
 
       {/* Persistent fixed left sidebar */}
       <aside className="fixed left-0 top-0 h-screen w-[28vw] bg-background flex flex-col items-center justify-center overflow-hidden z-20">
+        <AvatarThoughtBubble message={activeTechMessage} />
         {/* 3D avatar fills the sidebar */}
         <div className="w-full h-full">
           <Suspense
@@ -47,7 +51,7 @@ export default function App() {
                   </Html>
                 }
               >
-                <AvatarModel />
+                <AvatarModel hasActiveTech={Boolean(activeTechMessage)} />
               </Suspense>
               <OrbitControls enableZoom={false} enablePan={false} enableRotate={true} />
             </Canvas>
@@ -88,7 +92,7 @@ export default function App() {
         </section>
 
         {/* Tech Stack section */}
-        <TechStackFloating />
+        <TechStackFloating onActiveMessageChange={setActiveTechMessage} />
 
         {/* Projects section */}
         <section

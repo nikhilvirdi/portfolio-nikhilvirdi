@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { motion, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
 
 import javaSvg from 'devicon/icons/java/java-original.svg';
 import typescriptSvg from 'devicon/icons/typescript/typescript-original.svg';
@@ -38,32 +38,32 @@ interface TechItem extends TechDef {
 }
 
 const BASE_TECH_DEFS: TechDef[] = [
-  { name: 'Java', svg: javaSvg, message: "am Nik's favorite language btw" },
-  { name: 'TypeScript', svg: typescriptSvg, message: "he just uses type annotations over javascript and thinks its me" },
-  { name: 'JavaScript', svg: javascriptSvg, message: "haha nik always forgets my syntax" },
-  { name: 'Python', svg: pythonSvg, message: "he uses me for AI stuff" },
-  { name: 'C', svg: cSvg, message: "the OG, he respects me from a distance" },
+  { name: 'Java', svg: javaSvg, message: "Java's my favorite language btw" },
+  { name: 'TypeScript', svg: typescriptSvg, message: "i just add type annotations over javascript and call it TypeScript" },
+  { name: 'JavaScript', svg: javascriptSvg, message: "haha i always forget JavaScript's syntax" },
+  { name: 'Python', svg: pythonSvg, message: "i use python for AI stuff" },
+  { name: 'C', svg: cSvg, message: "C's the OG, i respect it from a distance" },
 
-  { name: 'Node.js', svg: nodejsSvg, message: "yk nik uses me for backend??" },
-  { name: 'Express', svg: expressSvg, invert: true, message: "am the framework holding his APIs together" },
-  { name: 'Postman', svg: postmanSvg, message: "he tests his APIs on me before trusting them anywhere else" },
-  { name: 'React', svg: reactSvg, message: "he uses me for vibecoding frontend nd still thinks am boring to learn" },
-  { name: 'Tailwind CSS', svg: tailwindcssSvg, message: "supporting guy to react for nik as he finds both boring" },
+  { name: 'Node.js', svg: nodejsSvg, message: "yk i use Node.js for backend??" },
+  { name: 'Express', svg: expressSvg, invert: true, message: "express is the framework holding my APIs together" },
+  { name: 'Postman', svg: postmanSvg, message: "i test my APIs on postman before trusting them anywhere else" },
+  { name: 'React', svg: reactSvg, message: "i use react for vibecoding frontend nd still think it's boring to learn" },
+  { name: 'Tailwind CSS', svg: tailwindcssSvg, message: "tailwind's the supporting guy to react for me, i find both boring lol" },
 
-  { name: 'PostgreSQL', svg: postgresqlSvg, message: "his data lives in me, rent free" },
-  { name: 'Prisma', svg: prismaSvg, invert: true, message: "am the middleman bw nik and his postgre" },
-  { name: 'HTML5', svg: html5Svg, message: "i remind him of his 1st sem" },
-  { name: 'CSS3', svg: css3Svg, message: "i used to help him add colors in his dead frontends till he started vibecoding frontend using tailwind" },
+  { name: 'PostgreSQL', svg: postgresqlSvg, message: "my data lives in postgres, rent free" },
+  { name: 'Prisma', svg: prismaSvg, invert: true, message: "prisma's the middleman between me and my postgres" },
+  { name: 'HTML5', svg: html5Svg, message: "html reminds me of my 1st sem" },
+  { name: 'CSS3', svg: css3Svg, message: "css used to help me add colors in my dead frontends till i started vibecoding frontend using tailwind" },
 
-  { name: 'Docker', svg: dockerSvg, message: "nik's fav technology, i once helped him run 10 servers on his one laptop only" },
-  { name: 'Nginx', svg: nginxSvg, message: "am nik's load balancer, reverse proxy friend, and sometimes cacher too" },
-  { name: 'GitHub Actions', svg: githubactionsSvg, message: "i run his CI so he doesn't have to remember to" },
-  { name: 'Git', svg: gitSvg, message: "i remember every mistake he's ever committed, literally" },
-  { name: 'GitHub', svg: githubSvg, invert: true, message: "home of way too many repos, only some of them finished" },
+  { name: 'Docker', svg: dockerSvg, message: "docker's my fav technology, once helped me run 10 servers on my one laptop only" },
+  { name: 'Nginx', svg: nginxSvg, message: "nginx is my load balancer, reverse proxy friend, and sometimes cacher too" },
+  { name: 'GitHub Actions', svg: githubactionsSvg, message: "github actions runs my CI so i don't have to remember to" },
+  { name: 'Git', svg: gitSvg, message: "git remembers every mistake i've ever committed, literally" },
+  { name: 'GitHub', svg: githubSvg, invert: true, message: "github's home to way too many of my repos, only some of them finished" },
   {
     name: 'JWT',
     svg: '/icons/jwt.png',
-    message: "he has hardly used me in any of the projects as of now",
+    message: "i've hardly used jwt in any of my projects as of now",
   },
 ];
 
@@ -121,7 +121,6 @@ interface FloatingIconProps {
   mouseX: React.RefObject<number>;
   mouseY: React.RefObject<number>;
   containerRef: React.RefObject<HTMLElement | null>;
-  isBubbleActive: boolean;
 }
 
 function FloatingIcon({
@@ -129,12 +128,7 @@ function FloatingIcon({
   mouseX,
   mouseY,
   containerRef,
-  isBubbleActive,
 }: FloatingIconProps) {
-  const [flipBelow, setFlipBelow] = useState(item.y < 28);
-  const [shiftX, setShiftX] = useState<'left' | 'right' | 'center'>(
-    item.x < 130 ? 'right' : item.x > 714 ? 'left' : 'center'
-  );
   const offsetX = useMotionValue(0);
   const offsetY = useMotionValue(0);
   const springX = useSpring(offsetX, { damping: 20, stiffness: 200 });
@@ -142,9 +136,6 @@ function FloatingIcon({
 
   useEffect(() => {
     let animId: number;
-    let flipBelowRef = item.y < 28;
-    let shiftXRef: 'left' | 'right' | 'center' =
-      item.x < 130 ? 'right' : item.x > 714 ? 'left' : 'center';
     const REPEL_RADIUS = 150;
     const MAX_PUSH = 85;
 
@@ -156,7 +147,6 @@ function FloatingIcon({
 
         const mx = mouseX.current;
         const my = mouseY.current;
-        let repelling = false;
 
         if (mx !== null && my !== null && mx !== -9999 && my !== -9999) {
           const dx = baseCenterX - mx;
@@ -164,7 +154,6 @@ function FloatingIcon({
           const dist = Math.hypot(dx, dy);
 
           if (dist < REPEL_RADIUS) {
-            repelling = true;
             const force = 1 - dist / REPEL_RADIUS;
             const push = force * MAX_PUSH;
             const angle = Math.atan2(dy, dx);
@@ -192,22 +181,6 @@ function FloatingIcon({
           offsetX.set(0);
           offsetY.set(0);
         }
-
-        const currentX = baseCenterX + (repelling ? offsetX.get() : 0);
-        const currentY = baseCenterY + (repelling ? offsetY.get() : 0);
-
-        const shouldFlip = currentY < 140;
-        if (shouldFlip !== flipBelowRef) {
-          flipBelowRef = shouldFlip;
-          setFlipBelow(shouldFlip);
-        }
-
-        const shouldShift: 'left' | 'right' | 'center' =
-          currentX < 130 ? 'right' : contRect.width - currentX < 130 ? 'left' : 'center';
-        if (shouldShift !== shiftXRef) {
-          shiftXRef = shouldShift;
-          setShiftX(shouldShift);
-        }
       }
       animId = requestAnimationFrame(checkRepel);
     };
@@ -216,18 +189,9 @@ function FloatingIcon({
     return () => cancelAnimationFrame(animId);
   }, [containerRef, item.x, item.y, mouseX, mouseY, offsetX, offsetY]);
 
-  const shiftClass =
-    shiftX === 'right'
-      ? 'translate-x-8'
-      : shiftX === 'left'
-      ? '-translate-x-8'
-      : 'translate-x-0';
-
   return (
     <motion.div
-      className={`absolute select-none pointer-events-auto cursor-default -translate-x-1/2 -translate-y-1/2 ${
-        isBubbleActive ? 'z-40' : 'z-10'
-      }`}
+      className="absolute select-none pointer-events-auto cursor-default -translate-x-1/2 -translate-y-1/2 z-10"
       style={{
         left: `${item.x}px`,
         top: `${item.y}%`,
@@ -249,63 +213,6 @@ function FloatingIcon({
         }}
         className="relative text-foreground/80 hover:text-foreground transition-colors flex flex-col items-center"
       >
-        <AnimatePresence>
-          {isBubbleActive && item.message && (
-            <motion.div
-              initial={{ opacity: 0, y: flipBelow ? -8 : 8, scale: 0.85 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: flipBelow ? -6 : 6, scale: 0.85 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
-              className={`absolute ${
-                flipBelow ? 'top-full mt-1' : 'bottom-full mb-1'
-              } left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center z-50 w-max`}
-            >
-              {flipBelow && (
-                /* Small triangular tail pointing UP toward the icon */
-                <svg
-                  viewBox="0 0 16 10"
-                  className="w-4 h-2.5 -mb-[1px] pointer-events-none overflow-visible rotate-180 z-20"
-                >
-                  <polygon points="0,-1 16,-1 8,9" fill="#000000" />
-                  <path
-                    d="M 0,0 L 8,9 L 16,0"
-                    fill="none"
-                    stroke="#ffffff"
-                    strokeWidth="1"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
-
-              {/* Simple rectangle with slightly rounded corners */}
-              <div
-                className={`relative bg-black text-white text-xs font-tag font-medium px-3.5 py-2 rounded-md border border-white shadow-[0_0_15px_rgba(255,255,255,0.15)] text-center leading-snug whitespace-normal max-w-[210px] z-10 transition-transform duration-150 ${shiftClass}`}
-              >
-                {item.message}
-              </div>
-
-              {!flipBelow && (
-                /* Small triangular tail pointing DOWN toward the icon */
-                <svg
-                  viewBox="0 0 16 10"
-                  className="w-4 h-2.5 -mt-[1px] pointer-events-none overflow-visible z-20"
-                >
-                  <polygon points="0,-1 16,-1 8,9" fill="#000000" />
-                  <path
-                    d="M 0,0 L 8,9 L 16,0"
-                    fill="none"
-                    stroke="#ffffff"
-                    strokeWidth="1"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         <img
           src={item.svg}
           alt={item.name}
@@ -322,12 +229,20 @@ function FloatingIcon({
   );
 }
 
-export default function TechStackFloating() {
+interface TechStackFloatingProps {
+  onActiveMessageChange?: (message: string | null) => void;
+}
+
+export default function TechStackFloating({ onActiveMessageChange }: TechStackFloatingProps = {}) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mouseX = useRef<number>(-9999);
   const mouseY = useRef<number>(-9999);
   const [items, setItems] = useState<TechItem[]>(() => generateFloatingItems(844));
-  const [activeBubbleName, setActiveBubbleName] = useState<string | null>(null);
+  const onActiveChangeRef = useRef(onActiveMessageChange);
+
+  useEffect(() => {
+    onActiveChangeRef.current = onActiveMessageChange;
+  }, [onActiveMessageChange]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -355,7 +270,7 @@ export default function TechStackFloating() {
       if (containerRef.current) {
         const mx = mouseX.current;
         const my = mouseY.current;
-        let closestName: string | null = null;
+        let closestMsg: string | null = null;
 
         if (mx !== -9999 && my !== -9999) {
           const contRect = containerRef.current.getBoundingClientRect();
@@ -367,21 +282,24 @@ export default function TechStackFloating() {
             const dist = Math.hypot(baseCenterX - mx, baseCenterY - my);
             if (dist < minDist) {
               minDist = dist;
-              closestName = item.name;
+              closestMsg = item.message || null;
             }
           }
         }
 
-        if (closestName !== currentActiveRef) {
-          currentActiveRef = closestName;
-          setActiveBubbleName(closestName);
+        if (closestMsg !== currentActiveRef) {
+          currentActiveRef = closestMsg;
+          onActiveChangeRef.current?.(closestMsg);
         }
       }
       animId = requestAnimationFrame(updateClosest);
     };
 
     animId = requestAnimationFrame(updateClosest);
-    return () => cancelAnimationFrame(animId);
+    return () => {
+      cancelAnimationFrame(animId);
+      onActiveChangeRef.current?.(null);
+    };
   }, [items]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -394,7 +312,7 @@ export default function TechStackFloating() {
   const handleMouseLeave = () => {
     mouseX.current = -9999;
     mouseY.current = -9999;
-    setActiveBubbleName(null);
+    onActiveChangeRef.current?.(null);
   };
 
   return (
@@ -419,7 +337,6 @@ export default function TechStackFloating() {
             mouseX={mouseX}
             mouseY={mouseY}
             containerRef={containerRef}
-            isBubbleActive={activeBubbleName === item.name}
           />
         ))}
       </div>
