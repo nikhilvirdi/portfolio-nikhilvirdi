@@ -62,7 +62,7 @@ export default function HeroBioReveal() {
     };
 
     const handleWheel = (e: WheelEvent) => {
-      // Let ScrollIntercept's white-overlay effect run unimpeded
+      // Do not engage if scroll is locked
       if (
         (scrollEl && scrollEl.style.overflow === 'hidden') ||
         document.body.style.overflow === 'hidden' ||

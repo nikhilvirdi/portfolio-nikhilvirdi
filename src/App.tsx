@@ -2,7 +2,6 @@ import { useState, lazy, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import CustomCursor from './components/CustomCursor';
-import ScrollIntercept from './components/ScrollIntercept';
 import HeroBioReveal from './components/HeroBioReveal';
 import TechStackFloating from './components/TechStackFloating';
 import ProjectsGrid from './components/ProjectsGrid';
@@ -19,7 +18,6 @@ export default function App() {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground font-body">
       <CustomCursor />
-      <ScrollIntercept />
 
       {/* Persistent fixed left sidebar */}
       <aside className="fixed left-0 top-0 h-screen w-[28vw] bg-background flex flex-col items-center justify-center overflow-hidden z-20">
