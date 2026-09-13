@@ -5,7 +5,6 @@ import javaSvg from 'devicon/icons/java/java-original.svg';
 import typescriptSvg from 'devicon/icons/typescript/typescript-original.svg';
 import javascriptSvg from 'devicon/icons/javascript/javascript-original.svg';
 import pythonSvg from 'devicon/icons/python/python-original.svg';
-import cSvg from 'devicon/icons/c/c-original.svg';
 import nodejsSvg from 'devicon/icons/nodejs/nodejs-original.svg';
 import postmanSvg from 'devicon/icons/postman/postman-original.svg';
 import reactSvg from 'devicon/icons/react/react-original.svg';
@@ -44,7 +43,7 @@ const BASE_TECH_DEFS: TechDef[] = [
   { name: 'TypeScript', svg: typescriptSvg, message: "i just add type annotations over javascript and call it TypeScript" },
   { name: 'JavaScript', svg: javascriptSvg, message: "haha i always forget JavaScript's syntax" },
   { name: 'Python', svg: pythonSvg, message: "i use python for AI stuff" },
-  { name: 'C', svg: cSvg, message: "C's the OG, i respect it from a distance" },
+  { name: 'C', svg: '/icons/C.webp', message: "C's the OG, i respect it from a distance" },
 
   { name: 'Node.js', svg: nodejsSvg, message: "yk i use Node.js for backend??" },
   { name: 'Express', svg: expressSvg, invert: true, message: "express is the framework holding my APIs together" },
@@ -444,10 +443,10 @@ export default function TechStackFloating({ onActiveMessageChange }: TechStackFl
   return (
     <section
       id="tech-stack"
-      className="py-20 px-16 bg-background"
+      className="py-16 px-16 bg-background"
     >
       <h2 className="font-heading text-5xl font-bold tracking-tight text-foreground">
-        <span className="bg-[#1D4FD8] box-decoration-clone">Tech Stack</span>
+        Tech Stack
       </h2>
       <div
         ref={containerRef}
