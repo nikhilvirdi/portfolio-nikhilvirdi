@@ -35,6 +35,8 @@ interface TechItem extends TechDef {
   driftY: number;
   driftR: number;
   duration: number;
+  width?: number;
+  height?: number;
 }
 
 const BASE_TECH_DEFS: TechDef[] = [
@@ -67,12 +69,34 @@ const BASE_TECH_DEFS: TechDef[] = [
   },
 ];
 
-function generateFloatingItems(containerWidth: number = 844): TechItem[] {
-  const MARGIN_X = 45;
-  const X_MIN = MARGIN_X;
-  const X_MAX = Math.max(X_MIN + 100, containerWidth - MARGIN_X);
-  const Y_MIN = 14;
-  const Y_MAX = 86;
+function getInitialEstimatedSize(name: string): { width: number; height: number } {
+  const labelWidth = Math.round(name.length * 7 + 20);
+  return {
+    width: Math.max(60, labelWidth),
+    height: 58,
+  };
+}
+
+function generateFloatingItems(
+  containerWidth: number = 844,
+  containerHeight: number = 640,
+  iconSizes?: { [name: string]: { width: number; height: number } }
+): TechItem[] {
+  let maxHalfW = 55;
+  let maxHalfH = 30;
+
+  for (const def of BASE_TECH_DEFS) {
+    const s = iconSizes?.[def.name] ?? getInitialEstimatedSize(def.name);
+    if (s.width / 2 > maxHalfW) maxHalfW = s.width / 2;
+    if (s.height / 2 > maxHalfH) maxHalfH = s.height / 2;
+  }
+
+  // Include drift and rotation safety buffer (14px) so no icon or label ever clips at container boundaries
+  const BUFFER = 14;
+  const X_MIN = maxHalfW + BUFFER;
+  const X_MAX = Math.max(X_MIN + 100, containerWidth - maxHalfW - BUFFER);
+  const Y_MIN = ((maxHalfH + BUFFER) / containerHeight) * 100;
+  const Y_MAX = ((containerHeight - maxHalfH - BUFFER) / containerHeight) * 100;
   const cols = 5;
   const rows = 4;
   const colStep = (X_MAX - X_MIN) / (cols - 1);
@@ -81,11 +105,11 @@ function generateFloatingItems(containerWidth: number = 844): TechItem[] {
   const slots: { x: number; y: number }[] = [];
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      const rawX = X_MIN + c * colStep + (Math.random() - 0.5) * (colStep * 0.35);
-      const rawY = Y_MIN + r * rowStep + (Math.random() - 0.5) * (rowStep * 0.35);
+      const rawX = X_MIN + c * colStep + (Math.random() - 0.5) * (colStep * 0.25);
+      const rawY = Y_MIN + r * rowStep + (Math.random() - 0.5) * (rowStep * 0.25);
       slots.push({
         x: Math.max(X_MIN, Math.min(X_MAX, Math.round(rawX))),
-        y: Math.max(12, Math.min(88, rawY)),
+        y: Math.max(Y_MIN, Math.min(Y_MAX, rawY)),
       });
     }
   }
@@ -100,14 +124,25 @@ function generateFloatingItems(containerWidth: number = 844): TechItem[] {
 
   return BASE_TECH_DEFS.map((def, idx) => {
     const slot = slots[idx];
+    const s = iconSizes?.[def.name] ?? getInitialEstimatedSize(def.name);
+    const halfW = s.width / 2 + BUFFER;
+    const halfH = s.height / 2 + BUFFER;
+
+    const clampedX = Math.max(halfW, Math.min(containerWidth - halfW, slot.x));
+    const minYPercent = (halfH / containerHeight) * 100;
+    const maxYPercent = ((containerHeight - halfH) / containerHeight) * 100;
+    const clampedY = Math.max(minYPercent, Math.min(maxYPercent, slot.y));
+
     const signX = Math.random() > 0.5 ? 1 : -1;
     const signY = Math.random() > 0.5 ? 1 : -1;
     const signR = Math.random() > 0.5 ? 1 : -1;
 
     return {
       ...def,
-      x: slot.x,
-      y: slot.y,
+      x: clampedX,
+      y: clampedY,
+      width: s.width,
+      height: s.height,
       driftX: (Math.random() * 3 + 6) * signX,
       driftY: (Math.random() * 3 + 6) * signY,
       driftR: (Math.random() * 2 + 4) * signR,
@@ -121,6 +156,7 @@ interface FloatingIconProps {
   mouseX: React.RefObject<number>;
   mouseY: React.RefObject<number>;
   containerRef: React.RefObject<HTMLElement | null>;
+  measureRef?: (el: HTMLDivElement | null) => void;
 }
 
 function FloatingIcon({
@@ -128,11 +164,18 @@ function FloatingIcon({
   mouseX,
   mouseY,
   containerRef,
+  measureRef,
 }: FloatingIconProps) {
+  const localRef = useRef<HTMLDivElement | null>(null);
   const offsetX = useMotionValue(0);
   const offsetY = useMotionValue(0);
   const springX = useSpring(offsetX, { damping: 20, stiffness: 200 });
   const springY = useSpring(offsetY, { damping: 20, stiffness: 200 });
+
+  const setRef = (el: HTMLDivElement | null) => {
+    localRef.current = el;
+    measureRef?.(el);
+  };
 
   useEffect(() => {
     let animId: number;
@@ -160,15 +203,24 @@ function FloatingIcon({
             let pushX = Math.cos(angle) * push;
             let pushY = Math.sin(angle) * push;
 
-            // Clamp target position so icons never push past either edge of bounding container
-            const MARGIN_X = 40;
+            // Measure this specific icon's own rendered bounding box
+            const iconEl = localRef.current;
+            const iconW = iconEl
+              ? Math.max(iconEl.offsetWidth, iconEl.getBoundingClientRect().width)
+              : (item.width || 80);
+            const iconH = iconEl
+              ? Math.max(iconEl.offsetHeight, iconEl.getBoundingClientRect().height)
+              : (item.height || 56);
+            const marginX = iconW / 2 + Math.abs(item.driftX) + 4;
+            const marginY = iconH / 2 + Math.abs(item.driftY) + 4;
+
+            // Clamp target position so this icon's own edge never crosses the container boundary
             const targetX = baseCenterX + pushX;
-            const clampedX = Math.max(MARGIN_X, Math.min(contRect.width - MARGIN_X, targetX));
+            const clampedX = Math.max(marginX, Math.min(contRect.width - marginX, targetX));
             pushX = clampedX - baseCenterX;
 
-            const MARGIN_Y = 32;
             const targetY = baseCenterY + pushY;
-            const clampedY = Math.max(MARGIN_Y, Math.min(contRect.height - MARGIN_Y, targetY));
+            const clampedY = Math.max(marginY, Math.min(contRect.height - marginY, targetY));
             pushY = clampedY - baseCenterY;
 
             offsetX.set(pushX);
@@ -187,45 +239,51 @@ function FloatingIcon({
 
     animId = requestAnimationFrame(checkRepel);
     return () => cancelAnimationFrame(animId);
-  }, [containerRef, item.x, item.y, mouseX, mouseY, offsetX, offsetY]);
+  }, [containerRef, item.x, item.y, item.width, item.height, item.driftX, item.driftY, mouseX, mouseY, offsetX, offsetY]);
 
   return (
-    <motion.div
+    <div
       className="absolute select-none pointer-events-auto cursor-default -translate-x-1/2 -translate-y-1/2 z-10"
       style={{
         left: `${item.x}px`,
         top: `${item.y}%`,
-        x: springX,
-        y: springY,
       }}
     >
       <motion.div
-        animate={{
-          x: [-item.driftX, item.driftX],
-          y: [-item.driftY, item.driftY],
-          rotate: [-item.driftR, item.driftR],
+        style={{
+          x: springX,
+          y: springY,
         }}
-        transition={{
-          duration: item.duration,
-          repeat: Infinity,
-          repeatType: 'mirror',
-          ease: 'easeInOut',
-        }}
-        className="relative text-foreground/80 hover:text-foreground transition-colors flex flex-col items-center"
       >
-        <img
-          src={item.svg}
-          alt={item.name}
-          width={38}
-          height={38}
-          className={`w-[38px] h-[38px] select-none pointer-events-none object-contain ${item.invert ? 'invert' : ''}`}
-          style={{ width: 38, height: 38 }}
-        />
-        <span className="text-[10px] tracking-wide text-muted font-tag mt-1 whitespace-nowrap">
-          {item.name}
-        </span>
+        <motion.div
+          ref={setRef}
+          animate={{
+            x: [-item.driftX, item.driftX],
+            y: [-item.driftY, item.driftY],
+            rotate: [-item.driftR, item.driftR],
+          }}
+          transition={{
+            duration: item.duration,
+            repeat: Infinity,
+            repeatType: 'mirror',
+            ease: 'easeInOut',
+          }}
+          className="relative text-foreground/80 hover:text-foreground transition-colors flex flex-col items-center"
+        >
+          <img
+            src={item.svg}
+            alt={item.name}
+            width={38}
+            height={38}
+            className={`w-[38px] h-[38px] select-none pointer-events-none object-contain ${item.invert ? 'invert' : ''}`}
+            style={{ width: 38, height: 38 }}
+          />
+          <span className="text-[10px] tracking-wide text-muted font-tag mt-1 whitespace-nowrap">
+            {item.name}
+          </span>
+        </motion.div>
       </motion.div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -237,7 +295,9 @@ export default function TechStackFloating({ onActiveMessageChange }: TechStackFl
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mouseX = useRef<number>(-9999);
   const mouseY = useRef<number>(-9999);
-  const [items, setItems] = useState<TechItem[]>(() => generateFloatingItems(844));
+  const iconRefs = useRef<{ [name: string]: HTMLElement | null }>({});
+  const prevWidthRef = useRef<number>(844);
+  const [items, setItems] = useState<TechItem[]>(() => generateFloatingItems(844, 640));
   const onActiveChangeRef = useRef(onActiveMessageChange);
 
   useEffect(() => {
@@ -246,19 +306,85 @@ export default function TechStackFloating({ onActiveMessageChange }: TechStackFl
 
   useEffect(() => {
     if (!containerRef.current) return;
-    const updateBounds = () => {
-      if (!containerRef.current) return;
-      const measuredWidth = containerRef.current.clientWidth || 844;
-      setItems(generateFloatingItems(measuredWidth));
+
+    const measureAllIcons = (): { [name: string]: { width: number; height: number } } => {
+      const sizes: { [name: string]: { width: number; height: number } } = {};
+      for (const def of BASE_TECH_DEFS) {
+        const el = iconRefs.current[def.name];
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          const w = Math.max(el.offsetWidth, rect.width);
+          const h = Math.max(el.offsetHeight, rect.height);
+          if (w > 0 && h > 0) {
+            sizes[def.name] = { width: w, height: h };
+          }
+        }
+      }
+      return sizes;
     };
 
-    updateBounds();
+    const updateBounds = () => {
+      if (!containerRef.current) return;
+      const contRect = containerRef.current.getBoundingClientRect();
+      const measuredWidth = containerRef.current.clientWidth || contRect.width || 844;
+      const measuredHeight = containerRef.current.clientHeight || contRect.height || 640;
+      const prevW = prevWidthRef.current || measuredWidth;
+      prevWidthRef.current = measuredWidth;
+      const scaleX = measuredWidth / prevW;
+
+      const sizes = measureAllIcons();
+      const BUFFER = 14;
+
+      setItems((prevItems) => {
+        return prevItems.map((item) => {
+          const size = sizes[item.name];
+          const iconW = size ? size.width : (item.width || 80);
+          const iconH = size ? size.height : (item.height || 56);
+          const halfW = iconW / 2 + BUFFER;
+          const halfH = iconH / 2 + BUFFER;
+
+          const scaledX = prevW === measuredWidth ? item.x : item.x * scaleX;
+          const clampedX = Math.max(halfW, Math.min(measuredWidth - halfW, scaledX));
+
+          const minYPercent = (halfH / measuredHeight) * 100;
+          const maxYPercent = ((measuredHeight - halfH) / measuredHeight) * 100;
+          const clampedY = Math.max(minYPercent, Math.min(maxYPercent, item.y));
+
+          return {
+            ...item,
+            x: clampedX,
+            y: clampedY,
+            width: iconW,
+            height: iconH,
+          };
+        });
+      });
+    };
+
+    // Recompute on mount once layout settles
+    requestAnimationFrame(() => {
+      updateBounds();
+    });
+
+    const timer = setTimeout(() => {
+      updateBounds();
+    }, 150);
+
+    // Recompute on font load since label rendering width can shift with font loading
+    if (typeof document !== 'undefined' && 'fonts' in document) {
+      document.fonts.ready.then(() => {
+        updateBounds();
+      });
+    }
 
     const ro = new ResizeObserver(() => {
       updateBounds();
     });
     ro.observe(containerRef.current);
-    return () => ro.disconnect();
+    return () => {
+      clearTimeout(timer);
+      ro.disconnect();
+    };
   }, []);
 
   useEffect(() => {
@@ -327,8 +453,8 @@ export default function TechStackFloating({ onActiveMessageChange }: TechStackFl
         ref={containerRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        className="relative w-[844px] max-w-full h-[600px] overflow-hidden mt-8"
-        style={{ width: '844px' }}
+        className="relative w-[844px] max-w-full h-[640px] overflow-hidden mt-8"
+        style={{ width: '844px', height: '640px' }}
       >
         {items.map((item) => (
           <FloatingIcon
@@ -337,6 +463,9 @@ export default function TechStackFloating({ onActiveMessageChange }: TechStackFl
             mouseX={mouseX}
             mouseY={mouseY}
             containerRef={containerRef}
+            measureRef={(el) => {
+              if (el) iconRefs.current[item.name] = el;
+            }}
           />
         ))}
       </div>
