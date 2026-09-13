@@ -20,7 +20,7 @@ import css3Svg from 'devicon/icons/css3/css3-original.svg';
 import expressSvg from 'devicon/icons/express/express-original.svg';
 import prismaSvg from 'devicon/icons/prisma/prisma-original.svg';
 
-interface TechDef {
+export interface TechDef {
   name: string;
   svg: string;
   invert?: boolean;
@@ -38,7 +38,7 @@ interface TechItem extends TechDef {
   height?: number;
 }
 
-const BASE_TECH_DEFS: TechDef[] = [
+export const BASE_TECH_DEFS: TechDef[] = [
   { name: 'Java', svg: javaSvg, message: "Java's my favorite language btw" },
   { name: 'TypeScript', svg: typescriptSvg, message: "i just add type annotations over javascript and call it TypeScript" },
   { name: 'JavaScript', svg: javascriptSvg, message: "haha i always forget JavaScript's syntax" },

@@ -41,12 +41,24 @@ const LinkBox = ({
   const ActiveHoverIcon = HoverIcon || Icon;
 
   const getNearestSide = (e: any) => {
-    const box = e.target.getBoundingClientRect();
+    const target = e.currentTarget || e.target;
+    const box = target.getBoundingClientRect();
 
-    const proximityToLeft = { proximity: Math.abs(box.left - e.clientX), side: 'left' };
-    const proximityToRight = { proximity: Math.abs(box.right - e.clientX), side: 'right' };
-    const proximityToTop = { proximity: Math.abs(box.top - e.clientY), side: 'top' };
-    const proximityToBottom = { proximity: Math.abs(box.bottom - e.clientY), side: 'bottom' };
+    let clientX = e.clientX;
+    let clientY = e.clientY;
+
+    if (e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+      clientX = e.changedTouches[0].clientX;
+      clientY = e.changedTouches[0].clientY;
+    }
+
+    const proximityToLeft = { proximity: Math.abs(box.left - clientX), side: 'left' };
+    const proximityToRight = { proximity: Math.abs(box.right - clientX), side: 'right' };
+    const proximityToTop = { proximity: Math.abs(box.top - clientY), side: 'top' };
+    const proximityToBottom = { proximity: Math.abs(box.bottom - clientY), side: 'bottom' };
 
     const sortedProximity = [
       proximityToLeft,
@@ -75,6 +87,8 @@ const LinkBox = ({
       rel={href.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onTouchStart={handleMouseEnter}
+      onTouchEnd={handleMouseLeave}
       className={className}
       style={style}
     >
@@ -177,9 +191,10 @@ const LeetcodeHoverIcon = () => (
 export default function ContactGrid() {
   return (
     <div
-      className="w-[844px] border border-white/10 bg-white/10 gap-[1px]"
+      className="w-[844px] max-w-full border border-white/10 bg-white/10 gap-[1px]"
       style={{
         width: '844px',
+        maxWidth: '100%',
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
         gridTemplateRows: 'repeat(3, minmax(45px, auto))',
