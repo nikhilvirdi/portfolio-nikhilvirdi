@@ -172,7 +172,7 @@ function CarouselCard({
         width: `${faceWidth}px`,
         height: `${faceHeight}px`,
         transform: `rotateY(${angle}deg) translateZ(${radius}px)`,
-        backgroundColor: 'rgba(0, 0, 0, 0)',
+        backgroundColor: 'rgba(0, 0, 0, 0.55)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -210,6 +210,144 @@ function CarouselCard({
         )}
       </div>
     </motion.div>
+  );
+}
+
+function GridLabFrame({ liveUrl }: { liveUrl: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const BASE_WIDTH = 1600;
+  const BASE_HEIGHT = 900;
+  const [scale, setScale] = useState<number>(768 / BASE_WIDTH);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const updateScale = () => {
+      if (containerRef.current) {
+        const w = containerRef.current.clientWidth;
+        if (w > 0) {
+          setScale(w / BASE_WIDTH);
+        }
+      }
+    };
+    updateScale();
+    const ro = new ResizeObserver(updateScale);
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full max-w-3xl bg-black overflow-hidden shrink-0"
+      style={{
+        aspectRatio: `${BASE_WIDTH} / ${BASE_HEIGHT}`,
+        height: `${Math.round(BASE_HEIGHT * scale)}px`,
+      }}
+    >
+      <iframe
+        src={liveUrl}
+        title="GridLab live application"
+        className="border-0 block"
+        style={{
+          width: `${BASE_WIDTH}px`,
+          height: `${BASE_HEIGHT}px`,
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+        }}
+      />
+    </div>
+  );
+}
+
+function AstraNetFrame({ liveUrl }: { liveUrl: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const BASE_WIDTH = 1920;
+  const BASE_HEIGHT = 1080;
+  const [scale, setScale] = useState<number>(768 / BASE_WIDTH);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const updateScale = () => {
+      if (containerRef.current) {
+        const w = containerRef.current.clientWidth;
+        if (w > 0) {
+          setScale(w / BASE_WIDTH);
+        }
+      }
+    };
+    updateScale();
+    const ro = new ResizeObserver(updateScale);
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full max-w-3xl bg-black overflow-hidden shrink-0"
+      style={{
+        aspectRatio: `${BASE_WIDTH} / ${BASE_HEIGHT}`,
+        height: `${Math.round(BASE_HEIGHT * scale)}px`,
+      }}
+    >
+      <iframe
+        src={liveUrl}
+        title="ASTRA-NET live application"
+        className="border-0 block"
+        style={{
+          width: `${BASE_WIDTH}px`,
+          height: `${BASE_HEIGHT}px`,
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+        }}
+      />
+    </div>
+  );
+}
+
+function PipelineAnatomyFrame({ liveUrl }: { liveUrl: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const BASE_WIDTH = 1920;
+  const BASE_HEIGHT = 1080;
+  const [scale, setScale] = useState<number>(768 / BASE_WIDTH);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const updateScale = () => {
+      if (containerRef.current) {
+        const w = containerRef.current.clientWidth;
+        if (w > 0) {
+          setScale(w / BASE_WIDTH);
+        }
+      }
+    };
+    updateScale();
+    const ro = new ResizeObserver(updateScale);
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full max-w-3xl bg-black overflow-hidden shrink-0"
+      style={{
+        aspectRatio: `${BASE_WIDTH} / ${BASE_HEIGHT}`,
+        height: `${Math.round(BASE_HEIGHT * scale)}px`,
+      }}
+    >
+      <iframe
+        src={liveUrl}
+        title="CI/CD Pipeline Anatomy live application"
+        className="border-0 block"
+        style={{
+          width: `${BASE_WIDTH}px`,
+          height: `${BASE_HEIGHT}px`,
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+        }}
+      />
+    </div>
   );
 }
 
@@ -420,39 +558,29 @@ export default function ProjectsGrid() {
               {selectedProject.liveUrl ? (
                 /* Live interactive iframe for projects with liveUrl: centered, clean edge with no border/bezel */
                 <div
-                  className={`w-full flex justify-center ${
-                    selectedProject.title === 'GridLab'
-                      ? 'overflow-y-auto'
-                      : 'overflow-hidden'
+                  className={`w-full flex justify-center overflow-hidden ${
+                    selectedProject.title === 'ASTRA-NET' || selectedProject.title === 'GridLab' || selectedProject.title === 'CI/CD Pipeline Anatomy' ? 'shrink-0' : ''
                   }`}
                 >
-                  <div
-                    className={`relative w-full max-w-3xl bg-black ${
-                      selectedProject.title === 'GridLab'
-                        ? 'overflow-y-auto'
-                        : selectedProject.title === 'CI/CD Pipeline Anatomy'
-                        ? 'aspect-video overflow-hidden'
-                        : 'overflow-hidden'
-                    }`}
-                    style={
-                      selectedProject.title === 'CI/CD Pipeline Anatomy'
-                        ? { overflow: 'hidden', aspectRatio: '16 / 9' }
-                        : selectedProject.title === 'GridLab'
-                        ? { height: '720px', overflow: 'auto' }
-                        : { height: '600px', overflow: 'hidden' }
-                    }
-                  >
-                    <iframe
-                      src={selectedProject.liveUrl}
-                      title={`${selectedProject.title} live application`}
-                      className="w-full h-full border-0 block"
-                      style={
-                        selectedProject.title === 'CI/CD Pipeline Anatomy'
-                          ? { position: 'absolute', inset: 0, width: '100%', height: '100%', aspectRatio: '16 / 9' }
-                          : { width: '100%', height: '100%' }
-                      }
-                    />
-                  </div>
+                  {selectedProject.title === 'GridLab' ? (
+                    <GridLabFrame liveUrl={selectedProject.liveUrl} />
+                  ) : selectedProject.title === 'ASTRA-NET' ? (
+                    <AstraNetFrame liveUrl={selectedProject.liveUrl} />
+                  ) : selectedProject.title === 'CI/CD Pipeline Anatomy' ? (
+                    <PipelineAnatomyFrame liveUrl={selectedProject.liveUrl} />
+                  ) : (
+                    <div
+                      className="relative w-full max-w-3xl bg-black overflow-hidden"
+                      style={{ height: '56vh', minHeight: '440px', overflow: 'hidden', flexShrink: 0 }}
+                    >
+                      <iframe
+                        src={selectedProject.liveUrl}
+                        title={`${selectedProject.title} live application`}
+                        className="w-full h-full border-0 block"
+                        style={{ width: '100%', height: '100%' }}
+                      />
+                    </div>
+                  )}
                 </div>
               ) : (
                 /* Natural size logo or title text for projects with no liveUrl, no boundary box */
@@ -472,12 +600,12 @@ export default function ProjectsGrid() {
               )}
 
               {/* Info block below the frame, using data from Part 1 */}
-              <div className="space-y-6 pt-2">
+              <div className="space-y-8 pt-4">
                 {selectedProject.whatItIs && (
                   <div>
-                    <h5 className="font-tag text-xs font-semibold uppercase tracking-widest text-muted mb-2">
-                      WHAT IT IS
-                    </h5>
+                    <h4 className="font-heading text-xl sm:text-2xl font-bold text-foreground tracking-tight mb-2.5">
+                      What it is
+                    </h4>
                     <p className="font-body text-base text-foreground/90 leading-relaxed">
                       {selectedProject.whatItIs}
                     </p>
@@ -486,9 +614,9 @@ export default function ProjectsGrid() {
 
                 {selectedProject.whatItDoes && (
                   <div>
-                    <h5 className="font-tag text-xs font-semibold uppercase tracking-widest text-muted mb-2">
-                      WHAT IT DOES
-                    </h5>
+                    <h4 className="font-heading text-xl sm:text-2xl font-bold text-foreground tracking-tight mb-2.5">
+                      What it does
+                    </h4>
                     <p className="font-body text-base text-foreground/90 leading-relaxed">
                       {selectedProject.whatItDoes}
                     </p>
@@ -497,16 +625,14 @@ export default function ProjectsGrid() {
 
                 {selectedProject.howItWorks && (
                   <div>
-                    <h5 className="font-tag text-xs font-semibold uppercase tracking-widest text-muted mb-2">
-                      HOW IT WORKS
-                    </h5>
+                    <h4 className="font-heading text-xl sm:text-2xl font-bold text-foreground tracking-tight mb-2.5">
+                      How it works
+                    </h4>
                     <p className="font-body text-base text-foreground/90 leading-relaxed">
                       {selectedProject.howItWorks}
                     </p>
                   </div>
                 )}
-
-
               </div>
             </motion.div>
           </motion.div>
