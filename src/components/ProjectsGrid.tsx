@@ -30,7 +30,7 @@ interface Project {
 const PROJECTS: Project[] = [
   {
     title: 'RedFlag-CI',
-    logo: '/logos/redflag-ci.png',
+    logo: '/logos/redflag-ci.svg',
     status: 'Shipped',
     whatItIs: "A GitHub App that watches pull requests for risky changes to AI agent configuration before they get merged. v2.0.0 is its final planned release.",
     whatItDoes: "AI coding agents read their permissions and instructions from files sitting in a repo, an MCP config, a CLAUDE.md, a .cursor/rules file, and a pull request is where that configuration actually changes. RedFlag CI runs two deterministic checks: one flags drift in agent config (a new MCP server, a swapped tool version, a widened permission, a changed hook), the other scans rule files for hidden Unicode tricks and lookalike characters that can hide instructions in a diff that looks completely normal. If a PR doesn't touch any of those files, it stays silent. No dashboard noise, no false-positive fatigue.",
@@ -41,7 +41,7 @@ const PROJECTS: Project[] = [
   },
   {
     title: 'JHusk',
-    logo: '/logos/jhusk.png',
+    logo: '/logos/jhusk.svg',
     status: 'Shipped',
     whatItIs: "A property-based testing library for Java, published on Maven Central as io.github.nikhilvirdi:jhusk. Built solo, it brings Hypothesis-style testing, generate a huge range of inputs and shrink any failure down to the smallest reproducible case, to the JVM.",
     whatItDoes: "Instead of hand-picking three or four example inputs, you state a rule your code should always hold, and JHusk generates a wide spread of inputs, including the edge cases nobody thinks to write by hand, to check it. When something fails, its internal shrinking finds the smallest input that still breaks the rule, so a rare bug turns into something actually debuggable.",
@@ -68,7 +68,7 @@ const PROJECTS: Project[] = [
   },
   {
     title: 'Stenod',
-    logo: '/logos/stenod.png',
+    logo: '/logos/stenod.svg',
     status: 'In Progress',
     whatItIs: "A local, deterministic memory daemon for AI coding sessions, published on npm as steno-daemon and run via the stenod CLI. Still actively in progress.",
     whatItDoes: "AI coding tools lose context the moment a session ends. Stenod runs alongside them, capturing filesystem changes, terminal activity, and AI-provider network traffic during a coding session, and compiles all of it into a handoff manifest that lets work resume cleanly, in the same tool or a different one, without re-explaining everything from scratch.",
