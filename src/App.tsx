@@ -59,7 +59,7 @@ export default function App() {
       {/* Right scrollable pane: margin-left 28vw, width 72vw, height 100vh, overflow-y auto */}
       <main
         id="main-scroll-pane"
-        className="ml-[28vw] h-screen w-[72vw] overflow-y-auto bg-background"
+        className="ml-[28vw] h-screen w-[72vw] overflow-y-auto overflow-x-hidden bg-background"
       >
         {/* Hero section */}
         <section

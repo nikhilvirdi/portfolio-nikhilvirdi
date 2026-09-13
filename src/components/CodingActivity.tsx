@@ -131,8 +131,8 @@ export default function CodingActivity() {
       )}
 
       {!loading && !error && data.length > 0 && (
-        <div className="w-full transition-opacity duration-300 opacity-100 h-auto">
-          <div className="w-full font-tag text-muted text-xs [&_text]:fill-muted [&_text]:font-tag [&_.react-activity-calendar__count]:text-muted [&_.react-activity-calendar__count]:font-tag [&_.react-activity-calendar__legend-colors]:text-muted [&_.react-activity-calendar__legend-colors]:font-tag [&_.react-activity-calendar__footer]:font-tag [&_.react-activity-calendar__footer]:text-xs [&_a]:hidden">
+        <div className="w-fit max-w-full transition-opacity duration-300 opacity-100 h-auto">
+          <div className="w-fit max-w-full font-tag text-muted text-xs [&_text]:fill-muted [&_text]:font-tag [&_.react-activity-calendar__count]:text-muted [&_.react-activity-calendar__count]:font-tag [&_.react-activity-calendar__legend-colors]:text-muted [&_.react-activity-calendar__legend-colors]:font-tag [&_.react-activity-calendar__footer]:font-tag [&_.react-activity-calendar__footer]:text-xs [&_a]:hidden">
             <ActivityCalendar
               data={data}
               colorScheme="dark"
@@ -140,7 +140,7 @@ export default function CodingActivity() {
               blockMargin={4}
               blockRadius={2}
               fontSize={12}
-              style={{ width: '100%' }}
+              style={{ width: 'max-content', maxWidth: '100%' }}
               tooltips={{
                 activity: {
                   text: (activity) =>

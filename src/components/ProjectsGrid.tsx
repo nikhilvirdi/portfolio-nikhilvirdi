@@ -215,15 +215,20 @@ function CarouselCard({
 
 export default function ProjectsGrid() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(844);
 
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+    if (!containerRef.current) return;
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.clientWidth || 844);
+      }
     };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    updateWidth();
+    const ro = new ResizeObserver(updateWidth);
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
   }, []);
 
   // Initial rotation offset of -135 puts Stenod in front
@@ -237,13 +242,14 @@ export default function ProjectsGrid() {
   const isDraggingRef = useRef(false);
   const dragDistanceRef = useRef(0);
 
-  // Reference cylinderWidth: 1800 desktop / 1100 mobile
+  // Derived cylinderWidth based on measured container element bounds: 1800 desktop / 1100 mobile
+  const isMobile = containerWidth < 600;
   const cylinderWidth = isMobile ? 1100 : 1800;
   const faceCount = PROJECTS.length;
   const faceWidth = cylinderWidth / faceCount; // 225px on desktop, 137.5px on mobile
   const radius = cylinderWidth / (2 * Math.PI); // ~286.5px on desktop, 175px on mobile
-  // Proportional height ratio ~1:1.18 (225px width -> 266px height)
-  const faceHeight = Math.round(faceWidth * 1.18);
+  // Proportional height ratio ~1:0.8 (225px width -> 180px height)
+  const faceHeight = Math.round(faceWidth * 0.8);
 
   const isModalOpen = Boolean(selectedProject);
 
@@ -294,7 +300,11 @@ export default function ProjectsGrid() {
   }, [selectedProject]);
 
   return (
-    <div className="relative w-full py-6 flex flex-col items-center justify-center select-none">
+    <div
+      ref={containerRef}
+      className="relative w-[844px] max-w-full py-6 flex flex-col items-center justify-center select-none"
+      style={{ width: '844px' }}
+    >
       {/* Outer carousel container with fixed height 380px */}
       <motion.div
         className="relative w-full h-[380px] flex items-center justify-center overflow-hidden [perspective:1000px] cursor-grab active:cursor-grabbing"

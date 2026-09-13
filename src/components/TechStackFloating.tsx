@@ -67,10 +67,11 @@ const BASE_TECH_DEFS: TechDef[] = [
   },
 ];
 
-function generateFloatingItems(): TechItem[] {
-  const X_MIN = 8;
-  const X_MAX = 92;
-  const Y_MIN = 12;
+function generateFloatingItems(containerWidth: number = 844): TechItem[] {
+  const MARGIN_X = 45;
+  const X_MIN = MARGIN_X;
+  const X_MAX = Math.max(X_MIN + 100, containerWidth - MARGIN_X);
+  const Y_MIN = 14;
   const Y_MAX = 86;
   const cols = 5;
   const rows = 4;
@@ -80,9 +81,11 @@ function generateFloatingItems(): TechItem[] {
   const slots: { x: number; y: number }[] = [];
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
+      const rawX = X_MIN + c * colStep + (Math.random() - 0.5) * (colStep * 0.35);
+      const rawY = Y_MIN + r * rowStep + (Math.random() - 0.5) * (rowStep * 0.35);
       slots.push({
-        x: X_MIN + c * colStep + (Math.random() - 0.5) * (colStep * 0.4),
-        y: Y_MIN + r * rowStep + (Math.random() - 0.5) * (rowStep * 0.4),
+        x: Math.max(X_MIN, Math.min(X_MAX, Math.round(rawX))),
+        y: Math.max(12, Math.min(88, rawY)),
       });
     }
   }
@@ -130,7 +133,7 @@ function FloatingIcon({
 }: FloatingIconProps) {
   const [flipBelow, setFlipBelow] = useState(item.y < 28);
   const [shiftX, setShiftX] = useState<'left' | 'right' | 'center'>(
-    item.x < 20 ? 'right' : item.x > 80 ? 'left' : 'center'
+    item.x < 130 ? 'right' : item.x > 714 ? 'left' : 'center'
   );
   const offsetX = useMotionValue(0);
   const offsetY = useMotionValue(0);
@@ -141,14 +144,14 @@ function FloatingIcon({
     let animId: number;
     let flipBelowRef = item.y < 28;
     let shiftXRef: 'left' | 'right' | 'center' =
-      item.x < 20 ? 'right' : item.x > 80 ? 'left' : 'center';
+      item.x < 130 ? 'right' : item.x > 714 ? 'left' : 'center';
     const REPEL_RADIUS = 150;
     const MAX_PUSH = 85;
 
     const checkRepel = () => {
       if (containerRef.current) {
         const contRect = containerRef.current.getBoundingClientRect();
-        const baseCenterX = (item.x / 100) * contRect.width;
+        const baseCenterX = item.x;
         const baseCenterY = (item.y / 100) * contRect.height;
 
         const mx = mouseX.current;
@@ -165,8 +168,22 @@ function FloatingIcon({
             const force = 1 - dist / REPEL_RADIUS;
             const push = force * MAX_PUSH;
             const angle = Math.atan2(dy, dx);
-            offsetX.set(Math.cos(angle) * push);
-            offsetY.set(Math.sin(angle) * push);
+            let pushX = Math.cos(angle) * push;
+            let pushY = Math.sin(angle) * push;
+
+            // Clamp target position so icons never push past either edge of bounding container
+            const MARGIN_X = 40;
+            const targetX = baseCenterX + pushX;
+            const clampedX = Math.max(MARGIN_X, Math.min(contRect.width - MARGIN_X, targetX));
+            pushX = clampedX - baseCenterX;
+
+            const MARGIN_Y = 32;
+            const targetY = baseCenterY + pushY;
+            const clampedY = Math.max(MARGIN_Y, Math.min(contRect.height - MARGIN_Y, targetY));
+            pushY = clampedY - baseCenterY;
+
+            offsetX.set(pushX);
+            offsetY.set(pushY);
           } else {
             offsetX.set(0);
             offsetY.set(0);
@@ -212,7 +229,7 @@ function FloatingIcon({
         isBubbleActive ? 'z-40' : 'z-10'
       }`}
       style={{
-        left: `${item.x}%`,
+        left: `${item.x}px`,
         top: `${item.y}%`,
         x: springX,
         y: springY,
@@ -309,8 +326,25 @@ export default function TechStackFloating() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mouseX = useRef<number>(-9999);
   const mouseY = useRef<number>(-9999);
-  const [items] = useState<TechItem[]>(generateFloatingItems);
+  const [items, setItems] = useState<TechItem[]>(() => generateFloatingItems(844));
   const [activeBubbleName, setActiveBubbleName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const updateBounds = () => {
+      if (!containerRef.current) return;
+      const measuredWidth = containerRef.current.clientWidth || 844;
+      setItems(generateFloatingItems(measuredWidth));
+    };
+
+    updateBounds();
+
+    const ro = new ResizeObserver(() => {
+      updateBounds();
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     let animId: number;
@@ -328,7 +362,7 @@ export default function TechStackFloating() {
           let minDist = REPEL_RADIUS;
 
           for (const item of items) {
-            const baseCenterX = (item.x / 100) * contRect.width;
+            const baseCenterX = item.x;
             const baseCenterY = (item.y / 100) * contRect.height;
             const dist = Math.hypot(baseCenterX - mx, baseCenterY - my);
             if (dist < minDist) {
@@ -366,18 +400,17 @@ export default function TechStackFloating() {
   return (
     <section
       id="tech-stack"
-      className="py-20 bg-background"
+      className="py-20 px-16 bg-background"
     >
-      <div className="px-16">
-        <h2 className="font-heading text-5xl font-bold tracking-tight text-foreground">
-          <span className="bg-[#1D4FD8] box-decoration-clone">Tech Stack</span>
-        </h2>
-      </div>
+      <h2 className="font-heading text-5xl font-bold tracking-tight text-foreground">
+        <span className="bg-[#1D4FD8] box-decoration-clone">Tech Stack</span>
+      </h2>
       <div
         ref={containerRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        className="relative w-full h-[600px] overflow-hidden mt-8"
+        className="relative w-[844px] max-w-full h-[600px] overflow-hidden mt-8"
+        style={{ width: '844px' }}
       >
         {items.map((item) => (
           <FloatingIcon

@@ -50,20 +50,21 @@
     fill: #18181b !important;
   }
 
-  /* Full-width responsive GitHub Activity calendar */
+  /* Responsive GitHub & LeetCode Activity calendars */
   .react-activity-calendar {
-    width: 100% !important;
+    width: max-content !important;
     max-width: 100% !important;
   }
 
   .react-activity-calendar__scroll-container {
     width: 100% !important;
     max-width: 100% !important;
-    overflow: visible !important;
+    overflow-x: auto !important;
   }
 
   .react-activity-calendar__calendar {
-    width: 100% !important;
+    width: auto !important;
+    max-width: 100% !important;
     height: auto !important;
     display: block !important;
   }
@@ -72,6 +73,7 @@
     width: 100% !important;
     display: flex !important;
     justify-content: space-between !important;
+    align-items: center !important;
   }
 }
 

@@ -23,7 +23,7 @@ export default function GitHubActivity() {
           loading ? 'opacity-0 h-0 pointer-events-none' : 'opacity-100 h-auto'
         }`}
       >
-        <div className="w-full font-tag text-muted text-xs [&_text]:fill-muted [&_text]:font-tag [&_.react-activity-calendar__count]:text-muted [&_.react-activity-calendar__count]:font-tag [&_.react-activity-calendar__legend-colors]:text-muted [&_.react-activity-calendar__legend-colors]:font-tag [&_.react-activity-calendar__footer]:font-tag [&_.react-activity-calendar__footer]:text-xs [&_a]:hidden">
+        <div className="w-fit max-w-full font-tag text-muted text-xs [&_text]:fill-muted [&_text]:font-tag [&_.react-activity-calendar__count]:text-muted [&_.react-activity-calendar__count]:font-tag [&_.react-activity-calendar__legend-colors]:text-muted [&_.react-activity-calendar__legend-colors]:font-tag [&_.react-activity-calendar__footer]:font-tag [&_.react-activity-calendar__footer]:text-xs [&_a]:hidden">
           <GitHubCalendar
             username="nikhilvirdi"
             year={2026}
@@ -32,7 +32,7 @@ export default function GitHubActivity() {
             blockMargin={4}
             blockRadius={2}
             fontSize={12}
-            style={{ width: '100%' }}
+            style={{ width: 'max-content', maxWidth: '100%' }}
             tooltips={{
               activity: {
                 text: (activity) =>

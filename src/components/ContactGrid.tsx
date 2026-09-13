@@ -157,8 +157,9 @@ const MavenIcon = () => (
 export default function ContactGrid() {
   return (
     <div
-      className="w-full border border-white/10 bg-white/10 gap-[1px]"
+      className="w-[844px] border border-white/10 bg-white/10 gap-[1px]"
       style={{
+        width: '844px',
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
         gridTemplateRows: 'repeat(3, minmax(45px, auto))',
