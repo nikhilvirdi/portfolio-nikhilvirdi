@@ -1,4 +1,4 @@
-# Nikhil Virdi — Portfolio
+# Nikhil Virdi's Portfolio
 
 This is my personal site. Not a template, built from scratch, one hit-and-trial decision at a time.
 
