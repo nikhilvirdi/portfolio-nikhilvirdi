@@ -259,7 +259,7 @@ export default function HeroBioReveal({ isMobile = false }: HeroBioRevealProps =
   return (
     <h1
       ref={headingRef}
-      className="font-heading text-[39px] font-bold leading-[1.1] max-w-none w-full tracking-tight"
+      className="font-heading text-[34px] font-bold leading-[1.1] max-w-none w-full tracking-tight"
     >
       {PARSED_LINES.map((pl, lineIdx) => (
         <Fragment key={lineIdx}>
