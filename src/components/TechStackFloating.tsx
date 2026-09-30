@@ -7,8 +7,6 @@ import javascriptSvg from 'devicon/icons/javascript/javascript-original.svg';
 import pythonSvg from 'devicon/icons/python/python-original.svg';
 import nodejsSvg from 'devicon/icons/nodejs/nodejs-original.svg';
 import postmanSvg from 'devicon/icons/postman/postman-original.svg';
-import reactSvg from 'devicon/icons/react/react-original.svg';
-import tailwindcssSvg from 'devicon/icons/tailwindcss/tailwindcss-original.svg';
 import postgresqlSvg from 'devicon/icons/postgresql/postgresql-original.svg';
 import dockerSvg from 'devicon/icons/docker/docker-original.svg';
 import nginxSvg from 'devicon/icons/nginx/nginx-original.svg';
@@ -48,8 +46,8 @@ export const BASE_TECH_DEFS: TechDef[] = [
   { name: 'Node.js', svg: nodejsSvg, message: "yk i use Node.js for backend??" },
   { name: 'Express', svg: expressSvg, invert: true, message: "express is the framework holding my APIs together" },
   { name: 'Postman', svg: postmanSvg, message: "i test my APIs on postman before trusting them anywhere else" },
-  { name: 'React', svg: reactSvg, message: "i use react for vibecoding frontend nd still think it's boring to learn" },
-  { name: 'Tailwind CSS', svg: tailwindcssSvg, message: "tailwind's the supporting guy to react for me, i find both boring lol" },
+  { name: 'Jest', svg: '/logos/jest.png', message: "i use jest to test my code, when i actually remember to write tests" },
+  { name: 'Redis', svg: '/logos/redis.png', message: "redis caches my data so postgres doesn't have to sweat every request" },
 
   { name: 'PostgreSQL', svg: postgresqlSvg, message: "my data lives in postgres, rent free" },
   { name: 'Prisma', svg: prismaSvg, invert: true, message: "prisma's the middleman between me and my postgres" },
@@ -65,6 +63,26 @@ export const BASE_TECH_DEFS: TechDef[] = [
     name: 'JWT',
     svg: '/icons/jwt.png',
     message: "i've hardly used jwt in any of my projects as of now",
+  },
+  {
+    name: 'NumPy',
+    svg: '/logos/numpy.png',
+    message: "numpy handles the math so i don't have to think about it too hard",
+  },
+  {
+    name: 'Kafka',
+    svg: '/logos/kafka.png',
+    message: "still figuring out queues and topics, don't test me on this yet",
+  },
+  {
+    name: 'GraphQL',
+    svg: '/logos/graphql.png',
+    message: "i know it exists and that's about it for now",
+  },
+  {
+    name: 'gRPC',
+    svg: '/logos/grpc.png',
+    message: "on my to-learn list, haven't shipped anything with it yet",
   },
 ];
 
@@ -97,7 +115,7 @@ function generateFloatingItems(
   const Y_MIN = ((maxHalfH + BUFFER) / containerHeight) * 100;
   const Y_MAX = ((containerHeight - maxHalfH - BUFFER) / containerHeight) * 100;
   const cols = 5;
-  const rows = 4;
+  const rows = Math.max(4, Math.ceil(BASE_TECH_DEFS.length / cols));
   const colStep = (X_MAX - X_MIN) / (cols - 1);
   const rowStep = (Y_MAX - Y_MIN) / (rows - 1);
 
@@ -122,7 +140,7 @@ function generateFloatingItems(
   }
 
   return BASE_TECH_DEFS.map((def, idx) => {
-    const slot = slots[idx];
+    const slot = slots[idx] || { x: (X_MIN + X_MAX) / 2, y: (Y_MIN + Y_MAX) / 2 };
     const s = iconSizes?.[def.name] ?? getInitialEstimatedSize(def.name);
     const halfW = s.width / 2 + BUFFER;
     const halfH = s.height / 2 + BUFFER;
