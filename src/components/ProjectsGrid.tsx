@@ -391,6 +391,8 @@ export default function ProjectsGrid() {
 
   const isDraggingRef = useRef(false);
   const dragDistanceRef = useRef(0);
+  const autoResumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoRevolveRef = useRef(true);
 
   // Derived cylinderWidth based on measured container element bounds: 1800 desktop / 1100 mobile
   const isMobile = containerWidth < 600;
@@ -403,9 +405,32 @@ export default function ProjectsGrid() {
 
   const isModalOpen = Boolean(selectedProject);
 
+  // Auto-revolve: ~8 degrees per second ambient drift, stops on drag, resumes 1.5s after release
+  useEffect(() => {
+    const DEG_PER_MS = 8 / 1000;
+    let lastTime: number | null = null;
+    let animId: number;
+    const tick = (now: number) => {
+      if (lastTime !== null && autoRevolveRef.current && !isDraggingRef.current && !isModalOpen) {
+        const elapsed = now - lastTime;
+        rotation.set(rotation.get() - DEG_PER_MS * elapsed);
+      }
+      lastTime = now;
+      animId = requestAnimationFrame(tick);
+    };
+    animId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isModalOpen]);
+
   const handleDragStart = () => {
     isDraggingRef.current = false;
     dragDistanceRef.current = 0;
+    autoRevolveRef.current = false;
+    if (autoResumeTimerRef.current) {
+      clearTimeout(autoResumeTimerRef.current);
+      autoResumeTimerRef.current = null;
+    }
   };
 
   const handleDrag = (_: unknown, info: PanInfo) => {
@@ -421,6 +446,10 @@ export default function ProjectsGrid() {
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     if (isModalOpen) return;
     rotation.set(rotation.get() + info.velocity.x * 0.03);
+    autoResumeTimerRef.current = setTimeout(() => {
+      autoRevolveRef.current = true;
+      isDraggingRef.current = false;
+    }, 1500);
     setTimeout(() => {
       isDraggingRef.current = false;
     }, 100);
