@@ -1159,7 +1159,7 @@ function ContributionSkyline({
   const range = (a: string | null, b: string | null, withYear = false) => {
     if (!a || !b) return "—"
     const f = withYear ? dfy : df
-    return f.format(dayMs(a)) + " — " + f.format(dayMs(b))
+    return f.format(dayMs(a)) + " to " + f.format(dayMs(b))
   }
   const is3d = view === "3d"
   const corners = showStats && width >= 560
@@ -1173,9 +1173,6 @@ function ContributionSkyline({
   const showRow = showStats && !(is3d && corners)
   const ease = "cubic-bezier(0.65, 0, 0.35, 1)"
   const levelNames = ["No " + plural, "Light", "Moderate", "Heavy", "Heaviest"]
-
-  const hints = ["Hover a day for details · arrow keys to explore", "Drag to orbit · double-click to reset"]
-  const hint = hints[is3d && orbit ? 1 : 0]
 
   return (
     <section
@@ -1347,18 +1344,7 @@ function ContributionSkyline({
 
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-3 pt-3 pb-3 text-[12px] sm:px-4" style={{ color: MUTED }}>
           {footer === undefined ? (
-            <span className="relative grid flex-1">
-              {hints.map((h) => (
-                <span
-                  key={h}
-                  aria-hidden={h !== hint}
-                  className="[grid-area:1/1] transition-opacity duration-500 motion-reduce:transition-none"
-                  style={{ opacity: h === hint ? 1 : 0 }}
-                >
-                  {h}
-                </span>
-              ))}
-            </span>
+            <span className="relative grid flex-1" />
           ) : (
             <span className="flex-1">{footer}</span>
           )}
@@ -1432,5 +1418,5 @@ export default function GitHubActivity() {
     return <p className="mt-8 animate-pulse py-2 font-tag text-sm text-muted">Loading...</p>
   }
 
-  return <ContributionSkyline data={data} palette="github" className="mt-8 font-tag" />
+  return <ContributionSkyline data={data} palette="github" className="mt-8 max-w-[844px] font-tag" />
 }
