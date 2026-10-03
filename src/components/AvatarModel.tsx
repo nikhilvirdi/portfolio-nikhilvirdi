@@ -9,7 +9,7 @@ interface AvatarModelProps {
 }
 
 export default function AvatarModel({ hasActiveTech = false }: AvatarModelProps) {
-  const { scene } = useGLTF('/models/avatar.glb');
+  const { scene } = useGLTF('/models/avatar-2.glb');
   const { gl } = useThree();
 
   const groupRef = useRef<THREE.Group | null>(null);
@@ -155,4 +155,4 @@ export default function AvatarModel({ hasActiveTech = false }: AvatarModelProps)
   );
 }
 
-useGLTF.preload('/models/avatar.glb');
+useGLTF.preload('/models/avatar-2.glb');
