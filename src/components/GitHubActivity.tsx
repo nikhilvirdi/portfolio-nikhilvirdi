@@ -1177,7 +1177,7 @@ function ContributionSkyline({
   return (
     <section
       ref={rootRef}
-      className={"relative w-full rounded-xl border p-4 font-sans sm:p-5 " + className}
+      className={"relative w-full font-sans " + className}
       style={{
         "--color-background": "#000000",
         "--color-foreground": "#f2f2f0",
@@ -1233,8 +1233,8 @@ function ContributionSkyline({
         )}
       </header>
 
-      <div className="relative rounded-lg border" style={{ borderColor: "transparent" }}>
-        <div className="relative px-3 pt-3 sm:px-4 sm:pt-4">
+      <div className="relative">
+        <div className="relative pt-3 sm:pt-4">
           <div
             ref={stageRef}
             className="relative w-full overflow-hidden rounded-md outline-offset-4 has-[:focus-visible]:outline-2"
@@ -1290,7 +1290,7 @@ function ContributionSkyline({
             ref={tipRef}
             role="tooltip"
             aria-hidden={active < 0}
-            className="pointer-events-none absolute top-3 left-3 z-20 whitespace-nowrap rounded-md px-2.5 py-1.5 text-[12px] leading-none shadow-lg transition-opacity duration-150 sm:top-4 sm:left-4 motion-reduce:transition-none"
+            className="pointer-events-none absolute top-3 left-0 z-20 whitespace-nowrap rounded-md px-2.5 py-1.5 text-[12px] leading-none shadow-lg transition-opacity duration-150 sm:top-4 motion-reduce:transition-none"
             style={{
               opacity: active >= 0 ? 1 : 0,
               background: "var(--color-foreground, #171717)",
@@ -1333,7 +1333,7 @@ function ContributionSkyline({
             }}
           >
             <div className="min-h-0 overflow-hidden">
-              <div className="grid grid-cols-2 gap-x-4 gap-y-4 px-3 pt-4 pb-1 sm:px-4 md:grid-cols-4">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-4 pt-4 pb-1 md:grid-cols-4">
                 {statBlocks.map((b) => (
                   <Stat key={b.label} {...b} accent={theme.accent} size={28} align="stack" />
                 ))}
@@ -1342,7 +1342,7 @@ function ContributionSkyline({
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-3 pt-3 pb-3 text-[12px] sm:px-4" style={{ color: MUTED }}>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-3 pb-3 text-[12px]" style={{ color: MUTED }}>
           {footer === undefined ? (
             <span className="relative grid flex-1" />
           ) : (
@@ -1418,5 +1418,12 @@ export default function GitHubActivity() {
     return <p className="mt-8 animate-pulse py-2 font-tag text-sm text-muted">Loading...</p>
   }
 
-  return <ContributionSkyline data={data} palette="github" className="mt-8 max-w-[844px] font-tag" />
+  return (
+    <div
+      className="w-[844px] max-w-full mt-8"
+      style={{ width: '844px', maxWidth: '100%' }}
+    >
+      <ContributionSkyline data={data} palette="github" className="w-full font-tag" />
+    </div>
+  )
 }
