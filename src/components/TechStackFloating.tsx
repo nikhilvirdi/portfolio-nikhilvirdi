@@ -42,6 +42,11 @@ export const BASE_TECH_DEFS: TechDef[] = [
   { name: 'JavaScript', svg: javascriptSvg, message: "haha i always forget JavaScript's syntax" },
   { name: 'Python', svg: pythonSvg, message: "i use python for AI stuff" },
   { name: 'C', svg: '/icons/C.webp', message: "C's the OG, i respect it from a distance" },
+  {
+    name: 'Golang',
+    svg: '/logos/golang.png',
+    message: "I love the gopher of golang, that's why i thought of learning it",
+  },
 
   { name: 'Node.js', svg: nodejsSvg, message: "yk i use Node.js for backend??" },
   { name: 'Express', svg: expressSvg, invert: true, message: "express is the framework holding my APIs together" },

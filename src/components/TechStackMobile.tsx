@@ -42,9 +42,9 @@ function generateMobileFloatingItems(
   const Y_MIN = ((maxHalfH + BUFFER) / containerHeight) * 100;
   const Y_MAX = ((containerHeight - maxHalfH - BUFFER) / containerHeight) * 100;
 
-  // 4 columns x 5 rows = 20 slots
+  // 4 columns x rows (dynamically computed so all icons have slots)
   const cols = 4;
-  const rows = 5;
+  const rows = Math.max(5, Math.ceil(BASE_TECH_DEFS.length / cols));
   const colStep = cols > 1 ? (X_MAX - X_MIN) / (cols - 1) : 0;
   const rowStep = rows > 1 ? (Y_MAX - Y_MIN) / (rows - 1) : 0;
 
