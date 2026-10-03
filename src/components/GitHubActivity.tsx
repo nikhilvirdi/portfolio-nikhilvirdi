@@ -1188,7 +1188,7 @@ function ContributionSkyline({
         "--color-border": "#27272a",
         background: "var(--color-background, #ffffff)",
         color: "var(--color-foreground, #171717)",
-        borderColor: "var(--color-border, #e5e5e5)",
+        borderColor: "transparent",
       } as React.CSSProperties}
     >
       <header className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -1236,7 +1236,7 @@ function ContributionSkyline({
         )}
       </header>
 
-      <div className="relative rounded-lg border" style={{ borderColor: "var(--color-border, #e5e5e5)" }}>
+      <div className="relative rounded-lg border" style={{ borderColor: "transparent" }}>
         <div className="relative px-3 pt-3 sm:px-4 sm:pt-4">
           <div
             ref={stageRef}
