@@ -2,8 +2,6 @@
 
 import * as React from "react"
 
-type GitHubActivityDay = { date: string; count: number; level: number }
-
 /**
  * Contribution Skyline — a year of activity as a GitHub-style heat map that
  * folds up into an isometric skyline, and back down again.
@@ -439,7 +437,7 @@ function Stat({
   )
 }
 
-function ContributionSkyline({
+export default function ContributionSkyline({
   data,
   endDate,
   view: viewProp,
@@ -1182,14 +1180,10 @@ function ContributionSkyline({
       ref={rootRef}
       className={"relative w-full rounded-xl border p-4 font-sans sm:p-5 " + className}
       style={{
-        "--color-background": "#000000",
-        "--color-foreground": "#f2f2f0",
-        "--color-muted-foreground": "#71717a",
-        "--color-border": "#27272a",
         background: "var(--color-background, #ffffff)",
         color: "var(--color-foreground, #171717)",
         borderColor: "var(--color-border, #e5e5e5)",
-      } as React.CSSProperties}
+      }}
     >
       <header className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <h3 className="m-0 text-[15px] font-normal leading-snug">
@@ -1395,42 +1389,4 @@ function ContributionSkyline({
       </p>
     </section>
   )
-}
-
-export default function GitHubActivity() {
-  const [data, setData] = React.useState<ContributionDay[] | null>(null)
-  const [error, setError] = React.useState(false)
-
-  React.useEffect(() => {
-    const controller = new AbortController()
-
-    fetch("https://github-contributions-api.jogruber.de/v4/nikhilvirdi?y=2026&client=react-github-calendar", {
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        const result: unknown = await response.json()
-        if (!response.ok || !result || typeof result !== "object" || !Array.isArray((result as { contributions?: unknown }).contributions)) {
-          throw new Error("GitHub contribution data unavailable")
-        }
-        return (result as { contributions: GitHubActivityDay[] }).contributions
-      })
-      .then((contributions) => {
-        setData(contributions.map(({ date, count }) => ({ date, count })))
-      })
-      .catch((reason: unknown) => {
-        if (!(reason instanceof DOMException && reason.name === "AbortError")) setError(true)
-      })
-
-    return () => controller.abort()
-  }, [])
-
-  if (error) {
-    return <p className="mt-8 py-2 font-tag text-sm text-muted">GitHub activity temporarily unavailable.</p>
-  }
-
-  if (!data) {
-    return <p className="mt-8 animate-pulse py-2 font-tag text-sm text-muted">Loading...</p>
-  }
-
-  return <ContributionSkyline data={data} palette="github" className="mt-8 font-tag" />
 }
