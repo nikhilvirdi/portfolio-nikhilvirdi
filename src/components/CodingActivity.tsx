@@ -216,19 +216,28 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
   const [active, setActive] = useState(-1);
   const [level, setLevel] = useState(-1);
   const [notice, setNotice] = useState('');
+  const [gameMode, setGameMode] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const scrollBox = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
+  const gameCanvas = useRef<HTMLCanvasElement>(null);
   const tip = useRef<HTMLDivElement>(null);
   const kickRef = useRef<(() => void) | null>(null);
   const levelRef = useRef(level);
   levelRef.current = level;
+  const gameModeRef = useRef(gameMode);
+  gameModeRef.current = gameMode;
 
   // Trigger animation transition when legend highlight level changes
   useEffect(() => {
     kickRef.current?.();
   }, [level]);
+
+  // Trigger redraw when game mode changes to hide/show month labels
+  useEffect(() => {
+    kickRef.current?.();
+  }, [gameMode]);
 
   useEffect(() => {
     const host = root.current;
@@ -340,13 +349,16 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
       ctx.textAlign = 'left';
       ctx.textBaseline = 'bottom';
 
-      let edge = -Infinity;
-      for (const month of model.months) {
-        const x = left + (month.week + 0.11) * s;
-        const mw = ctx.measureText(month.label).width;
-        if (x >= edge) {
-          ctx.fillText(month.label, x, top - 3);
-          edge = x + mw + 6;
+      // Hide month labels when game mode is active
+      if (!gameModeRef.current) {
+        let edge = -Infinity;
+        for (const month of model.months) {
+          const x = left + (month.week + 0.11) * s;
+          const mw = ctx.measureText(month.label).width;
+          if (x >= edge) {
+            ctx.fillText(month.label, x, top - 3);
+            edge = x + mw + 6;
+          }
         }
       }
 
@@ -538,6 +550,295 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     };
   }, [model]);
 
+  // Game Mode Canvas Setup and Game Loop
+  useEffect(() => {
+    const box = stage.current;
+    
+    if (!gameMode) {
+      // When game mode is off, ensure the stage returns to normal heatmap height
+      if (box) {
+        const host = root.current;
+        if (host) {
+          const rows = [
+            { day: 1, label: 'Mon' },
+            { day: 3, label: 'Wed' },
+            { day: 5, label: 'Fri' },
+          ];
+          const ctx = document.createElement('canvas').getContext('2d');
+          if (ctx) {
+            ctx.font = `400 10px ${getComputedStyle(host).fontFamily || 'sans-serif'}`;
+            const labelWidth = Math.ceil(Math.max(20, ...rows.map((row) => ctx.measureText(row.label).width))) + 8;
+            const s = (844 - labelWidth - 4) / 53;
+            const normalHeight = Math.ceil(22 + s * 7 + 4);
+            box.style.height = `${normalHeight}px`;
+          }
+        }
+      }
+      return;
+    }
+
+    const host = root.current;
+    const scrollEl = scrollBox.current;
+    const gCanvas = gameCanvas.current;
+    if (!host || !scrollEl || !box || !gCanvas || !model.weeks) return;
+
+    const gCtx = gCanvas.getContext('2d');
+    if (!gCtx) return;
+
+    // Check for reduced motion preference
+    const reduceMq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const reduced = reduceMq.matches;
+
+    // If user prefers reduced motion, significantly reduce animation speed
+    const motionScale = reduced ? 0.3 : 1.0;
+
+    // Use the same layout calculations as the main heatmap
+    const rows = [
+      { day: 1, label: 'Mon' },
+      { day: 3, label: 'Wed' },
+      { day: 5, label: 'Fri' },
+    ];
+
+    gCtx.font = `400 10px ${getComputedStyle(host).fontFamily || 'sans-serif'}`;
+    const labelWidth = Math.ceil(Math.max(20, ...rows.map((row) => gCtx.measureText(row.label).width))) + 8;
+    const left = 2 + labelWidth;
+    const top = 22;
+    const s = (844 - labelWidth - 4) / 53;
+    const width = Math.ceil(left + model.weeks * s + 4);
+    const height = Math.ceil(top + s * 7 + 4);
+    const gameHeight = height + 100; // Extra space below for spacecraft and breathing room
+    const pixelRatio = Math.min(2, window.devicePixelRatio || 1);
+
+    gCanvas.width = Math.round(width * pixelRatio);
+    gCanvas.height = Math.round(gameHeight * pixelRatio);
+    gCanvas.style.width = `${width}px`;
+    gCanvas.style.height = `${gameHeight}px`;
+
+    // Adjust the stage container to accommodate the extended game canvas
+    box.style.height = `${gameHeight}px`;
+
+    // Temporary game state - cell health levels
+    const cellHealth = new Map<string, number>();
+    model.cells.forEach((cell) => {
+      cellHealth.set(cell.date, cell.level);
+    });
+
+    // Game state
+    type Star = { x: number; y: number; speed: number; size: number; alpha: number };
+    type Bullet = { x: number; y: number; vy: number; width: number; height: number };
+    type Particle = { x: number; y: number; vx: number; vy: number; color: string; size: number; alpha: number; life: number; maxLife: number };
+
+    const stars: Star[] = Array.from({ length: reduced ? 70 : 140 }).map(() => ({
+      x: Math.random() * width,
+      y: Math.random() * gameHeight,
+      speed: (Math.random() * 0.4 + 0.1) * motionScale,
+      size: Math.random() * 1.2 + 0.5,
+      alpha: Math.random() * 0.5 + 0.1,
+    }));
+
+    const player = {
+      x: width / 2 - 15,
+      y: height + 50, // Position below the heatmap
+      width: 30,
+      height: 20,
+      speed: 4 * motionScale,
+      direction: 1,
+      color: '#38bdf8',
+    };
+
+    let bullets: Bullet[] = [];
+    let particles: Particle[] = [];
+    let lastShot = 0;
+    const cooldown = reduced ? 200 : 140;
+
+    const colors = ['#1b1b1b', '#0e4429', '#006d32', '#26a641', '#39d353'];
+
+    const shoot = () => {
+      bullets.push({
+        x: player.x + player.width / 2 - 1.5,
+        y: player.y - 4,
+        vy: -6 * motionScale,
+        width: 3,
+        height: 8,
+      });
+    };
+
+    const explode = (x: number, y: number, color: string) => {
+      const particleCount = reduced ? 6 : 12;
+      for (let i = 0; i < particleCount; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = (Math.random() * 2.5 + 1.2) * motionScale;
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          color,
+          size: Math.random() * 2 + 1,
+          alpha: 1,
+          life: 0,
+          maxLife: Math.random() * 15 + 15,
+        });
+      }
+    };
+
+    let animationFrameId: number;
+
+    const update = () => {
+      // Find active cell boundaries
+      let minWi = -1;
+      let maxWi = -1;
+      model.cells.forEach((cell) => {
+        const health = cellHealth.get(cell.date) ?? 0;
+        if (health > 0) {
+          if (minWi === -1) minWi = cell.week;
+          minWi = Math.min(minWi, cell.week);
+          maxWi = Math.max(maxWi, cell.week);
+        }
+      });
+
+      let minX = 0;
+      let maxX = width - player.width;
+      if (minWi !== -1 && maxWi !== -1) {
+        minX = minWi * s;
+        maxX = Math.max(minX, Math.min(width - player.width, (maxWi + 1) * s - player.width));
+      }
+
+      player.x = Math.max(minX, Math.min(maxX, player.x));
+
+      // Automatic sweep movement
+      player.x += player.speed * player.direction;
+      if (player.x >= maxX) {
+        player.x = maxX;
+        player.direction = -1;
+      } else if (player.x <= minX) {
+        player.x = minX;
+        player.direction = 1;
+      }
+
+      // Auto-shooting
+      const now = Date.now();
+      if (now - lastShot >= cooldown) {
+        shoot();
+        lastShot = now;
+      }
+
+      // Check if game complete
+      let anyActive = false;
+      cellHealth.forEach((health) => {
+        if (health > 0) anyActive = true;
+      });
+
+      if (!anyActive) {
+        // Reset game
+        model.cells.forEach((cell) => {
+          cellHealth.set(cell.date, cell.level);
+        });
+      }
+
+      // Update stars
+      stars.forEach((star) => {
+        star.y += star.speed;
+        if (star.y > gameHeight) {
+          star.y = 0;
+          star.x = Math.random() * width;
+        }
+      });
+
+      // Update bullets
+      bullets = bullets.filter((b) => {
+        b.y += b.vy;
+        return b.y > 0;
+      });
+
+      // Update particles
+      particles.forEach((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life++;
+        p.alpha = 1 - p.life / p.maxLife;
+      });
+      particles = particles.filter((p) => p.life < p.maxLife);
+
+      // Collision detection
+      const cellWidth = s * 0.78;
+      bullets.forEach((bullet, bulletIdx) => {
+        model.cells.forEach((cell) => {
+          const health = cellHealth.get(cell.date) ?? 0;
+          if (health === 0) return;
+
+          const cellX = left + (cell.week + 0.11) * s;
+          const cellY = top + (cell.day + 0.11) * s;
+
+          if (
+            bullet.x < cellX + cellWidth &&
+            bullet.x + bullet.width > cellX &&
+            bullet.y < cellY + cellWidth &&
+            bullet.y + bullet.height > cellY
+          ) {
+            bullets.splice(bulletIdx, 1);
+            const newHealth = health - 1;
+            cellHealth.set(cell.date, newHealth);
+            explode(cellX + cellWidth / 2, cellY + cellWidth / 2, colors[health] || colors[0]);
+          }
+        });
+      });
+    };
+
+    const render = () => {
+      gCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      gCtx.clearRect(0, 0, width, gameHeight);
+
+      // Draw stars
+      gCtx.fillStyle = '#ffffff';
+      stars.forEach((star) => {
+        gCtx.globalAlpha = star.alpha;
+        gCtx.fillRect(star.x, star.y, star.size, star.size);
+      });
+      gCtx.globalAlpha = 1.0;
+
+      // Draw bullets
+      gCtx.fillStyle = '#fbbf24';
+      bullets.forEach((b) => {
+        gCtx.fillRect(b.x, b.y, b.width, b.height);
+      });
+
+      // Draw particles
+      particles.forEach((p) => {
+        gCtx.fillStyle = p.color;
+        gCtx.globalAlpha = p.alpha;
+        gCtx.fillRect(p.x, p.y, p.size, p.size);
+      });
+      gCtx.globalAlpha = 1.0;
+
+      // Draw player spacecraft
+      gCtx.fillStyle = player.color;
+      gCtx.shadowColor = player.color;
+      gCtx.shadowBlur = 6;
+      gCtx.beginPath();
+      gCtx.moveTo(player.x + player.width / 2, player.y);
+      gCtx.lineTo(player.x + player.width, player.y + player.height);
+      gCtx.lineTo(player.x + player.width * 0.7, player.y + player.height * 0.75);
+      gCtx.lineTo(player.x + player.width * 0.3, player.y + player.height * 0.75);
+      gCtx.lineTo(player.x, player.y + player.height);
+      gCtx.closePath();
+      gCtx.fill();
+      gCtx.shadowBlur = 0;
+    };
+
+    const loop = () => {
+      update();
+      render();
+      animationFrameId = requestAnimationFrame(loop);
+    };
+
+    animationFrameId = requestAnimationFrame(loop);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [gameMode, model]);
+
   const colors = ['#1b1b1b', '#0e4429', '#006d32', '#26a641', '#39d353'];
 
   return (
@@ -545,10 +846,12 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
       {/* Horizontally scrollable container for the full April 2025 -> current date heatmap */}
       <div
         ref={scrollBox}
-        className="w-full overflow-x-auto overflow-y-hidden pb-2"
+        className="w-full pb-2"
         style={{
           scrollbarWidth: 'thin',
           scrollbarColor: '#27272a #000000',
+          overflowX: 'auto',
+          overflowY: 'visible',
         }}
       >
         <div
@@ -563,12 +866,19 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
             aria-label="LeetCode submissions heatmap. Use the arrow keys to read individual days."
             className="absolute top-0 left-0 block outline-none"
           />
+          {gameMode && (
+            <canvas
+              ref={gameCanvas}
+              className="absolute top-0 left-0 pointer-events-auto z-10"
+              style={{ cursor: 'crosshair' }}
+            />
+          )}
           <div
             ref={tip}
             role="tooltip"
-            aria-hidden={active < 0}
+            aria-hidden={active < 0 || gameMode}
             className="pointer-events-none absolute top-0 left-0 z-20 whitespace-nowrap rounded-md bg-foreground px-2.5 py-1.5 text-[12px] leading-none text-background shadow-lg"
-            style={{ opacity: active >= 0 ? 1 : 0 }}
+            style={{ opacity: active >= 0 && !gameMode ? 1 : 0 }}
           >
             {active >= 0 && model.cells[active] ? (
               <>
@@ -586,28 +896,58 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
       </div>
 
       {/* Legend below the scrollable container */}
-      <div className="flex items-center justify-end gap-1.5 pt-3" onMouseLeave={() => setLevel(-1)}>
-        <span className="mr-0.5">Less</span>
-        {colors.map((color, index) => (
+      <div className="flex items-center justify-between gap-4 pt-3">
+        <div className="flex items-center gap-1.5" onMouseLeave={() => setLevel(-1)}>
+          <span className="mr-0.5">Less</span>
+          {colors.map((color, index) => (
+            <button
+              key={color}
+              type="button"
+              aria-label={`Highlight level ${index}`}
+              aria-pressed={level === index}
+              title={['No submissions', 'Light', 'Moderate', 'Heavy', 'Heaviest'][index]}
+              onMouseEnter={() => setLevel(index)}
+              onFocus={() => setLevel(index)}
+              onBlur={() => setLevel(-1)}
+              onClick={() => setLevel((value) => (value === index ? -1 : index))}
+              className="h-[11px] w-[11px] rounded-[2px] border-0 p-0 hover:scale-125 focus-visible:outline-2 focus-visible:outline-offset-1"
+              style={{
+                background: color,
+                outlineColor: '#f2f2f0',
+                boxShadow: 'inset 0 0 0 1px rgba(127,127,127,0.12)',
+              }}
+            />
+          ))}
+          <span className="ml-0.5">More</span>
+        </div>
+
+        {/* Game Mode Toggle */}
+        <div className="flex items-center gap-2 border-l border-neutral-800 pl-4">
+          <span className="text-[11px] text-muted select-none" id="game-mode-label">Game Mode</span>
           <button
-            key={color}
             type="button"
-            aria-label={`Highlight level ${index}`}
-            aria-pressed={level === index}
-            title={['No submissions', 'Light', 'Moderate', 'Heavy', 'Heaviest'][index]}
-            onMouseEnter={() => setLevel(index)}
-            onFocus={() => setLevel(index)}
-            onBlur={() => setLevel(-1)}
-            onClick={() => setLevel((value) => (value === index ? -1 : index))}
-            className="h-[11px] w-[11px] rounded-[2px] border-0 p-0 hover:scale-125 focus-visible:outline-2 focus-visible:outline-offset-1"
+            role="switch"
+            aria-checked={gameMode}
+            aria-labelledby="game-mode-label"
+            aria-describedby="game-mode-description"
+            onClick={() => setGameMode(!gameMode)}
+            className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-2 focus-visible:outline-offset-2"
             style={{
-              background: color,
+              backgroundColor: gameMode ? '#22c55e' : '#27272a',
               outlineColor: '#f2f2f0',
-              boxShadow: 'inset 0 0 0 1px rgba(127,127,127,0.12)',
             }}
-          />
-        ))}
-        <span className="ml-0.5">More</span>
+          >
+            <span
+              className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+              style={{
+                transform: gameMode ? 'translateX(16px)' : 'translateX(0)',
+              }}
+            />
+          </button>
+          <span id="game-mode-description" className="sr-only">
+            {gameMode ? 'Game Mode active. Interactive space-defense game overlaying the heatmap.' : 'Game Mode inactive. Toggle to enable interactive game.'}
+          </span>
+        </div>
       </div>
       <p aria-live="polite" className="sr-only">
         {notice}
