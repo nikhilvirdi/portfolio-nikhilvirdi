@@ -91,10 +91,77 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-const compactFormatter = new Intl.NumberFormat('en-US', {
-  notation: 'compact',
-  maximumFractionDigits: 1,
-});
+/**
+ * Shared formatter for all stat blocks in the language/stats section:
+ * - Below 10,000: show the full number with thousands separators (e.g. 851, 1,785, 9,999)
+ * - From 10,000 up: compact notation with at most one decimal, no trailing ".0" (e.g. 10K, 12.8K, 161.4K; 1.2M)
+ */
+export function formatStatNumber(val: number): string {
+  const abs = Math.abs(val);
+  const sign = val < 0 ? '-' : '';
+  const rounded = Math.round(abs);
+
+  if (rounded < 10000) {
+    return sign + rounded.toLocaleString('en-US');
+  }
+
+  if (abs >= 1000000000) {
+    const num = abs / 1000000000;
+    const formatted = (Math.round(num * 10) / 10).toFixed(1).replace(/\.0$/, '');
+    return sign + formatted + 'B';
+  }
+
+  if (abs >= 1000000) {
+    const num = abs / 1000000;
+    const formatted = (Math.round(num * 10) / 10).toFixed(1).replace(/\.0$/, '');
+    return sign + formatted + 'M';
+  }
+
+  const num = abs / 1000;
+  const formatted = (Math.round(num * 10) / 10).toFixed(1).replace(/\.0$/, '');
+  return sign + formatted + 'K';
+}
+
+function useCountUp(target: number, start: boolean, durationMs: number = 1000): number {
+  const [val, setVal] = useState(0);
+
+  useEffect(() => {
+    if (!start) {
+      setVal(0);
+      return;
+    }
+
+    if (durationMs <= 0) {
+      setVal(target);
+      return;
+    }
+
+    let startTime: number | null = null;
+    let animId: number;
+
+    const step = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(elapsed / durationMs, 1);
+      // Ease out cubic: 1 - (1 - t)^3
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(target * easeOut);
+
+      setVal(current);
+
+      if (progress < 1) {
+        animId = requestAnimationFrame(step);
+      } else {
+        setVal(target);
+      }
+    };
+
+    animId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animId);
+  }, [target, start, durationMs]);
+
+  return val;
+}
 
 const MUTED = 'var(--color-muted-foreground, #737373)';
 const ACCENT = '#39d353'; // GitHub green matching activity heatmap level 4
@@ -172,11 +239,13 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
 
   const activeItem = languages.find((l) => l.name === activeLang);
 
-  const curLinesNet = totals.linesNet;
-  const curCommits = totals.commits;
-  const curLinesAdded = totals.linesAdded;
-  const curLinesDeleted = totals.linesDeleted;
-  const curActiveDays = totals.activeDays;
+  // Animated stat values counting up on entrance
+  const countUpDuration = isReduced ? 0 : 1000;
+  const curLinesNet = useCountUp(totals.linesNet, hasEntered, countUpDuration);
+  const curCommits = useCountUp(totals.commits, hasEntered, countUpDuration);
+  const curLinesAdded = useCountUp(totals.linesAdded, hasEntered, countUpDuration);
+  const curLinesDeleted = useCountUp(totals.linesDeleted, hasEntered, countUpDuration);
+  const curActiveDays = useCountUp(totals.activeDays, hasEntered, countUpDuration);
 
   const ariaSummary = `Language distribution across repositories: ${languages
     .map((l) => `${l.name} ${l.percent < 0.1 ? '<0.1%' : `${l.percent.toFixed(1)}%`}`)
@@ -423,7 +492,7 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
                     letterSpacing: '-0.02em',
                   }}
                 >
-                  {compactFormatter.format(curLinesNet)}
+                  {formatStatNumber(curLinesNet)}
                 </span>
               </div>
               <div className="mt-0.5 truncate text-[12px]" style={{ color: MUTED }}>
@@ -449,7 +518,7 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
                     letterSpacing: '-0.02em',
                   }}
                 >
-                  {compactFormatter.format(curCommits)}
+                  {formatStatNumber(curCommits)}
                 </span>
               </div>
               <div className="mt-0.5 truncate text-[12px]" style={{ color: MUTED }}>
@@ -457,7 +526,7 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
               </div>
             </div>
 
-            {/* Block 3: Lines added / deleted (nowrap, shrinking font slightly to fit on one line) */}
+            {/* Block 3: Lines added / deleted */}
             <div
               className="min-w-0"
               title={`+${totals.linesAdded.toLocaleString()} added / -${totals.linesDeleted.toLocaleString()} deleted`}
@@ -465,17 +534,16 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
               <div className="text-[13px] leading-tight" style={{ color: MUTED }}>
                 Lines added / deleted
               </div>
-              <div className="mt-1 flex items-baseline">
+              <div className="mt-1 flex flex-wrap items-baseline gap-x-1">
                 <span
-                  className="font-semibold tabular-nums whitespace-nowrap text-[21px] sm:text-[24px]"
+                  className="font-semibold tabular-nums text-[21px] sm:text-[24px]"
                   style={{
                     color: ACCENT,
                     lineHeight: 1.1,
                     letterSpacing: '-0.02em',
                   }}
                 >
-                  +{compactFormatter.format(curLinesAdded)} / -
-                  {compactFormatter.format(curLinesDeleted)}
+                  +{formatStatNumber(curLinesAdded)} / -{formatStatNumber(curLinesDeleted)}
                 </span>
               </div>
               <div className="mt-0.5 truncate text-[12px]" style={{ color: MUTED }}>
@@ -501,7 +569,7 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
                     letterSpacing: '-0.02em',
                   }}
                 >
-                  {compactFormatter.format(curActiveDays)}
+                  {formatStatNumber(curActiveDays)}
                 </span>
               </div>
               <div className="mt-0.5 truncate text-[12px]" style={{ color: MUTED }}>
