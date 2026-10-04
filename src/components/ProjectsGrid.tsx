@@ -808,7 +808,7 @@ export default function ProjectsGrid() {
                 className="relative w-full max-w-4xl max-h-[85vh] overflow-y-auto border border-white/10 bg-zinc-950 p-6 sm:p-8 rounded-xl flex flex-col space-y-6 shadow-2xl"
               >
                 {/* Header row with "Back to projects", links, and close */}
-                <div className="flex items-center justify-between gap-4 pb-3 border-b border-white/10 flex-wrap">
+                <div className="flex items-center justify-between gap-4 flex-wrap">
                   <button
                     type="button"
                     onClick={() => setSelectedProject(null)}
@@ -858,21 +858,16 @@ export default function ProjectsGrid() {
                   </div>
                 </div>
 
-                {/* Title & Status */}
-                <div className="flex items-baseline gap-3 flex-wrap">
-                  <h3
-                    className={`${
-                      LOGO_LESS_PROJECT_TITLES.includes(selectedProject.title)
-                        ? 'font-oxygen'
-                        : 'font-heading'
-                    } text-2xl sm:text-3xl font-medium text-foreground tracking-tight`}
-                  >
-                    {selectedProject.title}
-                  </h3>
-                  <span className="px-2.5 py-0.5 text-[10px] font-tag font-semibold tracking-wider uppercase border border-white/15 text-muted rounded-full">
-                    {selectedProject.status}
-                  </span>
-                </div>
+                {/* Title */}
+                <h3
+                  className={`${
+                    LOGO_LESS_PROJECT_TITLES.includes(selectedProject.title)
+                      ? 'font-oxygen'
+                      : 'font-heading'
+                  } text-2xl sm:text-3xl font-medium text-foreground tracking-tight`}
+                >
+                  {selectedProject.title}
+                </h3>
 
                 {/* Live frame or Logo visual */}
                 {selectedProject.liveUrl ? (
