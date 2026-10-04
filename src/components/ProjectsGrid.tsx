@@ -417,6 +417,9 @@ function SpreadCard({
     1,
   ]);
 
+  // Card container opacity: 1 (packed) → 0 (spread)
+  const containerOpacity = useTransform(progress, [0, 1], [1, 0]);
+
   return (
     <motion.div
       className="absolute left-1/2 top-1/2 will-change-transform cursor-pointer select-none outline-none"
@@ -440,8 +443,9 @@ function SpreadCard({
         }
       }}
     >
-      <div
-        className={`group relative flex items-center justify-center overflow-hidden rounded-xl border transition-all duration-300 ${
+      {/* Card container with dynamic opacity */}
+      <motion.div
+        className={`group absolute inset-0 flex items-center justify-center overflow-hidden rounded-xl border transition-all duration-300 ${
           isSelected
             ? 'border-white/60 ring-2 ring-white/20 bg-zinc-900 shadow-[0_12px_40px_rgba(0,0,0,0.8)] scale-105'
             : 'border-white/10 bg-zinc-950/85 hover:border-white/35 hover:bg-zinc-900/90 shadow-[0_8px_30px_rgba(0,0,0,0.6)]'
@@ -453,6 +457,7 @@ function SpreadCard({
         style={{
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
+          opacity: containerOpacity,
         }}
       >
         {/* Subtle SVG fractal noise texture */}
@@ -462,9 +467,17 @@ function SpreadCard({
             backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
           }}
         />
+      </motion.div>
 
-        {/* Centered Logo/Visual */}
-        <div className="relative z-10 w-full h-full flex items-center justify-center">
+      {/* Centered Logo/Visual - always visible, positioned independently */}
+      <div
+        className={`relative z-10 flex items-center justify-center pointer-events-auto ${
+          isMobile
+            ? 'w-[145px] h-[105px] p-2.5'
+            : 'w-[195px] lg:w-[215px] h-[135px] lg:h-[145px] p-3.5'
+        }`}
+      >
+        <div className="w-full h-full flex items-center justify-center">
           {project.logo ? (
             <img
               src={project.logo}
