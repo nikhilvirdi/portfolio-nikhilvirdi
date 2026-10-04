@@ -444,7 +444,7 @@ function ContributionSkyline({
   data,
   endDate,
   view: viewProp,
-  defaultView = "3d",
+  defaultView = "2d",
   onViewChange,
   palette = "github",
   title,
@@ -474,10 +474,13 @@ function ContributionSkyline({
 
   const [innerView, setInnerView] = React.useState<View>(defaultView)
   const view = viewProp ?? innerView
-  const setView = (v: View) => {
+  const setView = React.useCallback((v: View) => {
     if (viewProp === undefined) setInnerView(v)
     onViewChange?.(v)
-  }
+  }, [viewProp, onViewChange])
+  const isManualToggle = React.useRef(false)
+  const viewRef = React.useRef(view)
+  viewRef.current = view
 
   const [theme, setTheme] = React.useState<{ dark: boolean; swatches: string[]; accent: string }>(() => {
     const p = resolvePalette(palette, false)
@@ -526,7 +529,7 @@ function ContributionSkyline({
     // morph: t is linear time 0 (2D) → 1 (3D); the camera eases it, the bars wave it
     let t = 0
     let target = 0
-    let entered = false
+    let entered = true
     // orbit offsets, eased toward their goals
     let yaw = 0
     let elev = 0
@@ -1056,27 +1059,6 @@ function ContributionSkyline({
     retheme()
     relayout()
 
-    // The 3D view rises out of the flat one the first time it is seen.
-    const enter = () => {
-      if (entered) return
-      entered = true
-      if (reduced) t = cfg.current.target
-      setTarget()
-    }
-    let io: IntersectionObserver | null = null
-    if ("IntersectionObserver" in window) {
-      io = new IntersectionObserver(
-        (entries) => {
-          if (entries.some((en) => en.isIntersecting)) {
-            enter()
-            io?.disconnect()
-          }
-        },
-        { threshold: 0.35 },
-      )
-      io.observe(stage)
-    } else enter()
-
     const ro = new ResizeObserver(() => {
       if (Math.round(stage.clientWidth) !== W) relayout()
     })
@@ -1119,7 +1101,6 @@ function ContributionSkyline({
 
     return () => {
       if (raf) cancelAnimationFrame(raf)
-      io?.disconnect()
       ro.disconnect()
       mo.disconnect()
       reduceMq.removeEventListener("change", onReduce)
@@ -1149,6 +1130,70 @@ function ContributionSkyline({
   React.useEffect(() => {
     engine.current?.retheme()
   }, [palette])
+
+  // Bidirectional scroll-driven 2D <-> 3D transition
+  React.useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+
+    const pane = document.getElementById("main-scroll-pane")
+
+    const checkScroll = () => {
+      const el = rootRef.current
+      if (!el) return
+
+      const isDesktop = pane && window.innerWidth >= 1024 && pane.scrollHeight > pane.clientHeight
+      const currentContainer = isDesktop ? pane : null
+
+      const rect = el.getBoundingClientRect()
+      let topRelativeToViewport: number
+      let viewportHeight: number
+
+      if (currentContainer) {
+        const cRect = currentContainer.getBoundingClientRect()
+        topRelativeToViewport = rect.top - cRect.top
+        viewportHeight = cRect.height
+      } else {
+        topRelativeToViewport = rect.top
+        viewportHeight = window.innerHeight
+      }
+
+      // Trigger thresholds with hysteresis to prevent flickering or bouncing:
+      // Down: when section enters lower portion of the visible viewport (<= 72%)
+      // Up: when section moves back down near the bottom of the visible viewport (>= 86%)
+      const triggerDown = viewportHeight * 0.72
+      const triggerUp = viewportHeight * 0.86
+
+      if (topRelativeToViewport <= triggerDown) {
+        // Section is in view (or scrolled past) -> transition to 3D skyline
+        if (!isManualToggle.current && viewRef.current !== "3d") {
+          setView("3d")
+        }
+      } else if (topRelativeToViewport >= triggerUp) {
+        // Section has moved below trigger threshold (user scrolled back up) -> return to 2D heatmap
+        isManualToggle.current = false
+        if (viewRef.current !== "2d") {
+          setView("2d")
+        }
+      }
+    }
+
+    checkScroll()
+
+    if (pane) {
+      pane.addEventListener("scroll", checkScroll, { passive: true })
+    }
+    window.addEventListener("scroll", checkScroll, { passive: true })
+    window.addEventListener("resize", checkScroll, { passive: true })
+
+    return () => {
+      if (pane) {
+        pane.removeEventListener("scroll", checkScroll)
+      }
+      window.removeEventListener("scroll", checkScroll)
+      window.removeEventListener("resize", checkScroll)
+    }
+  }, [setView])
 
   // The tooltip's width is needed to keep it inside the card; measure it when its text changes.
   React.useLayoutEffect(() => {
@@ -1220,7 +1265,10 @@ function ContributionSkyline({
                 aria-pressed={view === v}
                 aria-label={v === "2d" ? "Flat heat map" : "3D skyline"}
                 title={v === "2d" ? "Flat heat map" : "3D skyline"}
-                onClick={() => setView(v)}
+                onClick={() => {
+                  isManualToggle.current = true
+                  setView(v)
+                }}
                 className="relative z-10 grid h-7 w-8 cursor-pointer place-items-center rounded border-0 bg-transparent p-0 transition-colors duration-500 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
                 style={{
                   color: view === v ? "var(--color-background, #ffffff)" : MUTED,

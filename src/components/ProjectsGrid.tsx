@@ -696,9 +696,6 @@ export default function ProjectsGrid() {
   const centerTextOpacity = useTransform(scatterProgress, [0.28, 0.65], [0, 1]);
   const centerTextScale = useTransform(scatterProgress, [0.28, 0.85], [0.88, 1]);
 
-  // Scroll hint fades out as scatter begins
-  const scrollHintOpacity = useTransform(rawProgress, [0, SCATTER_START], [1, 0]);
-
   // Handle escape key to close selected project view
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -766,25 +763,6 @@ export default function ProjectsGrid() {
             );
           })}
         </div>
-
-        {/* Initial Scroll Hint */}
-        {!isReduced && (
-          <motion.div
-            className="pointer-events-none absolute bottom-4 sm:bottom-6 z-20 flex flex-col items-center gap-1 text-[10px] sm:text-xs font-tag uppercase tracking-[0.2em] text-muted select-none"
-            style={{ opacity: scrollHintOpacity }}
-          >
-            <span>Scroll to spread</span>
-            <svg
-              className="w-3.5 h-3.5 animate-bounce text-muted"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </motion.div>
-        )}
 
         {/* Selected Project In-Place View within the SAME Area */}
         <AnimatePresence>

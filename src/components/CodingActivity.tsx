@@ -211,6 +211,16 @@ export function useLeetCodeActivity() {
   return useSyncExternalStore(subscribe, getSnapshot);
 }
 
+// ==================================================
+// Game Mode Layout Geometry
+// Sequence: heatmap (0..height) → game space (50px) → 🚀 shooter (20px) → breathing room (40px)
+// Total Game Mode vertical height: height + 110px (~1.82×, strictly derived from actual layout)
+// ==================================================
+const GAME_SPACE_BELOW_HEATMAP = 50; // Vertical space below heatmap to shooter top
+const SHOOTER_HEIGHT = 20; // Spacecraft sprite height
+const SHOOTER_BREATHING_ROOM = 40; // Clearance below spacecraft & glow animation
+const GAME_EXTRA_HEIGHT = GAME_SPACE_BELOW_HEATMAP + SHOOTER_HEIGHT + SHOOTER_BREATHING_ROOM; // 110px
+
 function Heatmap({ data }: { data: ContributionDay[] }) {
   const model = useMemo(() => buildCodingGrid(data), [data]);
   const [active, setActive] = useState(-1);
@@ -224,6 +234,8 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
   const gameCanvas = useRef<HTMLCanvasElement>(null);
   const tip = useRef<HTMLDivElement>(null);
   const kickRef = useRef<(() => void) | null>(null);
+  const layoutRef = useRef<(() => void) | null>(null);
+  const cellHealthRef = useRef<Map<string, number> | null>(null);
   const levelRef = useRef(level);
   levelRef.current = level;
   const gameModeRef = useRef(gameMode);
@@ -234,8 +246,13 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     kickRef.current?.();
   }, [level]);
 
-  // Trigger redraw when game mode changes to hide/show month labels
+  // Trigger redraw and layout update when game mode changes
   useEffect(() => {
+    gameModeRef.current = gameMode;
+    if (!gameMode) {
+      cellHealthRef.current = null;
+    }
+    layoutRef.current?.();
     kickRef.current?.();
   }, [gameMode]);
 
@@ -300,7 +317,10 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
         const x = left + (cell.week + 0.11) * s;
         const y = top + (cell.day + 0.11) * s;
 
-        const base = colors[cell.level];
+        const currentLevel = (gameModeRef.current && cellHealthRef.current)
+          ? (cellHealthRef.current.get(cell.date) ?? cell.level)
+          : cell.level;
+        const base = colors[currentLevel];
         let r = base[0];
         let g = base[1];
         let bl = base[2];
@@ -411,6 +431,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     };
 
     const kick = () => {
+      draw();
       if (raf) return;
       last = performance.now();
       raf = requestAnimationFrame(tick);
@@ -435,11 +456,22 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
       el.style.width = `${width}px`;
       el.style.height = `${height}px`;
 
+      const targetHeight = gameModeRef.current ? height + GAME_EXTRA_HEIGHT : height;
       box.style.width = `${width}px`;
-      box.style.height = `${height}px`;
+      box.style.height = `${targetHeight}px`;
+
+      if (gameCanvas.current && gameModeRef.current) {
+        const gCanvas = gameCanvas.current;
+        const gameHeight = height + GAME_EXTRA_HEIGHT;
+        gCanvas.width = Math.round(width * pixelRatio);
+        gCanvas.height = Math.round(gameHeight * pixelRatio);
+        gCanvas.style.width = `${width}px`;
+        gCanvas.style.height = `${gameHeight}px`;
+      }
 
       kick();
     };
+    layoutRef.current = layout;
 
     const refreshActive = () => {
       const next = hovered >= 0 ? hovered : pinned;
@@ -540,6 +572,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     layout();
 
     return () => {
+      layoutRef.current = null;
       if (raf) cancelAnimationFrame(raf);
       reduceMq.removeEventListener('change', onReduce);
       observer.disconnect();
@@ -555,25 +588,10 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     const box = stage.current;
     
     if (!gameMode) {
-      // When game mode is off, ensure the stage returns to normal heatmap height
-      if (box) {
-        const host = root.current;
-        if (host) {
-          const rows = [
-            { day: 1, label: 'Mon' },
-            { day: 3, label: 'Wed' },
-            { day: 5, label: 'Fri' },
-          ];
-          const ctx = document.createElement('canvas').getContext('2d');
-          if (ctx) {
-            ctx.font = `400 10px ${getComputedStyle(host).fontFamily || 'sans-serif'}`;
-            const labelWidth = Math.ceil(Math.max(20, ...rows.map((row) => ctx.measureText(row.label).width))) + 8;
-            const s = (844 - labelWidth - 4) / 53;
-            const normalHeight = Math.ceil(22 + s * 7 + 4);
-            box.style.height = `${normalHeight}px`;
-          }
-        }
-      }
+      // When game mode is off, ensure the stage returns to normal compact heatmap height
+      cellHealthRef.current = null;
+      layoutRef.current?.();
+      kickRef.current?.();
       return;
     }
 
@@ -606,7 +624,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     const s = (844 - labelWidth - 4) / 53;
     const width = Math.ceil(left + model.weeks * s + 4);
     const height = Math.ceil(top + s * 7 + 4);
-    const gameHeight = height + 100; // Extra space below for spacecraft and breathing room
+    const gameHeight = height + GAME_EXTRA_HEIGHT;
     const pixelRatio = Math.min(2, window.devicePixelRatio || 1);
 
     gCanvas.width = Math.round(width * pixelRatio);
@@ -622,6 +640,8 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     model.cells.forEach((cell) => {
       cellHealth.set(cell.date, cell.level);
     });
+    cellHealthRef.current = cellHealth;
+    kickRef.current?.();
 
     // Game state
     type Star = { x: number; y: number; speed: number; size: number; alpha: number };
@@ -638,9 +658,9 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
 
     const player = {
       x: width / 2 - 15,
-      y: height + 50, // Position below the heatmap
+      y: height + GAME_SPACE_BELOW_HEATMAP, // Position below the heatmap
       width: 30,
-      height: 20,
+      height: SHOOTER_HEIGHT,
       speed: 4 * motionScale,
       direction: 1,
       color: '#38bdf8',
@@ -716,6 +736,21 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
         player.direction = 1;
       }
 
+      // Automatically move horizontal scrollbar to follow the spacecraft in Game Mode
+      const viewportWidth = scrollEl.clientWidth;
+      const maxScroll = Math.max(0, scrollEl.scrollWidth - viewportWidth);
+      if (maxScroll > 0) {
+        const shooterCenterX = player.x + player.width / 2;
+        const targetScroll = Math.max(0, Math.min(maxScroll, shooterCenterX - viewportWidth / 2));
+        const currentScroll = scrollEl.scrollLeft;
+        const diff = targetScroll - currentScroll;
+        if (Math.abs(diff) > 0.5) {
+          scrollEl.scrollLeft = currentScroll + diff * (reduced ? 1 : 0.12);
+        } else {
+          scrollEl.scrollLeft = targetScroll;
+        }
+      }
+
       // Auto-shooting
       const now = Date.now();
       if (now - lastShot >= cooldown) {
@@ -730,10 +765,11 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
       });
 
       if (!anyActive) {
-        // Reset game
+        // Reset game to full original levels
         model.cells.forEach((cell) => {
           cellHealth.set(cell.date, cell.level);
         });
+        kickRef.current?.();
       }
 
       // Update stars
@@ -760,12 +796,21 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
       });
       particles = particles.filter((p) => p.life < p.maxLife);
 
-      // Collision detection
+      // Collision detection: check bullets against cells
+      let hitOccurred = false;
       const cellWidth = s * 0.78;
-      bullets.forEach((bullet, bulletIdx) => {
-        model.cells.forEach((cell) => {
+
+      for (let b = bullets.length - 1; b >= 0; b--) {
+        const bullet = bullets[b];
+
+        // Bullets travel upward; find the intersecting cell closest to the bullet's origin (largest cellY)
+        let hitCellIndex = -1;
+        let maxCellY = -Infinity;
+
+        for (let i = 0; i < model.cells.length; i++) {
+          const cell = model.cells[i];
           const health = cellHealth.get(cell.date) ?? 0;
-          if (health === 0) return;
+          if (health <= 0) continue; // 0-contribution / destroyed cells are ignored
 
           const cellX = left + (cell.week + 0.11) * s;
           const cellY = top + (cell.day + 0.11) * s;
@@ -776,13 +821,35 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
             bullet.y < cellY + cellWidth &&
             bullet.y + bullet.height > cellY
           ) {
-            bullets.splice(bulletIdx, 1);
-            const newHealth = health - 1;
-            cellHealth.set(cell.date, newHealth);
-            explode(cellX + cellWidth / 2, cellY + cellWidth / 2, colors[health] || colors[0]);
+            if (cellY > maxCellY) {
+              maxCellY = cellY;
+              hitCellIndex = i;
+            }
           }
-        });
-      });
+        }
+
+        if (hitCellIndex !== -1) {
+          // Consume bullet immediately so it cannot hit again in this or subsequent frames
+          bullets.splice(b, 1);
+
+          const cell = model.cells[hitCellIndex];
+          const currentLevel = cellHealth.get(cell.date) ?? 0;
+          if (currentLevel > 0) {
+            const nextLevel = currentLevel - 1;
+            cellHealth.set(cell.date, nextLevel);
+
+            const cellX = left + (cell.week + 0.11) * s;
+            const cellY = top + (cell.day + 0.11) * s;
+
+            explode(cellX + cellWidth / 2, cellY + cellWidth / 2, colors[currentLevel] || colors[0]);
+            hitOccurred = true;
+          }
+        }
+      }
+
+      if (hitOccurred) {
+        kickRef.current?.();
+      }
     };
 
     const render = () => {
@@ -836,6 +903,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
 
     return () => {
       cancelAnimationFrame(animationFrameId);
+      cellHealthRef.current = null;
     };
   }, [gameMode, model]);
 
@@ -851,13 +919,13 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
           scrollbarWidth: 'thin',
           scrollbarColor: '#27272a #000000',
           overflowX: 'auto',
-          overflowY: 'visible',
+          overflowY: 'hidden',
         }}
       >
         <div
           ref={stage}
           className="relative overflow-hidden outline-offset-4 has-[:focus-visible]:outline-2"
-          style={{ outlineColor: '#f2f2f0' }}
+          style={{ outlineColor: '#f2f2f0', transition: 'height 0.25s ease-out' }}
         >
           <canvas
             ref={canvas}
