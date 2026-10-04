@@ -1,0 +1,67 @@
+{
+  "generatedAt": "2026-10-04T18:13:59.675Z",
+  "languages": [
+    {
+      "name": "Python",
+      "bytes": 5446024,
+      "percent": 46.7
+    },
+    {
+      "name": "TypeScript",
+      "bytes": 4213031,
+      "percent": 36.1
+    },
+    {
+      "name": "HTML",
+      "bytes": 881125,
+      "percent": 7.6
+    },
+    {
+      "name": "Java",
+      "bytes": 580064,
+      "percent": 5
+    },
+    {
+      "name": "JavaScript",
+      "bytes": 262221,
+      "percent": 2.2
+    },
+    {
+      "name": "Kotlin",
+      "bytes": 193216,
+      "percent": 1.7
+    },
+    {
+      "name": "CSS",
+      "bytes": 61729,
+      "percent": 0.5
+    },
+    {
+      "name": "Go",
+      "bytes": 25556,
+      "percent": 0.2
+    },
+    {
+      "name": "GLSL",
+      "bytes": 1803,
+      "percent": 0
+    },
+    {
+      "name": "PowerShell",
+      "bytes": 1168,
+      "percent": 0
+    },
+    {
+      "name": "Dockerfile",
+      "bytes": 836,
+      "percent": 0
+    }
+  ],
+  "totals": {
+    "linesNet": 708709,
+    "linesAdded": 786744,
+    "linesDeleted": 78035,
+    "commits": 542,
+    "activeDays": 98
+  }
+}

@@ -1,0 +1,55 @@
+name: Update GitHub Stats
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: github-stats
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  update-stats:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Restore commit stats cache
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: github-stats-commits-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            github-stats-commits-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch GitHub Stats
+        env:
+          STATS_TOKEN: ${{ secrets.STATS_TOKEN || secrets.GITHUB_TOKEN }}
+        run: npm run stats:github
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/data/github-stats.json
+          if git diff --staged --quiet; then
+            echo "No changes in stats to commit."
+          else
+            git commit -m "chore: update github stats"
+            git push
+          fi
