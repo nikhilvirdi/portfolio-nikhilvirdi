@@ -208,7 +208,7 @@ export default function App() {
       {/* Projects section: reuse carousel component as-is */}
       <section
         id="projects-mobile"
-        className="py-10 bg-background overflow-hidden"
+        className="py-10 bg-background"
       >
         <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-8">
           Projects

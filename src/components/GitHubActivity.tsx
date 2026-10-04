@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import LanguageBar from "./LanguageBar"
 
 type GitHubActivityDay = { date: string; count: number; level: number }
 
@@ -1374,6 +1375,8 @@ function ContributionSkyline({
             </div>
           )}
         </div>
+
+        <LanguageBar />
       </div>
 
       <p aria-live="polite" className="sr-only">
