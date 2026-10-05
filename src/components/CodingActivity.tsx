@@ -338,9 +338,91 @@ if (typeof window !== 'undefined') {
 }
 
 // ==================================================
-// Arcade Victory Bitmap Lettering ("NIKHIL VIRDI")
+// Arcade Victory Bitmap Lettering
+// Message 1: "HELLO WORLD!! FROM"
+// Message 2: "NIKHIL VIRDI"
 // ==================================================
-const LETTER_PATHS: Record<string, [number, number][]> = {
+
+interface MessagePixel {
+  relRow: number;
+  relCol: number;
+}
+
+const MSG1_PATHS: Record<string, [number, number][]> = {
+  H: [
+    [4, 0], [3, 0], [2, 0], [1, 0], [0, 0], // left stem (up)
+    [2, 1],                                 // crossbar
+    [0, 2], [1, 2], [2, 2], [3, 2], [4, 2], // right stem (down)
+  ],
+  E: [
+    [4, 0], [3, 0], [2, 0], [1, 0], [0, 0], // stem (up)
+    [0, 1], [0, 2],                         // top bar
+    [2, 2], [2, 1],                         // mid bar
+    [4, 1], [4, 2],                         // bottom bar
+  ],
+  L: [
+    [0, 0], [1, 0], [2, 0], [3, 0], [4, 0], // stem (down)
+    [4, 1], [4, 2],                         // base
+  ],
+  O: [
+    [4, 0], [3, 0], [2, 0], [1, 0], [0, 0], // left stem (up)
+    [0, 1],                                 // top
+    [0, 2], [1, 2], [2, 2], [3, 2], [4, 2], // right stem (down)
+    [4, 1],                                 // bottom
+  ],
+  W: [
+    [0, 0], [1, 0], [2, 0], [3, 0], [4, 0], // left stem (down)
+    [4, 1], [3, 2], [2, 2],                 // center peak (up)
+    [4, 3], [4, 4], [3, 4], [2, 4], [1, 4], [0, 4], // right stem (up)
+  ],
+  R: [
+    [4, 0], [3, 0], [2, 0], [1, 0], [0, 0], // stem (up)
+    [0, 1], [0, 2], [1, 2], [2, 2], [2, 1], // top loop
+    [3, 2], [4, 2],                         // leg
+  ],
+  D: [
+    [4, 0], [3, 0], [2, 0], [1, 0], [0, 0], // stem (up)
+    [0, 1], [1, 2], [2, 2], [3, 2], [4, 1], // curve
+  ],
+  '!': [
+    [0, 0], [1, 0], [2, 0],                 // stem (down)
+    [4, 0],                                 // dot
+  ],
+  F: [
+    [4, 0], [3, 0], [2, 0], [1, 0], [0, 0], // stem (up)
+    [0, 1], [0, 2],                         // top bar
+    [2, 2], [2, 1],                         // mid bar
+  ],
+  M: [
+    [4, 0], [3, 0], [2, 0], [1, 0], [0, 0], // left stem (up)
+    [1, 1], [2, 2], [1, 3],                 // center V
+    [0, 4], [1, 4], [2, 4], [3, 4], [4, 4], // right stem (down)
+  ],
+};
+
+const MSG1_WIDTHS: Record<string, number> = {
+  H: 3,
+  E: 3,
+  L: 3,
+  O: 3,
+  W: 5,
+  R: 3,
+  D: 3,
+  '!': 1,
+  F: 3,
+  M: 5,
+  ' ': 2,
+};
+
+const MSG1_TOKENS = [
+  'H', 'E', 'L', 'L', 'O',
+  ' ',
+  'W', 'O', 'R', 'L', 'D', '!', '!',
+  ' ',
+  'F', 'R', 'O', 'M',
+];
+
+const MSG2_PATHS: Record<string, [number, number][]> = {
   N: [
     [0, 0], [1, 0], [2, 0], [3, 0], [4, 0], // left stem (down)
     [1, 1], [2, 2],                         // diagonal
@@ -380,7 +462,7 @@ const LETTER_PATHS: Record<string, [number, number][]> = {
   ],
 };
 
-const LETTER_WIDTHS: Record<string, number> = {
+const MSG2_WIDTHS: Record<string, number> = {
   N: 4,
   I: 1,
   I_UP: 1,
@@ -393,34 +475,57 @@ const LETTER_WIDTHS: Record<string, number> = {
   D: 4,
 };
 
-interface MessagePixel {
-  relRow: number;
-  relCol: number;
-}
+const MSG2_TOKENS = ['N', 'I', 'K', 'H', 'I_UP', 'L', ' ', 'V', 'I', 'R', 'D', 'I_UP'];
 
-function buildMessagePixels(): { pixels: MessagePixel[]; totalWidth: number } {
-  const tokens = ['N', 'I', 'K', 'H', 'I_UP', 'L', ' ', 'V', 'I', 'R', 'D', 'I_UP'];
+function buildMessagePixels(
+  tokens: string[],
+  paths: Record<string, [number, number][]>,
+  widths: Record<string, number>
+): { pixels: MessagePixel[]; totalWidth: number } {
   const pixels: MessagePixel[] = [];
   let col = 0;
 
   for (const token of tokens) {
     if (token === ' ') {
-      col += LETTER_WIDTHS[' '];
+      col += widths[' '] || 2;
       continue;
     }
-    const path = LETTER_PATHS[token];
+    const path = paths[token];
     if (path) {
       for (const [r, c] of path) {
         pixels.push({ relRow: r, relCol: col + c });
       }
-      col += (LETTER_WIDTHS[token] || 4) + 1; // 1 column spacing between letters
+      col += (widths[token] || 3) + 1; // 1 column spacing between letters
     }
   }
 
   return { pixels, totalWidth: col > 0 ? col - 1 : 0 };
 }
 
-const MESSAGE_DATA = buildMessagePixels();
+const MESSAGE_1 = buildMessagePixels(MSG1_TOKENS, MSG1_PATHS, MSG1_WIDTHS);
+const MESSAGE_2 = buildMessagePixels(MSG2_TOKENS, MSG2_PATHS, MSG2_WIDTHS);
+
+// Discrete green levels for Phase 2 blinking (4 blinks across 2 seconds)
+// Exactly maps the heatmap contribution levels from brightest to darkest
+const PHASE_2_PALETTE = [
+  '#39d353', // Blink 1: Level 4 (brightest green)
+  '#26a641', // Blink 2: Level 3 (medium green)
+  '#006d32', // Blink 3: Level 2 (darker green)
+  '#0e4429', // Blink 4: Level 1 (darkest green)
+];
+
+// Discrete green levels for Phase 4 blinking (8 blinks across 4 seconds)
+// Stepped discretely per blink from Level 4 down to Level 1
+const PHASE_4_PALETTE = [
+  '#39d353', // Blink 1: Level 4 (brightest green)
+  '#30ba49', // Blink 2
+  '#26a641', // Blink 3: Level 3 (medium green)
+  '#1b923c', // Blink 4
+  '#0d7c35', // Blink 5
+  '#006d32', // Blink 6: Level 2 (darker green)
+  '#07592e', // Blink 7
+  '#0e4429', // Blink 8: Level 1 (darkest green)
+];
 
 function Heatmap({ data }: { data: ContributionDay[] }) {
   const model = useMemo(() => buildCodingGrid(data), [data]);
@@ -862,6 +967,66 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     cellHealthRef.current = cellHealth;
     kickRef.current?.();
 
+    const cellWidth = s * 0.78;
+
+    // Active contribution region tracking and column-based spatial indexing
+    let activeMinX = Infinity;
+    let activeMaxX = -Infinity;
+    let activeMinY = Infinity;
+    let activeMaxY = -Infinity;
+    let activeMinWeek = Infinity;
+    let activeMaxWeek = -Infinity;
+    let hasActiveRegion = false;
+    const activeColumns = new Map<number, CodingCell[]>();
+
+    const updateActiveRegion = () => {
+      activeColumns.clear();
+      let minW = Infinity;
+      let maxW = -Infinity;
+      let minD = Infinity;
+      let maxD = -Infinity;
+      let count = 0;
+
+      for (let i = 0; i < model.cells.length; i++) {
+        const cell = model.cells[i];
+        const health = cellHealth.get(cell.date) ?? 0;
+        if (health > 0) {
+          count++;
+          if (cell.week < minW) minW = cell.week;
+          if (cell.week > maxW) maxW = cell.week;
+          if (cell.day < minD) minD = cell.day;
+          if (cell.day > maxD) maxD = cell.day;
+
+          let colList = activeColumns.get(cell.week);
+          if (!colList) {
+            colList = [];
+            activeColumns.set(cell.week, colList);
+          }
+          colList.push(cell);
+        }
+      }
+
+      if (count > 0) {
+        hasActiveRegion = true;
+        activeMinWeek = minW;
+        activeMaxWeek = maxW;
+        activeMinX = left + (minW + 0.11) * s;
+        activeMaxX = left + (maxW + 0.11) * s + cellWidth;
+        activeMinY = top + (minD + 0.11) * s;
+        activeMaxY = top + (maxD + 0.11) * s + cellWidth;
+      } else {
+        hasActiveRegion = false;
+        activeMinWeek = Infinity;
+        activeMaxWeek = -Infinity;
+        activeMinX = Infinity;
+        activeMaxX = -Infinity;
+        activeMinY = Infinity;
+        activeMaxY = -Infinity;
+      }
+    };
+
+    updateActiveRegion();
+
     // Game state
     type Star = { x: number; y: number; speed: number; size: number; alpha: number };
     type Bullet = { x: number; y: number; vy: number; width: number; height: number; type: ProjectileId; attack: number };
@@ -889,21 +1054,43 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     let particles: Particle[] = [];
     let lastShot = 0;
 
-    let completionPhase: 'none' | 'drawing' | 'pause' | 'flashing' | 'done' = 'none';
+    type CompletionPhase =
+      | 'none'
+      | 'p1_draw'
+      | 'p1_pause'
+      | 'p2_blink'
+      | 'p3_draw'
+      | 'p3_pause'
+      | 'p4_blink'
+      | 'done';
+
+    let completionPhase: CompletionPhase = 'none';
     let completionStartTime = 0;
     let currentPixelIndex = 0;
     let flashVisible = true;
-    const PIXEL_INTERVAL = reduced ? 18 : 28;
-    const PAUSE_DURATION = 500;
-    const FLASH_DURATION = 3500;
-    const FLASH_INTERVAL = 160;
-    const startCol = Math.max(0, Math.floor((model.weeks - MESSAGE_DATA.totalWidth) / 2));
+    let currentFlashColor = '#39d353';
+
+    const PIXEL_INTERVAL = reduced ? 14 : 22;
+    const PAUSE_DURATION = 200;
+    const BLINK_1_DURATION = 2000;
+    const BLINK_2_DURATION = 4000;
+    const BLINK_CYCLE = 500; // 280ms ON, 220ms OFF
+
+    const startCol1 = Math.max(0, Math.floor((model.weeks - MESSAGE_1.totalWidth) / 2));
+    const startCol2 = Math.max(0, Math.floor((model.weeks - MESSAGE_2.totalWidth) / 2));
+
+    const t1_draw = MESSAGE_1.pixels.length * PIXEL_INTERVAL;
+    const t1_pause = t1_draw + PAUSE_DURATION;
+    const t1_blink = t1_pause + BLINK_1_DURATION;
+    const t2_draw = t1_blink + MESSAGE_2.pixels.length * PIXEL_INTERVAL;
+    const t2_pause = t2_draw + PAUSE_DURATION;
+    const t2_blink = t2_pause + BLINK_2_DURATION;
 
     const startCompletion = () => {
       if (isCompletingRef.current) return;
       isCompletingRef.current = true;
       setIsCompleting(true);
-      completionPhase = 'drawing';
+      completionPhase = 'p1_draw';
       completionStartTime = performance.now();
       currentPixelIndex = 0;
       bullets = [];
@@ -948,56 +1135,73 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     const update = () => {
       if (isCompletingRef.current) {
         const elapsed = performance.now() - completionStartTime;
-        const totalPixels = MESSAGE_DATA.pixels.length;
-        const drawDuration = totalPixels * PIXEL_INTERVAL;
 
-        if (elapsed < drawDuration) {
-          completionPhase = 'drawing';
-          currentPixelIndex = Math.min(totalPixels, Math.floor(elapsed / PIXEL_INTERVAL) + 1);
-
-          // Smoothly scroll to track the leading drawing pixel on narrow viewports
+        const trackScroll = (msg: { pixels: MessagePixel[]; totalWidth: number }, sCol: number, idx: number) => {
           const viewportWidth = scrollEl.clientWidth;
           const maxScroll = Math.max(0, scrollEl.scrollWidth - viewportWidth);
           if (maxScroll > 0) {
-            const activePixel = MESSAGE_DATA.pixels[Math.min(currentPixelIndex - 1, totalPixels - 1)];
-            const pixelX = left + (startCol + activePixel.relCol + 0.5) * s;
+            const activePixel = msg.pixels[Math.min(idx - 1, msg.pixels.length - 1)];
+            const pixelX = left + (sCol + activePixel.relCol + 0.5) * s;
             const targetScroll = Math.max(0, Math.min(maxScroll, pixelX - viewportWidth / 2));
             const diff = targetScroll - scrollEl.scrollLeft;
             if (Math.abs(diff) > 0.5) {
               scrollEl.scrollLeft += diff * (reduced ? 1 : 0.1);
             }
           }
-        } else if (elapsed < drawDuration + PAUSE_DURATION) {
-          completionPhase = 'pause';
-          currentPixelIndex = totalPixels;
+        };
 
-          // Smoothly center the message in scroll view
+        const centerScroll = (msg: { pixels: MessagePixel[]; totalWidth: number }, sCol: number) => {
           const viewportWidth = scrollEl.clientWidth;
           const maxScroll = Math.max(0, scrollEl.scrollWidth - viewportWidth);
           if (maxScroll > 0) {
-            const messageCenterX = left + (startCol + MESSAGE_DATA.totalWidth / 2) * s;
+            const messageCenterX = left + (sCol + msg.totalWidth / 2) * s;
             const targetScroll = Math.max(0, Math.min(maxScroll, messageCenterX - viewportWidth / 2));
             const diff = targetScroll - scrollEl.scrollLeft;
             if (Math.abs(diff) > 0.5) {
               scrollEl.scrollLeft += diff * (reduced ? 1 : 0.1);
             }
           }
-        } else if (elapsed < drawDuration + PAUSE_DURATION + FLASH_DURATION) {
-          completionPhase = 'flashing';
-          const flashElapsed = elapsed - (drawDuration + PAUSE_DURATION);
-          flashVisible = Math.floor(flashElapsed / FLASH_INTERVAL) % 2 === 0;
+        };
 
-          const viewportWidth = scrollEl.clientWidth;
-          const maxScroll = Math.max(0, scrollEl.scrollWidth - viewportWidth);
-          if (maxScroll > 0) {
-            const messageCenterX = left + (startCol + MESSAGE_DATA.totalWidth / 2) * s;
-            const targetScroll = Math.max(0, Math.min(maxScroll, messageCenterX - viewportWidth / 2));
-            const diff = targetScroll - scrollEl.scrollLeft;
-            if (Math.abs(diff) > 0.5) {
-              scrollEl.scrollLeft += diff * (reduced ? 1 : 0.1);
-            }
-          }
+        if (elapsed < t1_draw) {
+          // Phase 1 — First message ("HELLO WORLD!! FROM") typing reveal
+          completionPhase = 'p1_draw';
+          currentPixelIndex = Math.min(MESSAGE_1.pixels.length, Math.floor(elapsed / PIXEL_INTERVAL) + 1);
+          trackScroll(MESSAGE_1, startCol1, currentPixelIndex);
+        } else if (elapsed < t1_pause) {
+          // Phase 1 — Brief hold
+          completionPhase = 'p1_pause';
+          currentPixelIndex = MESSAGE_1.pixels.length;
+          centerScroll(MESSAGE_1, startCol1);
+        } else if (elapsed < t1_blink) {
+          // Phase 2 — First message 2-second discrete darkening blink
+          completionPhase = 'p2_blink';
+          const bElapsed = elapsed - t1_pause;
+          const bIndex = Math.min(PHASE_2_PALETTE.length - 1, Math.floor(bElapsed / BLINK_CYCLE));
+          currentFlashColor = PHASE_2_PALETTE[bIndex];
+          flashVisible = (bElapsed % BLINK_CYCLE) < 280;
+          centerScroll(MESSAGE_1, startCol1);
+        } else if (elapsed < t2_draw) {
+          // Phase 3 — Second message ("NIKHIL VIRDI") typing reveal
+          completionPhase = 'p3_draw';
+          const draw2Elapsed = elapsed - t1_blink;
+          currentPixelIndex = Math.min(MESSAGE_2.pixels.length, Math.floor(draw2Elapsed / PIXEL_INTERVAL) + 1);
+          trackScroll(MESSAGE_2, startCol2, currentPixelIndex);
+        } else if (elapsed < t2_pause) {
+          // Phase 3 — Brief hold
+          completionPhase = 'p3_pause';
+          currentPixelIndex = MESSAGE_2.pixels.length;
+          centerScroll(MESSAGE_2, startCol2);
+        } else if (elapsed < t2_blink) {
+          // Phase 4 — Second message 4-second discrete darkening blink
+          completionPhase = 'p4_blink';
+          const bElapsed = elapsed - t2_pause;
+          const bIndex = Math.min(PHASE_4_PALETTE.length - 1, Math.floor(bElapsed / BLINK_CYCLE));
+          currentFlashColor = PHASE_4_PALETTE[bIndex];
+          flashVisible = (bElapsed % BLINK_CYCLE) < 280;
+          centerScroll(MESSAGE_2, startCol2);
         } else {
+          // Phase 5 — Exit Game Mode automatically and restore original heatmap
           completionPhase = 'done';
           setIsCompleting(false);
           isCompletingRef.current = false;
@@ -1018,25 +1222,11 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
         return;
       }
 
-      // Find active cell boundaries
-      let minWi = -1;
-      model.cells.forEach((cell) => {
-        const health = cellHealth.get(cell.date) ?? 0;
-        if (health > 0) {
-          if (minWi === -1) minWi = cell.week;
-          minWi = Math.min(minWi, cell.week);
-        }
-      });
-
-      let minX = 0;
+      const minX = 0;
       const maxX = width - player.width;
-      if (minWi !== -1) {
-        minX = Math.max(0, Math.min(minWi * s, maxX));
-      }
-
       player.x = Math.max(minX, Math.min(maxX, player.x));
 
-      // Automatic sweep movement
+      // Automatic sweep movement across the entire heatmap width
       player.x += player.speed * player.direction;
       if (player.x >= maxX) {
         player.x = maxX;
@@ -1071,12 +1261,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
       }
 
       // Check if game complete
-      let anyActive = false;
-      cellHealth.forEach((health) => {
-        if (health > 0) anyActive = true;
-      });
-
-      if (!anyActive && initialActiveCount > 0 && !isCompletingRef.current) {
+      if (!hasActiveRegion && initialActiveCount > 0 && !isCompletingRef.current) {
         startCompletion();
         return;
       }
@@ -1105,65 +1290,79 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
       });
       particles = particles.filter((p) => p.life < p.maxLife);
 
-      // Collision detection: check bullets against cells
+      // Collision detection: check bullets against the active contribution region
       let hitOccurred = false;
-      const cellWidth = s * 0.78;
 
-      for (let b = bullets.length - 1; b >= 0; b--) {
-        const bullet = bullets[b];
+      if (hasActiveRegion) {
+        for (let b = bullets.length - 1; b >= 0; b--) {
+          const bullet = bullets[b];
 
-        // Bullets travel upward; find the intersecting cell closest to the bullet's origin (largest cellY)
-        let hitCellIndex = -1;
-        let maxCellY = -Infinity;
-
-        for (let i = 0; i < model.cells.length; i++) {
-          const cell = model.cells[i];
-          const health = cellHealth.get(cell.date) ?? 0;
-          if (health <= 0) continue; // 0-contribution / destroyed cells are ignored
-
-          const cellX = left + (cell.week + 0.11) * s;
-          const cellY = top + (cell.day + 0.11) * s;
-
+          // Spatial rejection: skip bullets completely outside the remaining active contribution region
           if (
-            bullet.x < cellX + cellWidth &&
-            bullet.x + bullet.width > cellX &&
-            bullet.y < cellY + cellWidth &&
-            bullet.y + bullet.height > cellY
+            bullet.x + bullet.width < activeMinX ||
+            bullet.x > activeMaxX ||
+            bullet.y + bullet.height < activeMinY ||
+            bullet.y > activeMaxY
           ) {
-            if (cellY > maxCellY) {
-              maxCellY = cellY;
-              hitCellIndex = i;
-            }
+            continue;
           }
-        }
 
-        if (hitCellIndex !== -1) {
-          // Consume bullet immediately so it cannot hit again in this or subsequent frames
-          bullets.splice(b, 1);
+          // Target only the week column(s) intersecting this bullet's horizontal span
+          const startWeek = Math.max(activeMinWeek, Math.floor((bullet.x - left) / s));
+          const endWeek = Math.min(activeMaxWeek, Math.floor((bullet.x + bullet.width - left) / s));
 
-          const cell = model.cells[hitCellIndex];
-          const currentLevel = cellHealth.get(cell.date) ?? 0;
-          if (currentLevel > 0) {
-            const rawNext = currentLevel - bullet.attack;
-            const nextLevel = rawNext <= 0.0001 ? 0 : Math.round(rawNext * 100) / 100;
-            cellHealth.set(cell.date, nextLevel);
+          let hitCell: CodingCell | null = null;
+          let maxCellY = -Infinity;
 
-            let remainingActive = 0;
-            cellHealth.forEach((health) => {
-              if (health > 0) remainingActive++;
-            });
+          for (let w = startWeek; w <= endWeek; w++) {
+            const colCells = activeColumns.get(w);
+            if (!colCells) continue;
 
-            if (remainingActive === 0 && initialActiveCount > 0 && !isCompletingRef.current) {
-              hitOccurred = true;
-              startCompletion();
-              break;
-            } else {
+            for (let i = 0; i < colCells.length; i++) {
+              const cell = colCells[i];
               const cellX = left + (cell.week + 0.11) * s;
               const cellY = top + (cell.day + 0.11) * s;
 
-              const hitColor = rgb(interpolateLevelColor(GAME_COLORS, currentLevel));
-              explode(cellX + cellWidth / 2, cellY + cellWidth / 2, hitColor);
-              hitOccurred = true;
+              if (
+                bullet.x < cellX + cellWidth &&
+                bullet.x + bullet.width > cellX &&
+                bullet.y < cellY + cellWidth &&
+                bullet.y + bullet.height > cellY
+              ) {
+                // Find intersecting cell closest to the bullet's origin (largest cellY)
+                if (cellY > maxCellY) {
+                  maxCellY = cellY;
+                  hitCell = cell;
+                }
+              }
+            }
+          }
+
+          if (hitCell) {
+            // Consume bullet immediately so it cannot hit again in this or subsequent frames
+            bullets.splice(b, 1);
+
+            const currentLevel = cellHealth.get(hitCell.date) ?? 0;
+            if (currentLevel > 0) {
+              const rawNext = currentLevel - bullet.attack;
+              const nextLevel = rawNext <= 0.0001 ? 0 : Math.round(rawNext * 100) / 100;
+              cellHealth.set(hitCell.date, nextLevel);
+              if (nextLevel === 0) {
+                updateActiveRegion();
+              }
+
+              if (!hasActiveRegion && initialActiveCount > 0 && !isCompletingRef.current) {
+                hitOccurred = true;
+                startCompletion();
+                break;
+              } else {
+                const cellX = left + (hitCell.week + 0.11) * s;
+                const cellY = top + (hitCell.day + 0.11) * s;
+
+                const hitColor = rgb(interpolateLevelColor(GAME_COLORS, currentLevel));
+                explode(cellX + cellWidth / 2, cellY + cellWidth / 2, hitColor);
+                hitOccurred = true;
+              }
             }
           }
         }
@@ -1192,53 +1391,45 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
         const radius = s * 0.17;
         const startRow = 1;
 
-        if (completionPhase === 'drawing') {
-          for (let i = 0; i < currentPixelIndex; i++) {
-            const p = MESSAGE_DATA.pixels[i];
-            const col = startCol + p.relCol;
+        const drawMessagePixels = (
+          msg: { pixels: MessagePixel[]; totalWidth: number },
+          sCol: number,
+          count: number,
+          color: string,
+          highlightHead: boolean
+        ) => {
+          for (let i = 0; i < count; i++) {
+            const p = msg.pixels[i];
+            const col = sCol + p.relCol;
             const row = startRow + p.relRow;
             if (col < 0 || col >= model.weeks || row < 0 || row > 6) continue;
 
             const px = left + (col + 0.11) * s;
             const py = top + (row + 0.11) * s;
-            const isHead = i === currentPixelIndex - 1;
+            const isHead = highlightHead && i === count - 1;
 
             gCtx.beginPath();
             gCtx.roundRect(px, py, w, w, radius);
-            gCtx.fillStyle = isHead ? '#ffffff' : '#39d353';
+            gCtx.fillStyle = isHead ? '#ffffff' : color;
             gCtx.fill();
           }
-        } else if (completionPhase === 'pause') {
-          for (let i = 0; i < MESSAGE_DATA.pixels.length; i++) {
-            const p = MESSAGE_DATA.pixels[i];
-            const col = startCol + p.relCol;
-            const row = startRow + p.relRow;
-            if (col < 0 || col >= model.weeks || row < 0 || row > 6) continue;
+        };
 
-            const px = left + (col + 0.11) * s;
-            const py = top + (row + 0.11) * s;
-
-            gCtx.beginPath();
-            gCtx.roundRect(px, py, w, w, radius);
-            gCtx.fillStyle = '#39d353';
-            gCtx.fill();
-          }
-        } else if (completionPhase === 'flashing') {
+        if (completionPhase === 'p1_draw') {
+          drawMessagePixels(MESSAGE_1, startCol1, currentPixelIndex, '#39d353', true);
+        } else if (completionPhase === 'p1_pause') {
+          drawMessagePixels(MESSAGE_1, startCol1, MESSAGE_1.pixels.length, '#39d353', false);
+        } else if (completionPhase === 'p2_blink') {
           if (flashVisible) {
-            for (let i = 0; i < MESSAGE_DATA.pixels.length; i++) {
-              const p = MESSAGE_DATA.pixels[i];
-              const col = startCol + p.relCol;
-              const row = startRow + p.relRow;
-              if (col < 0 || col >= model.weeks || row < 0 || row > 6) continue;
-
-              const px = left + (col + 0.11) * s;
-              const py = top + (row + 0.11) * s;
-
-              gCtx.beginPath();
-              gCtx.roundRect(px, py, w, w, radius);
-              gCtx.fillStyle = '#39d353';
-              gCtx.fill();
-            }
+            drawMessagePixels(MESSAGE_1, startCol1, MESSAGE_1.pixels.length, currentFlashColor, false);
+          }
+        } else if (completionPhase === 'p3_draw') {
+          drawMessagePixels(MESSAGE_2, startCol2, currentPixelIndex, '#39d353', true);
+        } else if (completionPhase === 'p3_pause') {
+          drawMessagePixels(MESSAGE_2, startCol2, MESSAGE_2.pixels.length, '#39d353', false);
+        } else if (completionPhase === 'p4_blink') {
+          if (flashVisible) {
+            drawMessagePixels(MESSAGE_2, startCol2, MESSAGE_2.pixels.length, currentFlashColor, false);
           }
         }
 
