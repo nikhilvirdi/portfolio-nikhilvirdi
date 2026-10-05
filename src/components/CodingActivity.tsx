@@ -224,31 +224,61 @@ const GAME_EXTRA_HEIGHT = GAME_SPACE_BELOW_HEATMAP + SHOOTER_HEIGHT + SHOOTER_BR
 // ==================================================
 // Kenney Pixel Shmup Assets
 // ==================================================
-const SHIP_COUNT = 12;
-const SHIP_SPRITES = Array.from({ length: SHIP_COUNT }, (_, i) => {
-  const id = String(i).padStart(4, '0');
-  return `/assets/game/ships/ship_${id}.png`;
-});
+const SHIPS = [
+  { id: 0, name: 'Ship 1', src: '/assets/game/ships/ship_0000.png', fireRate: 6 },
+  { id: 1, name: 'Ship 2', src: '/assets/game/ships/ship_0001.png', fireRate: 8 },
+  { id: 2, name: 'Ship 3', src: '/assets/game/ships/ship_0002.png', fireRate: 4 },
+  { id: 3, name: 'Ship 4', src: '/assets/game/ships/ship_0003.png', fireRate: 4 },
+  { id: 4, name: 'Ship 5', src: '/assets/game/ships/ship_0004.png', fireRate: 8 },
+  { id: 5, name: 'Ship 6', src: '/assets/game/ships/ship_0005.png', fireRate: 6 },
+  { id: 6, name: 'Ship 7', src: '/assets/game/ships/ship_0006.png', fireRate: 8 },
+  { id: 7, name: 'Ship 8', src: '/assets/game/ships/ship_0007.png', fireRate: 4 },
+  { id: 8, name: 'Ship 9', src: '/assets/game/ships/ship_0008.png', fireRate: 6 },
+  { id: 9, name: 'Ship 10', src: '/assets/game/ships/ship_0009.png', fireRate: 6 },
+  { id: 10, name: 'Ship 11', src: '/assets/game/ships/ship_0010.png', fireRate: 8 },
+  { id: 11, name: 'Ship 12', src: '/assets/game/ships/ship_0011.png', fireRate: 4 },
+] as const;
 
 const PROJECTILES = [
-  { id: 'laser', name: 'Laser', src: '/assets/game/projectiles/tile_0000.png' },
-  { id: 'twin', name: 'Twin Laser', src: '/assets/game/projectiles/tile_0001.png' },
-  { id: 'pulse', name: 'Pulse', src: '/assets/game/projectiles/tile_0002.png' },
-  { id: 'plasma', name: 'Plasma', src: '/assets/game/projectiles/tile_0003.png' },
-  { id: 'missile', name: 'Missile', src: '/assets/game/projectiles/tile_0012.png' },
+  { id: 'laser', name: 'Laser', src: '/assets/game/projectiles/tile_0000.png', attack: 1.0 },
+  { id: 'twin', name: 'Twin Laser', src: '/assets/game/projectiles/tile_0001.png', attack: 1.0 },
+  { id: 'pulse', name: 'Pulse', src: '/assets/game/projectiles/tile_0002.png', attack: 1.5 },
+  { id: 'plasma', name: 'Plasma', src: '/assets/game/projectiles/tile_0003.png', attack: 2.0 },
+  { id: 'missile', name: 'Missile', src: '/assets/game/projectiles/tile_0012.png', attack: 0.5 },
 ] as const;
 
 type ProjectileId = typeof PROJECTILES[number]['id'];
+type ProjectileConfig = typeof PROJECTILES[number];
+
+const PROJECTILE_MAP = new Map<ProjectileId, ProjectileConfig>(
+  PROJECTILES.map((proj) => [proj.id, proj])
+);
+
+// Predefined palette colors for level interpolation (0..4)
+const fgRGB: RGB = [242, 242, 240];
+const bgRGB: RGB = [0, 0, 0];
+const emptyRGB = mixRGB(bgRGB, fgRGB, 0.11);
+const GAME_COLORS: RGB[] = [emptyRGB, ...resolvePalette('github', true).map(hex)];
+
+export function interpolateLevelColor(palette: RGB[], level: number): RGB {
+  if (level <= 0) return palette[0];
+  if (level >= palette.length - 1) return palette[palette.length - 1];
+  const low = Math.floor(level);
+  const high = Math.min(palette.length - 1, low + 1);
+  const frac = level - low;
+  if (frac <= 0.0001) return palette[low];
+  return mixRGB(palette[low], palette[high], frac);
+}
 
 // Preload assets into image cache for instantaneous, flicker-free rendering
 const shipImages: HTMLImageElement[] = [];
 const projectileImages = new Map<ProjectileId, HTMLImageElement>();
 
 if (typeof window !== 'undefined') {
-  SHIP_SPRITES.forEach((src, idx) => {
+  SHIPS.forEach((ship) => {
     const img = new Image();
-    img.src = src;
-    shipImages[idx] = img;
+    img.src = ship.src;
+    shipImages[ship.id] = img;
   });
   PROJECTILES.forEach((proj) => {
     const img = new Image();
@@ -266,7 +296,6 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
   const [selectedProjectile, setSelectedProjectile] = useState<ProjectileId>('laser');
   const [selectedShipIndex, setSelectedShipIndex] = useState<number>(0);
 
-  const lastShipIndexRef = useRef<number>(-1);
   const selectedProjectileRef = useRef<ProjectileId>(selectedProjectile);
   selectedProjectileRef.current = selectedProjectile;
   const selectedShipRef = useRef<number>(selectedShipIndex);
@@ -287,22 +316,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
   gameModeRef.current = gameMode;
 
   const handleToggleGameMode = () => {
-    setGameMode((prev) => {
-      const nextMode = !prev;
-      if (nextMode) {
-        // Turning ON: randomly select a ship from the pool without immediately repeating the previous ship
-        let nextShip = Math.floor(Math.random() * SHIP_COUNT);
-        if (SHIP_COUNT > 1 && lastShipIndexRef.current >= 0) {
-          while (nextShip === lastShipIndexRef.current) {
-            nextShip = Math.floor(Math.random() * SHIP_COUNT);
-          }
-        }
-        lastShipIndexRef.current = nextShip;
-        setSelectedShipIndex(nextShip);
-        selectedShipRef.current = nextShip;
-      }
-      return nextMode;
-    });
+    setGameMode((prev) => !prev);
   };
 
   // Trigger animation transition when legend highlight level changes
@@ -384,7 +398,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
         const currentLevel = (gameModeRef.current && cellHealthRef.current)
           ? (cellHealthRef.current.get(cell.date) ?? cell.level)
           : cell.level;
-        const base = colors[currentLevel];
+        const base = interpolateLevelColor(colors, currentLevel);
         let r = base[0];
         let g = base[1];
         let bl = base[2];
@@ -709,7 +723,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
 
     // Game state
     type Star = { x: number; y: number; speed: number; size: number; alpha: number };
-    type Bullet = { x: number; y: number; vy: number; width: number; height: number; type: ProjectileId };
+    type Bullet = { x: number; y: number; vy: number; width: number; height: number; type: ProjectileId; attack: number };
     type Particle = { x: number; y: number; vx: number; vy: number; color: string; size: number; alpha: number; life: number; maxLife: number };
 
     const stars: Star[] = Array.from({ length: reduced ? 70 : 140 }).map(() => ({
@@ -733,12 +747,11 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     let bullets: Bullet[] = [];
     let particles: Particle[] = [];
     let lastShot = 0;
-    const cooldown = reduced ? 200 : 140;
-
-    const colors = ['#1b1b1b', '#0e4429', '#006d32', '#26a641', '#39d353'];
 
     const shoot = () => {
       const pType = selectedProjectileRef.current;
+      const projConfig = PROJECTILE_MAP.get(pType);
+      const attack = projConfig ? projConfig.attack : 1.0;
       bullets.push({
         x: player.x + player.width / 2 - 2,
         y: player.y - 4,
@@ -746,6 +759,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
         width: 4,
         height: 10,
         type: pType,
+        attack,
       });
     };
 
@@ -817,9 +831,11 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
         }
       }
 
-      // Auto-shooting
+      // Auto-shooting based on selected ship's fireRate
       const now = Date.now();
-      if (now - lastShot >= cooldown) {
+      const currentShip = SHIPS[selectedShipRef.current] || SHIPS[0];
+      const fireInterval = (1000 / currentShip.fireRate) * (reduced ? 1.4 : 1.0);
+      if (now - lastShot >= fireInterval) {
         shoot();
         lastShot = now;
       }
@@ -901,13 +917,15 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
           const cell = model.cells[hitCellIndex];
           const currentLevel = cellHealth.get(cell.date) ?? 0;
           if (currentLevel > 0) {
-            const nextLevel = currentLevel - 1;
+            const rawNext = currentLevel - bullet.attack;
+            const nextLevel = rawNext <= 0.0001 ? 0 : Math.round(rawNext * 100) / 100;
             cellHealth.set(cell.date, nextLevel);
 
             const cellX = left + (cell.week + 0.11) * s;
             const cellY = top + (cell.day + 0.11) * s;
 
-            explode(cellX + cellWidth / 2, cellY + cellWidth / 2, colors[currentLevel] || colors[0]);
+            const hitColor = rgb(interpolateLevelColor(GAME_COLORS, currentLevel));
+            explode(cellX + cellWidth / 2, cellY + cellWidth / 2, hitColor);
             hitOccurred = true;
           }
         }
@@ -1049,39 +1067,85 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
         </div>
       </div>
 
-      {/* Legend below the scrollable container */}
+      {/* Legend / Controls row below the scrollable container */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-3">
-        <div className="flex items-center gap-1.5" onMouseLeave={() => setLevel(-1)}>
-          <span className="mr-0.5">Less</span>
-          {colors.map((color, index) => (
-            <button
-              key={color}
-              type="button"
-              aria-label={`Highlight level ${index}`}
-              aria-pressed={level === index}
-              title={['No submissions', 'Light', 'Moderate', 'Heavy', 'Heaviest'][index]}
-              onMouseEnter={() => setLevel(index)}
-              onFocus={() => setLevel(index)}
-              onBlur={() => setLevel(-1)}
-              onClick={() => setLevel((value) => (value === index ? -1 : index))}
-              className="h-[11px] w-[11px] rounded-[2px] border-0 p-0 hover:scale-125 focus-visible:outline-2 focus-visible:outline-offset-1"
-              style={{
-                background: color,
-                outlineColor: '#f2f2f0',
-                boxShadow: 'inset 0 0 0 1px rgba(127,127,127,0.12)',
-              }}
-            />
-          ))}
-          <span className="ml-0.5">More</span>
-        </div>
+        {!gameMode ? (
+          /* Normal mode: Less / More contribution legend on the left */
+          <div className="flex items-center gap-1.5" onMouseLeave={() => setLevel(-1)}>
+            <span className="mr-0.5">Less</span>
+            {colors.map((color, index) => (
+              <button
+                key={color}
+                type="button"
+                aria-label={`Highlight level ${index}`}
+                aria-pressed={level === index}
+                title={['No submissions', 'Light', 'Moderate', 'Heavy', 'Heaviest'][index]}
+                onMouseEnter={() => setLevel(index)}
+                onFocus={() => setLevel(index)}
+                onBlur={() => setLevel(-1)}
+                onClick={() => setLevel((value) => (value === index ? -1 : index))}
+                className="h-[11px] w-[11px] rounded-[2px] border-0 p-0 hover:scale-125 focus-visible:outline-2 focus-visible:outline-offset-1"
+                style={{
+                  background: color,
+                  outlineColor: '#f2f2f0',
+                  boxShadow: 'inset 0 0 0 1px rgba(127,127,127,0.12)',
+                }}
+              />
+            ))}
+            <span className="ml-0.5">More</span>
+          </div>
+        ) : (
+          /* Game Mode ON: Ship selector in the freed left-side position */
+          <div className="flex items-center gap-1.5 min-w-0 max-w-full" role="radiogroup" aria-label="Select ship">
+            <span className="text-[11px] text-muted select-none shrink-0">Ship</span>
+            <span className="text-[10px] text-neutral-400 font-mono select-none shrink-0 px-1.5 py-0.5 rounded bg-black border border-white/20">
+              {(SHIPS[selectedShipIndex] || SHIPS[0]).fireRate} shots/s
+            </span>
+            <div className="flex items-center gap-0.5 rounded-md border border-white/40 bg-black p-0.5 overflow-x-auto max-w-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {SHIPS.map((ship) => {
+                const isSelected = selectedShipIndex === ship.id;
+                return (
+                  <button
+                    key={ship.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    aria-label={`${ship.name}, ${ship.fireRate} shots/s`}
+                    title={`${ship.name} (${ship.fireRate} shots/s)`}
+                    onClick={() => {
+                      setSelectedShipIndex(ship.id);
+                      selectedShipRef.current = ship.id;
+                    }}
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded transition-all focus-visible:outline-2 focus-visible:outline-offset-1 ${
+                      isSelected
+                        ? 'border border-neutral-600 bg-neutral-800 shadow-sm'
+                        : 'border border-transparent opacity-50 hover:bg-neutral-800/60 hover:opacity-100'
+                    }`}
+                    style={{ outlineColor: '#f2f2f0' }}
+                  >
+                    <img
+                      src={ship.src}
+                      alt=""
+                      width={14}
+                      height={14}
+                      className="pointer-events-none select-none"
+                      style={{
+                        imageRendering: 'pixelated',
+                      }}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
-        {/* Game Mode Controls */}
-        <div className="flex items-center gap-3">
-          {/* Projectile/Weapon Selector (Game Mode only) */}
+        {/* Right side: Weapon selector (if Game Mode ON) + Game Mode Toggle */}
+        <div className="flex items-center gap-3 shrink-0">
           {gameMode && (
-            <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Select projectile type">
-              <span className="text-[11px] text-muted select-none">Weapon</span>
-              <div className="flex items-center gap-0.5 rounded-md border border-neutral-800 bg-neutral-900/90 p-0.5">
+            <div className="flex items-center gap-1.5 shrink-0" role="radiogroup" aria-label="Select projectile type">
+              <span className="text-[11px] text-muted select-none shrink-0">Weapon</span>
+              <div className="flex items-center gap-0.5 rounded-md border border-white/40 bg-black p-0.5">
                 {PROJECTILES.map((proj) => {
                   const isSelected = selectedProjectile === proj.id;
                   return (
@@ -1090,10 +1154,13 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
                       type="button"
                       role="radio"
                       aria-checked={isSelected}
-                      aria-label={proj.name}
-                      title={proj.name}
-                      onClick={() => setSelectedProjectile(proj.id)}
-                      className={`flex h-6 w-6 items-center justify-center rounded transition-all focus-visible:outline-2 focus-visible:outline-offset-1 ${
+                      aria-label={`${proj.name}, ${proj.attack} attack`}
+                      title={`${proj.name} (${proj.attack} ATK)`}
+                      onClick={() => {
+                        setSelectedProjectile(proj.id);
+                        selectedProjectileRef.current = proj.id;
+                      }}
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded transition-all focus-visible:outline-2 focus-visible:outline-offset-1 ${
                         isSelected
                           ? 'border border-neutral-600 bg-neutral-800 shadow-sm'
                           : 'border border-transparent opacity-50 hover:bg-neutral-800/60 hover:opacity-100'
@@ -1118,7 +1185,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
           )}
 
           {/* Game Mode Toggle */}
-          <div className="flex items-center gap-2 border-l border-neutral-800 pl-3">
+          <div className="flex items-center gap-2 border-l border-neutral-800 pl-3 shrink-0">
             <span className="text-[11px] text-muted select-none" id="game-mode-label">Game Mode</span>
             <button
               type="button"
