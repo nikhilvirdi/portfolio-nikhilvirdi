@@ -22,7 +22,6 @@ export interface TechDef {
   name: string;
   svg: string;
   invert?: boolean;
-  message?: string;
 }
 
 interface TechItem extends TechDef {
@@ -37,57 +36,51 @@ interface TechItem extends TechDef {
 }
 
 export const BASE_TECH_DEFS: TechDef[] = [
-  { name: 'Java', svg: javaSvg, message: "Java's my favorite language btw" },
-  { name: 'TypeScript', svg: typescriptSvg, message: "i just add type annotations over javascript and call it TypeScript" },
-  { name: 'JavaScript', svg: javascriptSvg, message: "haha i always forget JavaScript's syntax" },
-  { name: 'Python', svg: pythonSvg, message: "i use python for AI stuff" },
-  { name: 'C', svg: '/icons/C.webp', message: "C's the OG, i respect it from a distance" },
+  { name: 'Java', svg: javaSvg },
+  { name: 'TypeScript', svg: typescriptSvg },
+  { name: 'JavaScript', svg: javascriptSvg },
+  { name: 'Python', svg: pythonSvg },
+  { name: 'C', svg: '/icons/C.webp' },
   {
     name: 'Golang',
     svg: '/logos/golang.png',
-    message: "I love the gopher of golang, that's why i thought of learning it",
   },
 
-  { name: 'Node.js', svg: nodejsSvg, message: "yk i use Node.js for backend??" },
-  { name: 'Express', svg: expressSvg, invert: true, message: "express is the framework holding my APIs together" },
-  { name: 'Postman', svg: postmanSvg, message: "i test my APIs on postman before trusting them anywhere else" },
-  { name: 'Jest', svg: '/logos/jest.png', message: "i use jest to test my code, when i actually remember to write tests" },
-  { name: 'Redis', svg: '/logos/redis.png', message: "redis caches my data so postgres doesn't have to sweat every request" },
+  { name: 'Node.js', svg: nodejsSvg },
+  { name: 'Express', svg: expressSvg, invert: true },
+  { name: 'Postman', svg: postmanSvg },
+  { name: 'Jest', svg: '/logos/jest.png' },
+  { name: 'Redis', svg: '/logos/redis.png' },
 
-  { name: 'PostgreSQL', svg: postgresqlSvg, message: "my data lives in postgres, rent free" },
-  { name: 'Prisma', svg: prismaSvg, invert: true, message: "prisma's the middleman between me and my postgres" },
-  { name: 'HTML5', svg: html5Svg, message: "html reminds me of my 1st sem" },
-  { name: 'CSS3', svg: css3Svg, message: "css used to help me add colors in my dead frontends till i started vibecoding frontend using tailwind" },
+  { name: 'PostgreSQL', svg: postgresqlSvg },
+  { name: 'Prisma', svg: prismaSvg, invert: true },
+  { name: 'HTML5', svg: html5Svg },
+  { name: 'CSS3', svg: css3Svg },
 
-  { name: 'Docker', svg: dockerSvg, message: "docker's my fav technology, once helped me run 10 servers on my one laptop only" },
-  { name: 'Nginx', svg: nginxSvg, message: "nginx is my load balancer, reverse proxy friend, and sometimes cacher too" },
-  { name: 'GitHub Actions', svg: githubactionsSvg, message: "github actions runs my CI so i don't have to remember to" },
-  { name: 'Git', svg: gitSvg, message: "git remembers every mistake i've ever committed, literally" },
-  { name: 'GitHub', svg: githubSvg, invert: true, message: "github's home to way too many of my repos, only some of them finished" },
+  { name: 'Docker', svg: dockerSvg },
+  { name: 'Nginx', svg: nginxSvg },
+  { name: 'GitHub Actions', svg: githubactionsSvg },
+  { name: 'Git', svg: gitSvg },
+  { name: 'GitHub', svg: githubSvg, invert: true },
   {
     name: 'JWT',
     svg: '/icons/jwt.png',
-    message: "i've hardly used jwt in any of my projects as of now",
   },
   {
     name: 'NumPy',
     svg: '/logos/numpy.png',
-    message: "numpy handles the math so i don't have to think about it too hard",
   },
   {
     name: 'Kafka',
     svg: '/logos/kafka.png',
-    message: "still figuring out queues and topics, don't test me on this yet",
   },
   {
     name: 'GraphQL',
     svg: '/logos/graphql.png',
-    message: "i know it exists and that's about it for now",
   },
   {
     name: 'gRPC',
     svg: '/logos/grpc.png',
-    message: "on my to-learn list, haven't shipped anything with it yet",
   },
 ];
 
@@ -309,22 +302,13 @@ function FloatingIcon({
   );
 }
 
-interface TechStackFloatingProps {
-  onActiveMessageChange?: (message: string | null) => void;
-}
-
-export default function TechStackFloating({ onActiveMessageChange }: TechStackFloatingProps = {}) {
+export default function TechStackFloating() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mouseX = useRef<number>(-9999);
   const mouseY = useRef<number>(-9999);
   const iconRefs = useRef<{ [name: string]: HTMLElement | null }>({});
   const prevWidthRef = useRef<number>(844);
   const [items, setItems] = useState<TechItem[]>(() => generateFloatingItems(844, 640));
-  const onActiveChangeRef = useRef(onActiveMessageChange);
-
-  useEffect(() => {
-    onActiveChangeRef.current = onActiveMessageChange;
-  }, [onActiveMessageChange]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -409,47 +393,6 @@ export default function TechStackFloating({ onActiveMessageChange }: TechStackFl
     };
   }, []);
 
-  useEffect(() => {
-    let animId: number;
-    let currentActiveRef: string | null = null;
-    const REPEL_RADIUS = 150;
-
-    const updateClosest = () => {
-      if (containerRef.current) {
-        const mx = mouseX.current;
-        const my = mouseY.current;
-        let closestMsg: string | null = null;
-
-        if (mx !== -9999 && my !== -9999) {
-          const contRect = containerRef.current.getBoundingClientRect();
-          let minDist = REPEL_RADIUS;
-
-          for (const item of items) {
-            const baseCenterX = item.x;
-            const baseCenterY = (item.y / 100) * contRect.height;
-            const dist = Math.hypot(baseCenterX - mx, baseCenterY - my);
-            if (dist < minDist) {
-              minDist = dist;
-              closestMsg = item.message || null;
-            }
-          }
-        }
-
-        if (closestMsg !== currentActiveRef) {
-          currentActiveRef = closestMsg;
-          onActiveChangeRef.current?.(closestMsg);
-        }
-      }
-      animId = requestAnimationFrame(updateClosest);
-    };
-
-    animId = requestAnimationFrame(updateClosest);
-    return () => {
-      cancelAnimationFrame(animId);
-      onActiveChangeRef.current?.(null);
-    };
-  }, [items]);
-
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
@@ -460,7 +403,6 @@ export default function TechStackFloating({ onActiveMessageChange }: TechStackFl
   const handleMouseLeave = () => {
     mouseX.current = -9999;
     mouseY.current = -9999;
-    onActiveChangeRef.current?.(null);
   };
 
   return (

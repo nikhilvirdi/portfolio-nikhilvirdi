@@ -4,11 +4,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF, Center } from '@react-three/drei';
 import { getHeroProgress } from '../utils/heroScroll';
 
-interface AvatarModelProps {
-  hasActiveTech?: boolean;
-}
-
-export default function AvatarModel({ hasActiveTech = false }: AvatarModelProps) {
+export default function AvatarModel() {
   const { scene } = useGLTF('/models/avatar-2.glb');
   const { gl } = useThree();
 
@@ -16,7 +12,6 @@ export default function AvatarModel({ hasActiveTech = false }: AvatarModelProps)
 
   // Constants
   const BASE_ROTATION_X = (5 * Math.PI) / 180; // ~5° permanent forward lean
-  const HOVER_PITCH_ANGLE = (6 * Math.PI) / 180; // ~6° added pitch toward viewer when active
   const BASE_ROTATION_Y = -Math.PI / 2; // -90° resting rotation facing viewer
   const MAX_TURN_ANGLE = (22.5 * Math.PI) / 180; // ~+22.5° turn toward Hero headline
   const BOB_SPEED = Math.PI * 0.5; // ~4 second period (2 * PI / 4 = 0.5 * PI)
@@ -28,11 +23,6 @@ export default function AvatarModel({ hasActiveTech = false }: AvatarModelProps)
   const clickTimeRef = useRef<number>(-999);
   const currentScaleY = useRef<number>(1);
   const currentScaleXZ = useRef<number>(1);
-  const activeTechRef = useRef(hasActiveTech);
-
-  useEffect(() => {
-    activeTechRef.current = hasActiveTech;
-  }, [hasActiveTech]);
 
   // Trigger squash-and-stretch on click of avatar or canvas
   const triggerBounce = () => {
@@ -71,12 +61,10 @@ export default function AvatarModel({ hasActiveTech = false }: AvatarModelProps)
     const group = groupRef.current;
     if (!group) return;
 
-    // ── 1. Forward lean on X-axis (baseline forward lean + hover pitch towards viewer) ──
-    const isHoverActive = activeTechRef.current;
-    const targetRotationX = BASE_ROTATION_X + (isHoverActive ? HOVER_PITCH_ANGLE : 0);
+    // ── 1. Forward lean on X-axis (baseline forward lean) ──
     group.rotation.x = THREE.MathUtils.lerp(
       group.rotation.x,
-      targetRotationX,
+      BASE_ROTATION_X,
       Math.min(1, delta * 12)
     );
 
