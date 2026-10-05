@@ -221,12 +221,57 @@ const SHOOTER_HEIGHT = 20; // Spacecraft sprite height
 const SHOOTER_BREATHING_ROOM = 40; // Clearance below spacecraft & glow animation
 const GAME_EXTRA_HEIGHT = GAME_SPACE_BELOW_HEATMAP + SHOOTER_HEIGHT + SHOOTER_BREATHING_ROOM; // 110px
 
+// ==================================================
+// Kenney Pixel Shmup Assets
+// ==================================================
+const SHIP_COUNT = 12;
+const SHIP_SPRITES = Array.from({ length: SHIP_COUNT }, (_, i) => {
+  const id = String(i).padStart(4, '0');
+  return `/assets/game/ships/ship_${id}.png`;
+});
+
+const PROJECTILES = [
+  { id: 'laser', name: 'Laser', src: '/assets/game/projectiles/tile_0000.png' },
+  { id: 'twin', name: 'Twin Laser', src: '/assets/game/projectiles/tile_0001.png' },
+  { id: 'pulse', name: 'Pulse', src: '/assets/game/projectiles/tile_0002.png' },
+  { id: 'plasma', name: 'Plasma', src: '/assets/game/projectiles/tile_0003.png' },
+  { id: 'missile', name: 'Missile', src: '/assets/game/projectiles/tile_0012.png' },
+] as const;
+
+type ProjectileId = typeof PROJECTILES[number]['id'];
+
+// Preload assets into image cache for instantaneous, flicker-free rendering
+const shipImages: HTMLImageElement[] = [];
+const projectileImages = new Map<ProjectileId, HTMLImageElement>();
+
+if (typeof window !== 'undefined') {
+  SHIP_SPRITES.forEach((src, idx) => {
+    const img = new Image();
+    img.src = src;
+    shipImages[idx] = img;
+  });
+  PROJECTILES.forEach((proj) => {
+    const img = new Image();
+    img.src = proj.src;
+    projectileImages.set(proj.id, img);
+  });
+}
+
 function Heatmap({ data }: { data: ContributionDay[] }) {
   const model = useMemo(() => buildCodingGrid(data), [data]);
   const [active, setActive] = useState(-1);
   const [level, setLevel] = useState(-1);
   const [notice, setNotice] = useState('');
   const [gameMode, setGameMode] = useState(false);
+  const [selectedProjectile, setSelectedProjectile] = useState<ProjectileId>('laser');
+  const [selectedShipIndex, setSelectedShipIndex] = useState<number>(0);
+
+  const lastShipIndexRef = useRef<number>(-1);
+  const selectedProjectileRef = useRef<ProjectileId>(selectedProjectile);
+  selectedProjectileRef.current = selectedProjectile;
+  const selectedShipRef = useRef<number>(selectedShipIndex);
+  selectedShipRef.current = selectedShipIndex;
+
   const root = useRef<HTMLDivElement>(null);
   const scrollBox = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLDivElement>(null);
@@ -240,6 +285,25 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
   levelRef.current = level;
   const gameModeRef = useRef(gameMode);
   gameModeRef.current = gameMode;
+
+  const handleToggleGameMode = () => {
+    setGameMode((prev) => {
+      const nextMode = !prev;
+      if (nextMode) {
+        // Turning ON: randomly select a ship from the pool without immediately repeating the previous ship
+        let nextShip = Math.floor(Math.random() * SHIP_COUNT);
+        if (SHIP_COUNT > 1 && lastShipIndexRef.current >= 0) {
+          while (nextShip === lastShipIndexRef.current) {
+            nextShip = Math.floor(Math.random() * SHIP_COUNT);
+          }
+        }
+        lastShipIndexRef.current = nextShip;
+        setSelectedShipIndex(nextShip);
+        selectedShipRef.current = nextShip;
+      }
+      return nextMode;
+    });
+  };
 
   // Trigger animation transition when legend highlight level changes
   useEffect(() => {
@@ -645,7 +709,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
 
     // Game state
     type Star = { x: number; y: number; speed: number; size: number; alpha: number };
-    type Bullet = { x: number; y: number; vy: number; width: number; height: number };
+    type Bullet = { x: number; y: number; vy: number; width: number; height: number; type: ProjectileId };
     type Particle = { x: number; y: number; vx: number; vy: number; color: string; size: number; alpha: number; life: number; maxLife: number };
 
     const stars: Star[] = Array.from({ length: reduced ? 70 : 140 }).map(() => ({
@@ -674,12 +738,14 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     const colors = ['#1b1b1b', '#0e4429', '#006d32', '#26a641', '#39d353'];
 
     const shoot = () => {
+      const pType = selectedProjectileRef.current;
       bullets.push({
-        x: player.x + player.width / 2 - 1.5,
+        x: player.x + player.width / 2 - 2,
         y: player.y - 4,
         vy: -6 * motionScale,
-        width: 3,
-        height: 8,
+        width: 4,
+        height: 10,
+        type: pType,
       });
     };
 
@@ -854,6 +920,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
 
     const render = () => {
       gCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      gCtx.imageSmoothingEnabled = false;
       gCtx.clearRect(0, 0, width, gameHeight);
 
       // Draw stars
@@ -864,10 +931,18 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
       });
       gCtx.globalAlpha = 1.0;
 
-      // Draw bullets
-      gCtx.fillStyle = '#fbbf24';
+      // Draw bullets using pixelated projectile sprites
       bullets.forEach((b) => {
-        gCtx.fillRect(b.x, b.y, b.width, b.height);
+        const img = projectileImages.get(b.type);
+        if (img && img.complete && img.naturalWidth > 0) {
+          const drawSize = 16;
+          const drawX = Math.round(b.x + b.width / 2 - drawSize / 2);
+          const drawY = Math.round(b.y);
+          gCtx.drawImage(img, drawX, drawY, drawSize, drawSize);
+        } else {
+          gCtx.fillStyle = '#fbbf24';
+          gCtx.fillRect(b.x, b.y, b.width, b.height);
+        }
       });
 
       // Draw particles
@@ -878,19 +953,30 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
       });
       gCtx.globalAlpha = 1.0;
 
-      // Draw player spacecraft
-      gCtx.fillStyle = player.color;
-      gCtx.shadowColor = player.color;
-      gCtx.shadowBlur = 6;
-      gCtx.beginPath();
-      gCtx.moveTo(player.x + player.width / 2, player.y);
-      gCtx.lineTo(player.x + player.width, player.y + player.height);
-      gCtx.lineTo(player.x + player.width * 0.7, player.y + player.height * 0.75);
-      gCtx.lineTo(player.x + player.width * 0.3, player.y + player.height * 0.75);
-      gCtx.lineTo(player.x, player.y + player.height);
-      gCtx.closePath();
-      gCtx.fill();
-      gCtx.shadowBlur = 0;
+      // Draw player spacecraft using active session Kenney ship sprite
+      const shipIdx = selectedShipRef.current;
+      const shipImg = shipImages[shipIdx];
+      const shipDrawSize = 32;
+      const shipX = Math.round(player.x + (player.width - shipDrawSize) / 2);
+      const shipY = Math.round(player.y + (player.height - shipDrawSize) / 2);
+
+      if (shipImg && shipImg.complete && shipImg.naturalWidth > 0) {
+        gCtx.drawImage(shipImg, shipX, shipY, shipDrawSize, shipDrawSize);
+      } else {
+        // Fallback polygon if sprite is still loading
+        gCtx.fillStyle = player.color;
+        gCtx.shadowColor = player.color;
+        gCtx.shadowBlur = 6;
+        gCtx.beginPath();
+        gCtx.moveTo(player.x + player.width / 2, player.y);
+        gCtx.lineTo(player.x + player.width, player.y + player.height);
+        gCtx.lineTo(player.x + player.width * 0.7, player.y + player.height * 0.75);
+        gCtx.lineTo(player.x + player.width * 0.3, player.y + player.height * 0.75);
+        gCtx.lineTo(player.x, player.y + player.height);
+        gCtx.closePath();
+        gCtx.fill();
+        gCtx.shadowBlur = 0;
+      }
     };
 
     const loop = () => {
@@ -964,7 +1050,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
       </div>
 
       {/* Legend below the scrollable container */}
-      <div className="flex items-center justify-between gap-4 pt-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-3">
         <div className="flex items-center gap-1.5" onMouseLeave={() => setLevel(-1)}>
           <span className="mr-0.5">Less</span>
           {colors.map((color, index) => (
@@ -989,32 +1075,75 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
           <span className="ml-0.5">More</span>
         </div>
 
-        {/* Game Mode Toggle */}
-        <div className="flex items-center gap-2 border-l border-neutral-800 pl-4">
-          <span className="text-[11px] text-muted select-none" id="game-mode-label">Game Mode</span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={gameMode}
-            aria-labelledby="game-mode-label"
-            aria-describedby="game-mode-description"
-            onClick={() => setGameMode(!gameMode)}
-            className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-2 focus-visible:outline-offset-2"
-            style={{
-              backgroundColor: gameMode ? '#22c55e' : '#27272a',
-              outlineColor: '#f2f2f0',
-            }}
-          >
-            <span
-              className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+        {/* Game Mode Controls */}
+        <div className="flex items-center gap-3">
+          {/* Projectile/Weapon Selector (Game Mode only) */}
+          {gameMode && (
+            <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Select projectile type">
+              <span className="text-[11px] text-muted select-none">Weapon</span>
+              <div className="flex items-center gap-0.5 rounded-md border border-neutral-800 bg-neutral-900/90 p-0.5">
+                {PROJECTILES.map((proj) => {
+                  const isSelected = selectedProjectile === proj.id;
+                  return (
+                    <button
+                      key={proj.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={isSelected}
+                      aria-label={proj.name}
+                      title={proj.name}
+                      onClick={() => setSelectedProjectile(proj.id)}
+                      className={`flex h-6 w-6 items-center justify-center rounded transition-all focus-visible:outline-2 focus-visible:outline-offset-1 ${
+                        isSelected
+                          ? 'border border-neutral-600 bg-neutral-800 shadow-sm'
+                          : 'border border-transparent opacity-50 hover:bg-neutral-800/60 hover:opacity-100'
+                      }`}
+                      style={{ outlineColor: '#f2f2f0' }}
+                    >
+                      <img
+                        src={proj.src}
+                        alt=""
+                        width={14}
+                        height={14}
+                        className="pointer-events-none select-none"
+                        style={{
+                          imageRendering: 'pixelated',
+                        }}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Game Mode Toggle */}
+          <div className="flex items-center gap-2 border-l border-neutral-800 pl-3">
+            <span className="text-[11px] text-muted select-none" id="game-mode-label">Game Mode</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={gameMode}
+              aria-labelledby="game-mode-label"
+              aria-describedby="game-mode-description"
+              onClick={handleToggleGameMode}
+              className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-2 focus-visible:outline-offset-2"
               style={{
-                transform: gameMode ? 'translateX(16px)' : 'translateX(0)',
+                backgroundColor: gameMode ? '#22c55e' : '#27272a',
+                outlineColor: '#f2f2f0',
               }}
-            />
-          </button>
-          <span id="game-mode-description" className="sr-only">
-            {gameMode ? 'Game Mode active. Interactive space-defense game overlaying the heatmap.' : 'Game Mode inactive. Toggle to enable interactive game.'}
-          </span>
+            >
+              <span
+                className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                style={{
+                  transform: gameMode ? 'translateX(16px)' : 'translateX(0)',
+                }}
+              />
+            </button>
+            <span id="game-mode-description" className="sr-only">
+              {gameMode ? 'Game Mode active. Interactive space-defense game overlaying the heatmap.' : 'Game Mode inactive. Toggle to enable interactive game.'}
+            </span>
+          </div>
         </div>
       </div>
       <p aria-live="polite" className="sr-only">
