@@ -97,7 +97,7 @@ export default function App() {
         {/* Projects section */}
         <section
           id="projects"
-          className="py-16 px-16 bg-background"
+          className="pt-16 pb-0 px-16 bg-background"
         >
           <h2 className="font-heading text-5xl font-bold tracking-tight text-foreground mb-8">
             Projects
@@ -208,7 +208,7 @@ export default function App() {
       {/* Projects section: reuse carousel component as-is */}
       <section
         id="projects-mobile"
-        className="py-10 bg-background"
+        className="pt-10 pb-0 bg-background"
       >
         <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-8">
           Projects
