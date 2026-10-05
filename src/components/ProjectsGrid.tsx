@@ -488,7 +488,7 @@ function SpreadCard({
             <h4
               className={`${
                 LOGO_LESS_PROJECT_TITLES.includes(project.title)
-                  ? 'font-oxygen font-bold'
+                  ? 'font-jakarta font-bold'
                   : 'font-heading font-semibold'
               } text-[13px] sm:text-base text-foreground text-center px-1.5 sm:px-2 leading-snug select-none line-clamp-2`}
             >
@@ -853,7 +853,7 @@ export default function ProjectsGrid() {
                 <h3
                   className={`${
                     LOGO_LESS_PROJECT_TITLES.includes(selectedProject.title)
-                      ? 'font-oxygen'
+                      ? 'font-jakarta'
                       : 'font-heading'
                   } text-2xl sm:text-3xl font-medium text-foreground tracking-tight`}
                 >
@@ -902,7 +902,7 @@ export default function ProjectsGrid() {
                       <h4
                         className={`${
                           LOGO_LESS_PROJECT_TITLES.includes(selectedProject.title)
-                            ? 'font-oxygen'
+                            ? 'font-jakarta'
                             : 'font-heading'
                         } text-2xl sm:text-3xl font-bold text-foreground text-center px-6 max-w-lg leading-snug`}
                       >
