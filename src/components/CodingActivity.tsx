@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { dayMs, mixRGB, resolvePalette, type ContributionDay, type RGB } from './GitHubActivity';
+import leetcodeSnapshot from '../data/leetcode-activity.json';
 
 const rgb = (c: number[]) => `rgb(${c.map(Math.round).join(',')})`;
 const hex = (value: string): RGB => [
@@ -126,11 +127,58 @@ function setSharedState(next: LeetCodeState) {
   listeners.forEach((l) => l());
 }
 
+function normalizeSubmissionCounts(counts: Record<string, number>): ContributionDay[] {
+  // Range: April 1, 2025 through current date dynamically
+  const startDate = new Date(Date.UTC(2025, 3, 1)); // 2025-04-01
+  const now = new Date();
+  const endDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+  const days: ContributionDay[] = [];
+  for (
+    const cur = new Date(startDate.getTime());
+    cur <= endDate;
+    cur.setUTCDate(cur.getUTCDate() + 1)
+  ) {
+    const key = cur.toISOString().slice(0, 10);
+    days.push({
+      date: key,
+      count: counts[key] || 0,
+    });
+  }
+  return days;
+}
+
+function getFallbackSnapshotDays(): ContributionDay[] | null {
+  try {
+    const snapshot = leetcodeSnapshot as
+      | {
+          days?: Record<string, number>;
+          totalSubmissions?: number;
+        }
+      | undefined;
+    const daysMap = snapshot?.days;
+    if (daysMap && typeof daysMap === 'object' && Object.keys(daysMap).length > 0) {
+      const hasAnySubmissions =
+        (typeof snapshot?.totalSubmissions === 'number' && snapshot.totalSubmissions > 0) ||
+        Object.values(daysMap).some((c) => Number(c) > 0);
+      if (hasAnySubmissions) {
+        const normalized = normalizeSubmissionCounts(daysMap);
+        if (normalized.length > 0) {
+          return normalized;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to load LeetCode snapshot:', err);
+  }
+  return null;
+}
+
 export function fetchLeetCodeDataOnce(): Promise<void> {
   if (fetchPromise) return fetchPromise;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
+  const timeout = setTimeout(() => controller.abort(), 8000);
 
   const parse = (value: unknown): Record<string, number> => {
     if (typeof value === 'string') {
@@ -156,33 +204,26 @@ export function fetchLeetCodeDataOnce(): Promise<void> {
     })
     .then(([data2025, data2026]) => {
       const counts: Record<string, number> = {};
-      for (const cal of [parse(data2025.submissionCalendar), parse(data2026.submissionCalendar)]) {
+      let hasData = false;
+      for (const cal of [parse(data2025?.submissionCalendar), parse(data2026?.submissionCalendar)]) {
         for (const [timestamp, count] of Object.entries(cal)) {
           const val = Number(timestamp);
           if (!Number.isNaN(val)) {
             const dateStr = new Date(val < 1e11 ? val * 1000 : val).toISOString().slice(0, 10);
-            counts[dateStr] = (counts[dateStr] || 0) + Number(count);
+            const numCount = Number(count);
+            counts[dateStr] = (counts[dateStr] || 0) + numCount;
+            if (numCount > 0) {
+              hasData = true;
+            }
           }
         }
       }
 
-      // Range: April 1, 2025 through current date dynamically
-      const startDate = new Date(Date.UTC(2025, 3, 1)); // 2025-04-01
-      const now = new Date();
-      const endDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-
-      const days: ContributionDay[] = [];
-      for (
-        const cur = new Date(startDate.getTime());
-        cur <= endDate;
-        cur.setUTCDate(cur.getUTCDate() + 1)
-      ) {
-        const key = cur.toISOString().slice(0, 10);
-        days.push({
-          date: key,
-          count: counts[key] || 0,
-        });
+      if (!hasData) {
+        throw new Error('LeetCode fresh request returned empty data');
       }
+
+      const days = normalizeSubmissionCounts(counts);
 
       setSharedState({
         loading: false,
@@ -192,12 +233,21 @@ export function fetchLeetCodeDataOnce(): Promise<void> {
     })
     .catch((err) => {
       clearTimeout(timeout);
-      console.error('LeetCode calendar fetch error:', err);
-      setSharedState({
-        loading: false,
-        error: true,
-        data: [],
-      });
+      console.warn('LeetCode live fetch failed or timed out, trying snapshot fallback:', err);
+      const fallbackDays = getFallbackSnapshotDays();
+      if (fallbackDays && fallbackDays.length > 0) {
+        setSharedState({
+          loading: false,
+          error: false,
+          data: fallbackDays,
+        });
+      } else {
+        setSharedState({
+          loading: false,
+          error: true,
+          data: [],
+        });
+      }
     });
 
   return fetchPromise;
@@ -287,12 +337,99 @@ if (typeof window !== 'undefined') {
   });
 }
 
+// ==================================================
+// Arcade Victory Bitmap Lettering ("NIKHIL VIRDI")
+// ==================================================
+const LETTER_PATHS: Record<string, [number, number][]> = {
+  N: [
+    [0, 0], [1, 0], [2, 0], [3, 0], [4, 0], // left stem (down)
+    [1, 1], [2, 2],                         // diagonal
+    [4, 3], [3, 3], [2, 3], [1, 3], [0, 3], // right stem (up)
+  ],
+  I: [
+    [0, 0], [1, 0], [2, 0], [3, 0], [4, 0], // stem (down)
+  ],
+  I_UP: [
+    [4, 0], [3, 0], [2, 0], [1, 0], [0, 0], // stem (up)
+  ],
+  K: [
+    [4, 0], [3, 0], [2, 0], [1, 0], [0, 0], // stem (up)
+    [2, 1], [1, 2], [0, 3],                 // top diagonal
+    [3, 2], [4, 3],                         // bottom diagonal
+  ],
+  H: [
+    [4, 0], [3, 0], [2, 0], [1, 0], [0, 0], // left stem (up)
+    [2, 1], [2, 2],                         // crossbar
+    [0, 3], [1, 3], [2, 3], [3, 3], [4, 3], // right stem (down)
+  ],
+  L: [
+    [0, 0], [1, 0], [2, 0], [3, 0], [4, 0], // stem (down)
+    [4, 1], [4, 2],                         // base
+  ],
+  V: [
+    [0, 0], [1, 0], [2, 1], [3, 1], [4, 2], [3, 3], [2, 3], [1, 4], [0, 4],
+  ],
+  R: [
+    [4, 0], [3, 0], [2, 0], [1, 0], [0, 0], // stem (up)
+    [0, 1], [0, 2], [1, 3], [2, 2], [2, 1], // loop
+    [3, 2], [4, 3],                         // leg
+  ],
+  D: [
+    [4, 0], [3, 0], [2, 0], [1, 0], [0, 0], // stem (up)
+    [0, 1], [0, 2], [1, 3], [2, 3], [3, 3], [4, 2], [4, 1], // curve
+  ],
+};
+
+const LETTER_WIDTHS: Record<string, number> = {
+  N: 4,
+  I: 1,
+  I_UP: 1,
+  K: 4,
+  H: 4,
+  L: 3,
+  ' ': 2,
+  V: 5,
+  R: 4,
+  D: 4,
+};
+
+interface MessagePixel {
+  relRow: number;
+  relCol: number;
+}
+
+function buildMessagePixels(): { pixels: MessagePixel[]; totalWidth: number } {
+  const tokens = ['N', 'I', 'K', 'H', 'I_UP', 'L', ' ', 'V', 'I', 'R', 'D', 'I_UP'];
+  const pixels: MessagePixel[] = [];
+  let col = 0;
+
+  for (const token of tokens) {
+    if (token === ' ') {
+      col += LETTER_WIDTHS[' '];
+      continue;
+    }
+    const path = LETTER_PATHS[token];
+    if (path) {
+      for (const [r, c] of path) {
+        pixels.push({ relRow: r, relCol: col + c });
+      }
+      col += (LETTER_WIDTHS[token] || 4) + 1; // 1 column spacing between letters
+    }
+  }
+
+  return { pixels, totalWidth: col > 0 ? col - 1 : 0 };
+}
+
+const MESSAGE_DATA = buildMessagePixels();
+
 function Heatmap({ data }: { data: ContributionDay[] }) {
   const model = useMemo(() => buildCodingGrid(data), [data]);
   const [active, setActive] = useState(-1);
   const [level, setLevel] = useState(-1);
   const [notice, setNotice] = useState('');
   const [gameMode, setGameMode] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const isCompletingRef = useRef(false);
   const [selectedProjectile, setSelectedProjectile] = useState<ProjectileId>('laser');
   const [selectedShipIndex, setSelectedShipIndex] = useState<number>(0);
 
@@ -316,6 +453,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
   gameModeRef.current = gameMode;
 
   const handleToggleGameMode = () => {
+    if (isCompletingRef.current) return;
     setGameMode((prev) => !prev);
   };
 
@@ -597,6 +735,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     const key = (event: KeyboardEvent) => {
       const keys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Escape', 'Enter', ' '];
       if (!keys.includes(event.key)) return;
+      if (gameModeRef.current || isCompletingRef.current) return;
       event.preventDefault();
       if (event.key === 'Escape') {
         pinned = -1;
@@ -715,8 +854,10 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
 
     // Temporary game state - cell health levels
     const cellHealth = new Map<string, number>();
+    let initialActiveCount = 0;
     model.cells.forEach((cell) => {
       cellHealth.set(cell.date, cell.level);
+      if (cell.level > 0) initialActiveCount++;
     });
     cellHealthRef.current = cellHealth;
     kickRef.current?.();
@@ -747,6 +888,26 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     let bullets: Bullet[] = [];
     let particles: Particle[] = [];
     let lastShot = 0;
+
+    let completionPhase: 'none' | 'drawing' | 'pause' | 'flashing' | 'done' = 'none';
+    let completionStartTime = 0;
+    let currentPixelIndex = 0;
+    let flashVisible = true;
+    const PIXEL_INTERVAL = reduced ? 18 : 28;
+    const PAUSE_DURATION = 500;
+    const FLASH_DURATION = 3500;
+    const FLASH_INTERVAL = 160;
+    const startCol = Math.max(0, Math.floor((model.weeks - MESSAGE_DATA.totalWidth) / 2));
+
+    const startCompletion = () => {
+      if (isCompletingRef.current) return;
+      isCompletingRef.current = true;
+      setIsCompleting(true);
+      completionPhase = 'drawing';
+      completionStartTime = performance.now();
+      currentPixelIndex = 0;
+      bullets = [];
+    };
 
     const shoot = () => {
       const pType = selectedProjectileRef.current;
@@ -785,23 +946,92 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     let animationFrameId: number;
 
     const update = () => {
+      if (isCompletingRef.current) {
+        const elapsed = performance.now() - completionStartTime;
+        const totalPixels = MESSAGE_DATA.pixels.length;
+        const drawDuration = totalPixels * PIXEL_INTERVAL;
+
+        if (elapsed < drawDuration) {
+          completionPhase = 'drawing';
+          currentPixelIndex = Math.min(totalPixels, Math.floor(elapsed / PIXEL_INTERVAL) + 1);
+
+          // Smoothly scroll to track the leading drawing pixel on narrow viewports
+          const viewportWidth = scrollEl.clientWidth;
+          const maxScroll = Math.max(0, scrollEl.scrollWidth - viewportWidth);
+          if (maxScroll > 0) {
+            const activePixel = MESSAGE_DATA.pixels[Math.min(currentPixelIndex - 1, totalPixels - 1)];
+            const pixelX = left + (startCol + activePixel.relCol + 0.5) * s;
+            const targetScroll = Math.max(0, Math.min(maxScroll, pixelX - viewportWidth / 2));
+            const diff = targetScroll - scrollEl.scrollLeft;
+            if (Math.abs(diff) > 0.5) {
+              scrollEl.scrollLeft += diff * (reduced ? 1 : 0.1);
+            }
+          }
+        } else if (elapsed < drawDuration + PAUSE_DURATION) {
+          completionPhase = 'pause';
+          currentPixelIndex = totalPixels;
+
+          // Smoothly center the message in scroll view
+          const viewportWidth = scrollEl.clientWidth;
+          const maxScroll = Math.max(0, scrollEl.scrollWidth - viewportWidth);
+          if (maxScroll > 0) {
+            const messageCenterX = left + (startCol + MESSAGE_DATA.totalWidth / 2) * s;
+            const targetScroll = Math.max(0, Math.min(maxScroll, messageCenterX - viewportWidth / 2));
+            const diff = targetScroll - scrollEl.scrollLeft;
+            if (Math.abs(diff) > 0.5) {
+              scrollEl.scrollLeft += diff * (reduced ? 1 : 0.1);
+            }
+          }
+        } else if (elapsed < drawDuration + PAUSE_DURATION + FLASH_DURATION) {
+          completionPhase = 'flashing';
+          const flashElapsed = elapsed - (drawDuration + PAUSE_DURATION);
+          flashVisible = Math.floor(flashElapsed / FLASH_INTERVAL) % 2 === 0;
+
+          const viewportWidth = scrollEl.clientWidth;
+          const maxScroll = Math.max(0, scrollEl.scrollWidth - viewportWidth);
+          if (maxScroll > 0) {
+            const messageCenterX = left + (startCol + MESSAGE_DATA.totalWidth / 2) * s;
+            const targetScroll = Math.max(0, Math.min(maxScroll, messageCenterX - viewportWidth / 2));
+            const diff = targetScroll - scrollEl.scrollLeft;
+            if (Math.abs(diff) > 0.5) {
+              scrollEl.scrollLeft += diff * (reduced ? 1 : 0.1);
+            }
+          }
+        } else {
+          completionPhase = 'done';
+          setIsCompleting(false);
+          isCompletingRef.current = false;
+          cellHealthRef.current = null;
+          setGameMode(false);
+          return;
+        }
+
+        // Keep background stars drifting
+        stars.forEach((star) => {
+          star.y += star.speed;
+          if (star.y > gameHeight) {
+            star.y = 0;
+            star.x = Math.random() * width;
+          }
+        });
+
+        return;
+      }
+
       // Find active cell boundaries
       let minWi = -1;
-      let maxWi = -1;
       model.cells.forEach((cell) => {
         const health = cellHealth.get(cell.date) ?? 0;
         if (health > 0) {
           if (minWi === -1) minWi = cell.week;
           minWi = Math.min(minWi, cell.week);
-          maxWi = Math.max(maxWi, cell.week);
         }
       });
 
       let minX = 0;
-      let maxX = width - player.width;
-      if (minWi !== -1 && maxWi !== -1) {
-        minX = minWi * s;
-        maxX = Math.max(minX, Math.min(width - player.width, (maxWi + 1) * s - player.width));
+      const maxX = width - player.width;
+      if (minWi !== -1) {
+        minX = Math.max(0, Math.min(minWi * s, maxX));
       }
 
       player.x = Math.max(minX, Math.min(maxX, player.x));
@@ -846,12 +1076,9 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
         if (health > 0) anyActive = true;
       });
 
-      if (!anyActive) {
-        // Reset game to full original levels
-        model.cells.forEach((cell) => {
-          cellHealth.set(cell.date, cell.level);
-        });
-        kickRef.current?.();
+      if (!anyActive && initialActiveCount > 0 && !isCompletingRef.current) {
+        startCompletion();
+        return;
       }
 
       // Update stars
@@ -921,12 +1148,23 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
             const nextLevel = rawNext <= 0.0001 ? 0 : Math.round(rawNext * 100) / 100;
             cellHealth.set(cell.date, nextLevel);
 
-            const cellX = left + (cell.week + 0.11) * s;
-            const cellY = top + (cell.day + 0.11) * s;
+            let remainingActive = 0;
+            cellHealth.forEach((health) => {
+              if (health > 0) remainingActive++;
+            });
 
-            const hitColor = rgb(interpolateLevelColor(GAME_COLORS, currentLevel));
-            explode(cellX + cellWidth / 2, cellY + cellWidth / 2, hitColor);
-            hitOccurred = true;
+            if (remainingActive === 0 && initialActiveCount > 0 && !isCompletingRef.current) {
+              hitOccurred = true;
+              startCompletion();
+              break;
+            } else {
+              const cellX = left + (cell.week + 0.11) * s;
+              const cellY = top + (cell.day + 0.11) * s;
+
+              const hitColor = rgb(interpolateLevelColor(GAME_COLORS, currentLevel));
+              explode(cellX + cellWidth / 2, cellY + cellWidth / 2, hitColor);
+              hitOccurred = true;
+            }
           }
         }
       }
@@ -948,6 +1186,85 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
         gCtx.fillRect(star.x, star.y, star.size, star.size);
       });
       gCtx.globalAlpha = 1.0;
+
+      if (isCompletingRef.current) {
+        const w = s * 0.78;
+        const radius = s * 0.17;
+        const startRow = 1;
+
+        if (completionPhase === 'drawing') {
+          for (let i = 0; i < currentPixelIndex; i++) {
+            const p = MESSAGE_DATA.pixels[i];
+            const col = startCol + p.relCol;
+            const row = startRow + p.relRow;
+            if (col < 0 || col >= model.weeks || row < 0 || row > 6) continue;
+
+            const px = left + (col + 0.11) * s;
+            const py = top + (row + 0.11) * s;
+            const isHead = i === currentPixelIndex - 1;
+
+            gCtx.beginPath();
+            gCtx.roundRect(px, py, w, w, radius);
+            gCtx.fillStyle = isHead ? '#ffffff' : '#39d353';
+            gCtx.fill();
+          }
+        } else if (completionPhase === 'pause') {
+          for (let i = 0; i < MESSAGE_DATA.pixels.length; i++) {
+            const p = MESSAGE_DATA.pixels[i];
+            const col = startCol + p.relCol;
+            const row = startRow + p.relRow;
+            if (col < 0 || col >= model.weeks || row < 0 || row > 6) continue;
+
+            const px = left + (col + 0.11) * s;
+            const py = top + (row + 0.11) * s;
+
+            gCtx.beginPath();
+            gCtx.roundRect(px, py, w, w, radius);
+            gCtx.fillStyle = '#39d353';
+            gCtx.fill();
+          }
+        } else if (completionPhase === 'flashing') {
+          if (flashVisible) {
+            for (let i = 0; i < MESSAGE_DATA.pixels.length; i++) {
+              const p = MESSAGE_DATA.pixels[i];
+              const col = startCol + p.relCol;
+              const row = startRow + p.relRow;
+              if (col < 0 || col >= model.weeks || row < 0 || row > 6) continue;
+
+              const px = left + (col + 0.11) * s;
+              const py = top + (row + 0.11) * s;
+
+              gCtx.beginPath();
+              gCtx.roundRect(px, py, w, w, radius);
+              gCtx.fillStyle = '#39d353';
+              gCtx.fill();
+            }
+          }
+        }
+
+        // Draw player spacecraft frozen in place
+        const shipIdx = selectedShipRef.current;
+        const shipImg = shipImages[shipIdx];
+        const shipDrawSize = 32;
+        const shipX = Math.round(player.x + (player.width - shipDrawSize) / 2);
+        const shipY = Math.round(player.y + (player.height - shipDrawSize) / 2);
+
+        if (shipImg && shipImg.complete && shipImg.naturalWidth > 0) {
+          gCtx.drawImage(shipImg, shipX, shipY, shipDrawSize, shipDrawSize);
+        } else {
+          gCtx.fillStyle = player.color;
+          gCtx.beginPath();
+          gCtx.moveTo(player.x + player.width / 2, player.y);
+          gCtx.lineTo(player.x + player.width, player.y + player.height);
+          gCtx.lineTo(player.x + player.width * 0.7, player.y + player.height * 0.75);
+          gCtx.lineTo(player.x + player.width * 0.3, player.y + player.height * 0.75);
+          gCtx.lineTo(player.x, player.y + player.height);
+          gCtx.closePath();
+          gCtx.fill();
+        }
+
+        return;
+      }
 
       // Draw bullets using pixelated projectile sprites
       bullets.forEach((b) => {
@@ -1007,7 +1324,10 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
 
     return () => {
       cancelAnimationFrame(animationFrameId);
+      gCtx.clearRect(0, 0, width, gameHeight);
+      box.style.height = `${height}px`;
       cellHealthRef.current = null;
+      isCompletingRef.current = false;
     };
   }, [gameMode, model]);
 
@@ -1109,14 +1429,18 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
                     aria-checked={isSelected}
                     aria-label={`${ship.name}, ${ship.fireRate} shots/s`}
                     title={`${ship.name} (${ship.fireRate} shots/s)`}
+                    disabled={isCompleting}
                     onClick={() => {
+                      if (isCompletingRef.current) return;
                       setSelectedShipIndex(ship.id);
                       selectedShipRef.current = ship.id;
                     }}
                     className={`flex h-6 w-6 shrink-0 items-center justify-center rounded transition-all focus-visible:outline-2 focus-visible:outline-offset-1 ${
-                      isSelected
-                        ? 'border border-neutral-600 bg-neutral-800 shadow-sm'
-                        : 'border border-transparent opacity-50 hover:bg-neutral-800/60 hover:opacity-100'
+                      isCompleting
+                        ? 'cursor-not-allowed opacity-50'
+                        : isSelected
+                          ? 'border border-neutral-600 bg-neutral-800 shadow-sm'
+                          : 'border border-transparent opacity-50 hover:bg-neutral-800/60 hover:opacity-100'
                     }`}
                     style={{ outlineColor: '#f2f2f0' }}
                   >
@@ -1153,14 +1477,18 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
                       aria-checked={isSelected}
                       aria-label={`${proj.name}, ${proj.attack} attack`}
                       title={`${proj.name} (${proj.attack} ATK)`}
+                      disabled={isCompleting}
                       onClick={() => {
+                        if (isCompletingRef.current) return;
                         setSelectedProjectile(proj.id);
                         selectedProjectileRef.current = proj.id;
                       }}
                       className={`flex h-6 w-6 shrink-0 items-center justify-center rounded transition-all focus-visible:outline-2 focus-visible:outline-offset-1 ${
-                        isSelected
-                          ? 'border border-neutral-600 bg-neutral-800 shadow-sm'
-                          : 'border border-transparent opacity-50 hover:bg-neutral-800/60 hover:opacity-100'
+                        isCompleting
+                          ? 'cursor-not-allowed opacity-50'
+                          : isSelected
+                            ? 'border border-neutral-600 bg-neutral-800 shadow-sm'
+                            : 'border border-transparent opacity-50 hover:bg-neutral-800/60 hover:opacity-100'
                       }`}
                       style={{ outlineColor: '#f2f2f0' }}
                     >
@@ -1190,8 +1518,11 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
               aria-checked={gameMode}
               aria-labelledby="game-mode-label"
               aria-describedby="game-mode-description"
+              disabled={isCompleting}
               onClick={handleToggleGameMode}
-              className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-2 focus-visible:outline-offset-2"
+              className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                isCompleting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+              }`}
               style={{
                 backgroundColor: gameMode ? '#22c55e' : '#27272a',
                 outlineColor: '#f2f2f0',

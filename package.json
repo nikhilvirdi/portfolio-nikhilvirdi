@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "stats:github": "node scripts/fetch-github-stats.mjs"
+    "stats:github": "node scripts/fetch-github-stats.mjs",
+    "stats:leetcode": "node scripts/fetch-leetcode.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",
