@@ -249,8 +249,8 @@ const CARD_LAYOUTS: CardLayoutDef[] = [
   },
 ];
 
-const SCATTER_START = 0.04;
-const SCATTER_END = 0.96;
+const SCATTER_START = 0.02;
+const SCATTER_END = 0.98;
 
 const PARALLAX_SPRING = { stiffness: 90, damping: 22, mass: 0.6 };
 
@@ -726,8 +726,8 @@ export default function ProjectsGrid() {
     setSelectedProject((prev) => (prev?.title === project.title ? null : project));
   }, []);
 
-  // Tailored scroll length: ~165vh on desktop, ~140vh on mobile
-  const scrollLength = isMobile ? 140 : 165;
+  // Tailored scroll length: ~130vh on desktop, ~115vh on mobile
+  const scrollLength = isMobile ? 115 : 130;
 
   return (
     <div
