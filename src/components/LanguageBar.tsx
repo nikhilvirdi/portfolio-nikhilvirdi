@@ -1,5 +1,10 @@
 import { useState, useRef, useEffect, useId } from 'react';
 import githubStats from '../data/github-stats.json';
+import { BASE_TECH_DEFS } from './TechStackFloating';
+import kotlinSvg from 'devicon/icons/kotlin/kotlin-original.svg';
+import powershellSvg from 'devicon/icons/powershell/powershell-original.svg';
+import openglSvg from 'devicon/icons/opengl/opengl-original.svg';
+import bashSvg from 'devicon/icons/bash/bash-original.svg';
 
 export interface LanguageEntry {
   name: string;
@@ -170,26 +175,107 @@ const ACCENT = '#39d353'; // GitHub green matching activity heatmap level 4
 const DX = 6;
 const DY = 4.5;
 
+// Map languages to Tech Stack definitions or devicon fallbacks
+const TECH_NAME_ALIASES: Record<string, string> = {
+  HTML: 'HTML5',
+  CSS: 'CSS3',
+  Go: 'Golang',
+  Dockerfile: 'Docker',
+};
+
+const EXTRA_LANGUAGE_LOGOS: Record<string, { svg: string; invert?: boolean }> = {
+  Kotlin: { svg: kotlinSvg },
+  PowerShell: { svg: powershellSvg },
+  GLSL: { svg: openglSvg },
+  Shell: { svg: bashSvg },
+  Bash: { svg: bashSvg },
+};
+
+function getLanguageLogo(name: string): { svg: string; invert?: boolean } | null {
+  const targetName = TECH_NAME_ALIASES[name] || name;
+  const tech = BASE_TECH_DEFS.find((t) => t.name.toLowerCase() === targetName.toLowerCase());
+  if (tech) {
+    return { svg: tech.svg, invert: tech.invert };
+  }
+  return EXTRA_LANGUAGE_LOGOS[name] || null;
+}
+
 // ============================================================================
 // Main Component
 // ============================================================================
 
 export default function LanguageBar({ className = '' }: { className?: string }) {
   const stats = githubStats as GitHubStatsData | undefined;
-
-  // Render nothing if stats data is missing or empty
-  if (!stats || !stats.languages || stats.languages.length === 0 || !stats.totals) {
-    return null;
-  }
-
-  const { languages, totals } = stats;
+  const languages = stats?.languages ?? [];
+  const totals = stats?.totals ?? {
+    linesNet: 0,
+    commits: 0,
+    linesAdded: 0,
+    linesDeleted: 0,
+    activeDays: 0,
+  };
+  const hasStats = Boolean(stats && stats.languages && stats.languages.length > 0 && stats.totals);
 
   const [activeLang, setActiveLang] = useState<string | null>(null);
   const [hasEntered, setHasEntered] = useState(false);
   const [isReduced, setIsReduced] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const chartAreaRef = useRef<HTMLDivElement>(null);
+  const allReposRef = useRef<HTMLDivElement>(null);
+  const rightmostBarRef = useRef<HTMLDivElement>(null);
+
+  // Baseline vertical distance from bottom of chart container (aligns with "all repositories" on desktop)
+  const [baselineBottom, setBaselineBottom] = useState<number>(43);
+  // Baseline horizontal right inset matching rightmost percentage/bar
+  const [rightOffset, setRightOffset] = useState<number>(16);
+
   const tooltipId = useId();
+
+  // Synchronize baseline vertically with "all repositories" and horizontally with rightmost bar
+  useEffect(() => {
+    const updateGeometry = () => {
+      if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+        if (chartAreaRef.current && allReposRef.current) {
+          const chartRect = chartAreaRef.current.getBoundingClientRect();
+          const repoRect = allReposRef.current.getBoundingClientRect();
+
+          // Align chart baseline to the "all repositories" text baseline level
+          const repoBaselineY = repoRect.top + repoRect.height * 0.72;
+          const calculatedBottom = Math.round(chartRect.bottom - repoBaselineY);
+
+          if (calculatedBottom >= 25 && calculatedBottom <= 80) {
+            setBaselineBottom((prev) => (Math.abs(prev - calculatedBottom) >= 1 ? calculatedBottom : prev));
+          }
+        }
+      } else {
+        // Mobile fallback where sections are stacked vertically
+        setBaselineBottom(38);
+      }
+
+      // Extend baseline across complete language-chart width ending around rightmost percentage/bar
+      if (chartAreaRef.current && rightmostBarRef.current) {
+        const chartRect = chartAreaRef.current.getBoundingClientRect();
+        const barRect = rightmostBarRef.current.getBoundingClientRect();
+        const rightEdge = barRect.right + DX;
+        const calcRight = Math.max(0, Math.round(chartRect.right - rightEdge));
+        setRightOffset((prev) => (Math.abs(prev - calcRight) >= 1 ? calcRight : prev));
+      }
+    };
+
+    updateGeometry();
+    window.addEventListener('resize', updateGeometry);
+    const timer = setTimeout(updateGeometry, 150);
+
+    if (typeof document !== 'undefined' && 'fonts' in document) {
+      document.fonts.ready.then(updateGeometry);
+    }
+
+    return () => {
+      window.removeEventListener('resize', updateGeometry);
+      clearTimeout(timer);
+    };
+  }, [hasEntered]);
 
   // Scroll entrance trigger (runs once only)
   useEffect(() => {
@@ -250,6 +336,10 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
   const ariaSummary = `Language distribution across repositories: ${languages
     .map((l) => `${l.name} ${l.percent < 0.1 ? '<0.1%' : `${l.percent.toFixed(1)}%`}`)
     .join(', ')}`;
+
+  if (!hasStats) {
+    return null;
+  }
 
   return (
     <div
@@ -313,29 +403,47 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
             </div>
           </div>
 
-          {/* Bar Chart Area with 3 Faint Gridlines */}
-          {/* pb-24 gives 96px of clean space below baseline for rotated labels */}
+          {/* Bar Chart Area with Horizontal Gridlines & Baseline Aligned to 'all repositories' */}
           <div
-            className="relative w-full h-[185px] sm:h-[205px] flex items-end gap-1.5 sm:gap-2.5 pt-7 pb-24 pl-5 sm:pl-7 pr-4 sm:pr-6"
+            ref={chartAreaRef}
+            className="relative w-full h-[185px] sm:h-[205px] flex items-end gap-1.5 sm:gap-2.5 pt-7 pl-3 sm:pl-4 pr-3 sm:pr-4"
+            style={{
+              paddingBottom: `${baselineBottom}px`,
+            }}
           >
             {/* Baseline Gridline */}
             <div
-              className="absolute inset-x-0 bottom-24 pointer-events-none border-b border-zinc-800/60"
+              className="absolute left-0 pointer-events-none border-b border-zinc-800/70"
+              style={{
+                bottom: `${baselineBottom}px`,
+                right: `${rightOffset}px`,
+              }}
               aria-hidden="true"
             />
             {/* 33% dashed gridline */}
             <div
-              className="absolute inset-x-0 bottom-[calc(96px+(100%-124px)*0.33)] pointer-events-none border-b border-zinc-800/40 border-dashed"
+              className="absolute left-0 pointer-events-none border-b border-zinc-800/40 border-dashed"
+              style={{
+                bottom: `calc(${baselineBottom}px + (100% - ${28 + baselineBottom}px) * 0.33)`,
+                right: `${rightOffset}px`,
+              }}
               aria-hidden="true"
             />
             {/* 66% dashed gridline */}
             <div
-              className="absolute inset-x-0 bottom-[calc(96px+(100%-124px)*0.66)] pointer-events-none border-b border-zinc-800/40 border-dashed"
+              className="absolute left-0 pointer-events-none border-b border-zinc-800/40 border-dashed"
+              style={{
+                bottom: `calc(${baselineBottom}px + (100% - ${28 + baselineBottom}px) * 0.66)`,
+                right: `${rightOffset}px`,
+              }}
               aria-hidden="true"
             />
             {/* 100% dashed gridline */}
             <div
-              className="absolute inset-x-0 top-7 pointer-events-none border-b border-zinc-800/40 border-dashed"
+              className="absolute left-0 top-7 pointer-events-none border-b border-zinc-800/40 border-dashed"
+              style={{
+                right: `${rightOffset}px`,
+              }}
               aria-hidden="true"
             />
 
@@ -343,6 +451,8 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
             {languages.map((item, index) => {
               const isHovered = activeLang === item.name;
               const isDimmed = activeLang !== null && !isHovered;
+              const isLast = index === languages.length - 1;
+              const logo = getLanguageLogo(item.name);
 
               // Calculate normalized height percentage
               const rawHeightPercent = (item.percent / maxScale) * 100;
@@ -394,6 +504,7 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
 
                   {/* 3D Bar Assembly (Front Face + Top Face + Right Side Face) */}
                   <div
+                    ref={isLast ? rightmostBarRef : undefined}
                     className="relative w-full max-w-[20px] sm:max-w-[26px] transition-all"
                     style={{
                       height: currentHeight,
@@ -438,30 +549,27 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
                     />
                   </div>
 
-                  {/* Language label: fully BELOW baseline, rotated -45deg, pure white #FFFFFF, Manrope 12-13px weight 500 */}
-                  <div
-                    className="absolute pointer-events-none whitespace-nowrap"
-                    style={{
-                      top: 'calc(100% - 84px)', // 12px below the 96px baseline
-                      right: '50%',
-                      transformOrigin: 'top right',
-                      transform: 'rotate(-45deg)',
-                    }}
-                  >
-                    <span
-                      className="block select-none transition-opacity duration-200"
-                      style={{
-                        color: '#FFFFFF',
-                        fontFamily: 'Manrope, sans-serif',
-                        fontSize: '12.5px',
-                        fontWeight: 500,
-                        lineHeight: 1,
-                        opacity: isDimmed ? 0.35 : 1,
-                      }}
+                  {/* Small Language Logo: centered directly below the bar, replacing rotated text */}
+                  {logo && (
+                    <div
+                      className="absolute top-[calc(100%+8px)] sm:top-[calc(100%+9px)] left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-none"
                     >
-                      {item.name}
-                    </span>
-                  </div>
+                      <img
+                        src={logo.svg}
+                        alt={item.name}
+                        width={18}
+                        height={18}
+                        className={`w-4 h-4 sm:w-[18px] sm:h-[18px] select-none pointer-events-none object-contain transition-all duration-200 ${
+                          logo.invert ? 'invert' : ''
+                        }`}
+                        style={{
+                          opacity: isReduced || hasEntered ? (isDimmed ? 0.35 : 0.95) : 0,
+                          filter: isHovered ? 'brightness(1.2)' : 'none',
+                          transition: percentFadeTransition,
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -546,7 +654,11 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
                   +{formatStatNumber(curLinesAdded)} / -{formatStatNumber(curLinesDeleted)}
                 </span>
               </div>
-              <div className="mt-0.5 truncate text-[12px]" style={{ color: MUTED }}>
+              <div
+                ref={allReposRef}
+                className="mt-0.5 truncate text-[12px]"
+                style={{ color: MUTED }}
+              >
                 all repositories
               </div>
             </div>
