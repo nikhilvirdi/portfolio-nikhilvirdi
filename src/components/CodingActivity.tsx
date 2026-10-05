@@ -1098,10 +1098,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
           /* Game Mode ON: Ship selector in the freed left-side position */
           <div className="flex items-center gap-1.5 min-w-0 max-w-full" role="radiogroup" aria-label="Select ship">
             <span className="text-[11px] text-muted select-none shrink-0">Ship</span>
-            <span className="text-[10px] text-neutral-400 font-mono select-none shrink-0 px-1.5 py-0.5 rounded bg-black border border-white/20">
-              {(SHIPS[selectedShipIndex] || SHIPS[0]).fireRate} shots/s
-            </span>
-            <div className="flex items-center gap-0.5 rounded-md border border-white/40 bg-black p-0.5 overflow-x-auto max-w-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex items-center gap-0.5 rounded-md border border-black bg-black p-0.5 overflow-x-auto max-w-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {SHIPS.map((ship) => {
                 const isSelected = selectedShipIndex === ship.id;
                 return (
@@ -1145,7 +1142,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
           {gameMode && (
             <div className="flex items-center gap-1.5 shrink-0" role="radiogroup" aria-label="Select projectile type">
               <span className="text-[11px] text-muted select-none shrink-0">Weapon</span>
-              <div className="flex items-center gap-0.5 rounded-md border border-white/40 bg-black p-0.5">
+              <div className="flex items-center gap-0.5 rounded-md border border-black bg-black p-0.5">
                 {PROJECTILES.map((proj) => {
                   const isSelected = selectedProjectile === proj.id;
                   return (
