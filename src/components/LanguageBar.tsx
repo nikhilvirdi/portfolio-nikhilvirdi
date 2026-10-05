@@ -200,6 +200,10 @@ function getLanguageLogo(name: string): { svg: string; invert?: boolean } | null
   return EXTRA_LANGUAGE_LOGOS[name] || null;
 }
 
+// Global flag tracking if the language visualization has already triggered entrance
+// across responsive layout variants (desktop and mobile component trees).
+let globalHasEntered = false;
+
 // ============================================================================
 // Main Component
 // ============================================================================
@@ -217,7 +221,7 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
   const hasStats = Boolean(stats && stats.languages && stats.languages.length > 0 && stats.totals);
 
   const [activeLang, setActiveLang] = useState<string | null>(null);
-  const [hasEntered, setHasEntered] = useState(false);
+  const [hasEntered, setHasEntered] = useState(() => globalHasEntered);
   const [isReduced, setIsReduced] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -240,12 +244,17 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
           const chartRect = chartAreaRef.current.getBoundingClientRect();
           const repoRect = allReposRef.current.getBoundingClientRect();
 
-          // Align chart baseline to the "all repositories" text baseline level
-          const repoBaselineY = repoRect.top + repoRect.height * 0.72;
-          const calculatedBottom = Math.round(chartRect.bottom - repoBaselineY);
+          // Check if chart and allRepos are actually visible and side-by-side
+          if (chartRect.width > 0 && repoRect.width > 0 && repoRect.left >= chartRect.right - 20) {
+            // Align chart baseline to the "all repositories" text baseline level
+            const repoBaselineY = repoRect.top + repoRect.height * 0.72;
+            const calculatedBottom = Math.round(chartRect.bottom - repoBaselineY);
 
-          if (calculatedBottom >= 25 && calculatedBottom <= 80) {
-            setBaselineBottom((prev) => (Math.abs(prev - calculatedBottom) >= 1 ? calculatedBottom : prev));
+            if (calculatedBottom >= 25 && calculatedBottom <= 80) {
+              setBaselineBottom((prev) => (Math.abs(prev - calculatedBottom) >= 1 ? calculatedBottom : prev));
+            }
+          } else if (chartRect.width > 0) {
+            setBaselineBottom(38);
           }
         }
       } else {
@@ -257,9 +266,11 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
       if (chartAreaRef.current && rightmostBarRef.current) {
         const chartRect = chartAreaRef.current.getBoundingClientRect();
         const barRect = rightmostBarRef.current.getBoundingClientRect();
-        const rightEdge = barRect.right + DX;
-        const calcRight = Math.max(0, Math.round(chartRect.right - rightEdge));
-        setRightOffset((prev) => (Math.abs(prev - calcRight) >= 1 ? calcRight : prev));
+        if (chartRect.width > 0 && barRect.width > 0) {
+          const rightEdge = barRect.right + DX;
+          const calcRight = Math.max(0, Math.round(chartRect.right - rightEdge));
+          setRightOffset((prev) => (Math.abs(prev - calcRight) >= 1 ? calcRight : prev));
+        }
       }
     };
 
@@ -267,17 +278,34 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
     window.addEventListener('resize', updateGeometry);
     const timer = setTimeout(updateGeometry, 150);
 
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => {
+            if (!hasEntered && globalHasEntered) {
+              setHasEntered(true);
+            }
+            updateGeometry();
+          })
+        : null;
+
+    if (chartAreaRef.current && resizeObserver) {
+      resizeObserver.observe(chartAreaRef.current);
+    }
+
     if (typeof document !== 'undefined' && 'fonts' in document) {
       document.fonts.ready.then(updateGeometry);
     }
 
     return () => {
       window.removeEventListener('resize', updateGeometry);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
       clearTimeout(timer);
     };
   }, [hasEntered]);
 
-  // Scroll entrance trigger (runs once only)
+  // Scroll entrance trigger
   useEffect(() => {
     let prefersReduced = false;
     if (typeof window !== 'undefined') {
@@ -285,6 +313,12 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
     }
     if (prefersReduced) {
       setIsReduced(true);
+      globalHasEntered = true;
+      setHasEntered(true);
+      return;
+    }
+
+    if (globalHasEntered) {
       setHasEntered(true);
       return;
     }
@@ -292,31 +326,66 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
     const target = containerRef.current;
     if (!target) return;
 
-    // Check if already in viewport on mount
-    const rect = target.getBoundingClientRect();
-    if (rect.top < window.innerHeight && rect.bottom > 0) {
-      setHasEntered(true);
+    // Check if already visible in viewport
+    const checkVisibility = () => {
+      const rect = target.getBoundingClientRect();
+      if (rect.height > 0 && rect.top < window.innerHeight && rect.bottom > 0) {
+        globalHasEntered = true;
+        setHasEntered(true);
+        return true;
+      }
+      return false;
+    };
+
+    if (checkVisibility()) {
       return;
     }
 
-    const scrollPane = document.getElementById('main-scroll-pane');
+    const pane = target.closest('#main-scroll-pane');
     const observer = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
         if (entry.isIntersecting) {
+          globalHasEntered = true;
           setHasEntered(true);
           observer.disconnect();
         }
       },
       {
-        root: scrollPane && window.innerWidth >= 1024 ? scrollPane : null,
+        root: pane, // null when outside #main-scroll-pane (e.g. mobile tree)
         threshold: 0.05,
         rootMargin: '40px 0px',
       }
     );
 
     observer.observe(target);
-    return () => observer.disconnect();
+
+    // Also handle dynamic viewport resize or scroll when switching layouts
+    const handleCheck = () => {
+      if (globalHasEntered || checkVisibility()) {
+        observer.disconnect();
+        window.removeEventListener('resize', handleCheck);
+        window.removeEventListener('scroll', handleCheck);
+        if (pane) {
+          pane.removeEventListener('scroll', handleCheck);
+        }
+      }
+    };
+
+    window.addEventListener('resize', handleCheck, { passive: true });
+    window.addEventListener('scroll', handleCheck, { passive: true });
+    if (pane) {
+      pane.addEventListener('scroll', handleCheck, { passive: true });
+    }
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', handleCheck);
+      window.removeEventListener('scroll', handleCheck);
+      if (pane) {
+        pane.removeEventListener('scroll', handleCheck);
+      }
+    };
   }, []);
 
   // Compute scale for linear y-axis
@@ -489,7 +558,7 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
                   onMouseLeave={() => setActiveLang(null)}
                   onFocus={() => setActiveLang(item.name)}
                   onBlur={() => setActiveLang(null)}
-                  className="relative flex-1 h-full flex flex-col justify-end items-center cursor-pointer outline-none group"
+                  className="relative flex-1 min-w-0 h-full flex flex-col justify-end items-center cursor-pointer outline-none group"
                 >
                   {/* % Label above the bar (fades in as bar completes growth) */}
                   <span
