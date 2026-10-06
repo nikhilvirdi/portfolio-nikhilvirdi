@@ -148,6 +148,62 @@ function normalizeSubmissionCounts(counts: Record<string, number>): Contribution
   return days;
 }
 
+export const LEETCODE_CACHE_KEY = 'leetcode_activity_contributions';
+
+export function saveCachedLeetCodeContributions(data: ContributionDay[]): void {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem(LEETCODE_CACHE_KEY, JSON.stringify(data));
+    }
+  } catch (err) {
+    console.warn('Failed to cache LeetCode contributions in localStorage:', err);
+  }
+}
+
+export function loadCachedLeetCodeContributions(): ContributionDay[] | null {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return null;
+    }
+    const raw = window.localStorage.getItem(LEETCODE_CACHE_KEY);
+    if (!raw) return null;
+
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      return null;
+    }
+
+    const validated: ContributionDay[] = [];
+    for (const item of parsed) {
+      if (
+        item &&
+        typeof item === 'object' &&
+        typeof (item as { date?: unknown }).date === 'string' &&
+        typeof (item as { count?: unknown }).count === 'number' &&
+        Number.isFinite((item as { count: number }).count) &&
+        (item as { count: number }).count >= 0
+      ) {
+        const dateStr = (item as { date: string }).date;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+          validated.push({
+            date: dateStr,
+            count: (item as { count: number }).count,
+          });
+        }
+      }
+    }
+
+    if (validated.length === 0) {
+      return null;
+    }
+
+    return validated;
+  } catch (err) {
+    console.warn('Failed to load cached LeetCode contributions from localStorage:', err);
+    return null;
+  }
+}
+
 function getFallbackSnapshotDays(): ContributionDay[] | null {
   try {
     const snapshot = leetcodeSnapshot as
@@ -174,8 +230,12 @@ function getFallbackSnapshotDays(): ContributionDay[] | null {
   return null;
 }
 
-export function fetchLeetCodeDataOnce(): Promise<void> {
-  if (fetchPromise) return fetchPromise;
+export function resetLeetCodeFetchPromise(): void {
+  fetchPromise = null;
+}
+
+export function fetchLeetCodeDataOnce(force = false): Promise<void> {
+  if (fetchPromise && !force) return fetchPromise;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
@@ -224,6 +284,11 @@ export function fetchLeetCodeDataOnce(): Promise<void> {
       }
 
       const days = normalizeSubmissionCounts(counts);
+      if (!Array.isArray(days) || days.length === 0) {
+        throw new Error('LeetCode normalized data is empty or invalid');
+      }
+
+      saveCachedLeetCodeContributions(days);
 
       setSharedState({
         loading: false,
@@ -233,7 +298,21 @@ export function fetchLeetCodeDataOnce(): Promise<void> {
     })
     .catch((err) => {
       clearTimeout(timeout);
-      console.warn('LeetCode live fetch failed or timed out, trying snapshot fallback:', err);
+      fetchPromise = null;
+      console.warn('LeetCode live fetch failed or timed out, trying cache fallback:', err);
+
+      // 1. Try client-side localStorage cache
+      const cachedDays = loadCachedLeetCodeContributions();
+      if (cachedDays && cachedDays.length > 0) {
+        setSharedState({
+          loading: false,
+          error: false,
+          data: cachedDays,
+        });
+        return;
+      }
+
+      // 2. Try committed static snapshot fallback
       const fallbackDays = getFallbackSnapshotDays();
       if (fallbackDays && fallbackDays.length > 0) {
         setSharedState({
@@ -241,13 +320,15 @@ export function fetchLeetCodeDataOnce(): Promise<void> {
           error: false,
           data: fallbackDays,
         });
-      } else {
-        setSharedState({
-          loading: false,
-          error: true,
-          data: [],
-        });
+        return;
       }
+
+      // 3. Both failed: show unavailable error state
+      setSharedState({
+        loading: false,
+        error: true,
+        data: [],
+      });
     });
 
   return fetchPromise;

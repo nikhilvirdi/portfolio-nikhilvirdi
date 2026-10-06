@@ -1434,6 +1434,62 @@ function ContributionSkyline({
   )
 }
 
+const GITHUB_CACHE_KEY = "github_activity_contributions"
+
+function saveCachedGitHubContributions(data: ContributionDay[]): void {
+  try {
+    if (typeof window !== "undefined" && window.localStorage) {
+      window.localStorage.setItem(GITHUB_CACHE_KEY, JSON.stringify(data))
+    }
+  } catch (err) {
+    console.warn("Failed to cache GitHub contributions in localStorage:", err)
+  }
+}
+
+function loadCachedGitHubContributions(): ContributionDay[] | null {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) {
+      return null
+    }
+    const raw = window.localStorage.getItem(GITHUB_CACHE_KEY)
+    if (!raw) return null
+
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      return null
+    }
+
+    const validated: ContributionDay[] = []
+    for (const item of parsed) {
+      if (
+        item &&
+        typeof item === "object" &&
+        typeof (item as { date?: unknown }).date === "string" &&
+        typeof (item as { count?: unknown }).count === "number" &&
+        Number.isFinite((item as { count: number }).count) &&
+        (item as { count: number }).count >= 0
+      ) {
+        const dateStr = (item as { date: string }).date
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+          validated.push({
+            date: dateStr,
+            count: (item as { count: number }).count,
+          })
+        }
+      }
+    }
+
+    if (validated.length === 0) {
+      return null
+    }
+
+    return validated
+  } catch (err) {
+    console.warn("Failed to load cached GitHub contributions from localStorage:", err)
+    return null
+  }
+}
+
 export default function GitHubActivity() {
   const [data, setData] = React.useState<ContributionDay[] | null>(null)
   const [error, setError] = React.useState(false)
@@ -1452,10 +1508,19 @@ export default function GitHubActivity() {
         return (result as { contributions: GitHubActivityDay[] }).contributions
       })
       .then((contributions) => {
-        setData(contributions.map(({ date, count }) => ({ date, count })))
+        const normalized: ContributionDay[] = contributions.map(({ date, count }) => ({ date, count }))
+        saveCachedGitHubContributions(normalized)
+        setData(normalized)
       })
       .catch((reason: unknown) => {
-        if (!(reason instanceof DOMException && reason.name === "AbortError")) setError(true)
+        if (reason instanceof DOMException && reason.name === "AbortError") return
+
+        const cached = loadCachedGitHubContributions()
+        if (cached && cached.length > 0) {
+          setData(cached)
+        } else {
+          setError(true)
+        }
       })
 
     return () => controller.abort()
