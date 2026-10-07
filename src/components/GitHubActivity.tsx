@@ -163,12 +163,47 @@ export const computeStats = (cells: Cell[]): ContributionStats => {
       if (run > longest.days) longest = { days: run, start: runStart, end: c.date }
     } else run = 0
   }
-  let j = cells.length - 1
-  if (j >= 0 && cells[j].count === 0) j--
+  
+  // Current streak: only consider dates up to today, ignore future dates
+  const todayMs = dayMs(new Date())
+  
+  // Find the last cell that is today or earlier
+  let lastValidIdx = cells.length - 1
+  while (lastValidIdx >= 0 && dayMs(cells[lastValidIdx].date) > todayMs) {
+    lastValidIdx--
+  }
+  
+  if (lastValidIdx < 0) {
+    // No valid dates up to today
+    const current: Streak = { days: 0, start: null, end: null }
+    return {
+      total,
+      first: cells.length ? cells[0].date : null,
+      last: cells.length ? cells[cells.length - 1].date : null,
+      busiest: { count: best, date: bestDate },
+      longest,
+      current,
+    }
+  }
+  
+  // Start from today (or the last valid date)
+  let j = lastValidIdx
+  
+  // If today has 0 contributions, treat it as unfinished and check yesterday
+  if (j >= 0 && cells[j].count === 0) {
+    j--
+  }
+  
   const endAt = j
-  while (j >= 0 && cells[j].count > 0) j--
+  
+  // Walk backward through consecutive days with count > 0
+  while (j >= 0 && cells[j].count > 0) {
+    j--
+  }
+  
   const days = endAt - j
   const current: Streak = days > 0 ? { days, start: cells[j + 1].date, end: cells[endAt].date } : { days: 0, start: null, end: null }
+  
   return {
     total,
     first: cells.length ? cells[0].date : null,

@@ -1,10 +1,13 @@
 import { useState, useRef, useEffect, useId } from 'react';
+import * as React from 'react';
 import githubStats from '../data/github-stats.json';
 import { BASE_TECH_DEFS } from './TechStackFloating';
 import kotlinSvg from 'devicon/icons/kotlin/kotlin-original.svg';
 import powershellSvg from 'devicon/icons/powershell/powershell-original.svg';
 import openglSvg from 'devicon/icons/opengl/opengl-original.svg';
 import bashSvg from 'devicon/icons/bash/bash-original.svg';
+import matlabSvg from 'devicon/icons/matlab/matlab-original.svg';
+import aarch64Svg from 'devicon/icons/aarch64/aarch64-original.svg';
 
 export interface LanguageEntry {
   name: string;
@@ -189,9 +192,18 @@ const EXTRA_LANGUAGE_LOGOS: Record<string, { svg: string; invert?: boolean }> = 
   GLSL: { svg: openglSvg },
   Shell: { svg: bashSvg },
   Bash: { svg: bashSvg },
+  MATLAB: { svg: matlabSvg },
+  M: { svg: matlabSvg }, // M files are typically MATLAB or Objective-C; MATLAB is more common
+  Assembly: { svg: aarch64Svg },
+  VHDL: { svg: aarch64Svg }, // Hardware description language, use architecture icon as closest match
 };
 
 function getLanguageLogo(name: string): { svg: string; invert?: boolean } | null {
+  // "Other" category doesn't get a logo
+  if (name === 'Other') {
+    return null;
+  }
+  
   const targetName = TECH_NAME_ALIASES[name] || name;
   const tech = BASE_TECH_DEFS.find((t) => t.name.toLowerCase() === targetName.toLowerCase());
   if (tech) {
@@ -210,7 +222,38 @@ let globalHasEntered = false;
 
 export default function LanguageBar({ className = '' }: { className?: string }) {
   const stats = githubStats as GitHubStatsData | undefined;
-  const languages = stats?.languages ?? [];
+  const rawLanguages = stats?.languages ?? [];
+  
+  // Group languages: > 0.1% shown individually, <= 0.1% grouped as "Other"
+  const languages: LanguageEntry[] = React.useMemo(() => {
+    const visible: LanguageEntry[] = [];
+    const hidden: LanguageEntry[] = [];
+    
+    for (const lang of rawLanguages) {
+      if (lang.percent > 0.1) {
+        visible.push(lang);
+      } else {
+        hidden.push(lang);
+      }
+    }
+    
+    // If there are hidden languages, create "Other" entry
+    if (hidden.length > 0) {
+      const otherBytes = hidden.reduce((sum, lang) => sum + lang.bytes, 0);
+      const otherPercent = hidden.reduce((sum, lang) => sum + lang.percent, 0);
+      
+      if (otherPercent > 0) {
+        visible.push({
+          name: 'Other',
+          bytes: otherBytes,
+          percent: otherPercent,
+        });
+      }
+    }
+    
+    return visible;
+  }, [rawLanguages]);
+  
   const totals = stats?.totals ?? {
     linesNet: 0,
     commits: 0,
@@ -637,6 +680,24 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
                           transition: percentFadeTransition,
                         }}
                       />
+                    </div>
+                  )}
+                  
+                  {/* Fallback text label for languages without logos (e.g., "Other") */}
+                  {!logo && (
+                    <div
+                      className="absolute top-[calc(100%+8px)] sm:top-[calc(100%+9px)] left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-none"
+                    >
+                      <span
+                        className="text-[9px] sm:text-[10px] font-tag text-zinc-400 select-none whitespace-nowrap"
+                        style={{
+                          opacity: isReduced || hasEntered ? (isDimmed ? 0.35 : 0.85) : 0,
+                          filter: isHovered ? 'brightness(1.2)' : 'none',
+                          transition: percentFadeTransition,
+                        }}
+                      >
+                        {item.name}
+                      </span>
                     </div>
                   )}
                 </div>
