@@ -1,29 +1,29 @@
 {
-  "generatedAt": "2026-10-06T18:23:32.849Z",
+  "generatedAt": "2026-10-07T06:01:17.638Z",
   "languages": [
     {
       "name": "Python",
-      "bytes": 5446024,
-      "percent": 45
+      "bytes": 5446222,
+      "percent": 44.2
     },
     {
       "name": "TypeScript",
       "bytes": 4289274,
-      "percent": 35.4
+      "percent": 34.8
     },
     {
       "name": "HTML",
-      "bytes": 889211,
+      "bytes": 896926,
       "percent": 7.3
     },
     {
       "name": "Java",
-      "bytes": 580064,
-      "percent": 4.8
+      "bytes": 665812,
+      "percent": 5.4
     },
     {
       "name": "JavaScript",
-      "bytes": 575865,
+      "bytes": 593952,
       "percent": 4.8
     },
     {
@@ -32,8 +32,13 @@
       "percent": 1.6
     },
     {
+      "name": "C",
+      "bytes": 96232,
+      "percent": 0.8
+    },
+    {
       "name": "CSS",
-      "bytes": 62810,
+      "bytes": 67368,
       "percent": 0.5
     },
     {
@@ -42,9 +47,24 @@
       "percent": 0.4
     },
     {
-      "name": "C",
-      "bytes": 29183,
-      "percent": 0.2
+      "name": "MATLAB",
+      "bytes": 16068,
+      "percent": 0.1
+    },
+    {
+      "name": "VHDL",
+      "bytes": 3194,
+      "percent": 0
+    },
+    {
+      "name": "M",
+      "bytes": 3185,
+      "percent": 0
+    },
+    {
+      "name": "Assembly",
+      "bytes": 2864,
+      "percent": 0
     },
     {
       "name": "GLSL",
@@ -63,10 +83,10 @@
     }
   ],
   "totals": {
-    "linesNet": 105128,
-    "linesAdded": 192419,
-    "linesDeleted": 87291,
-    "commits": 1865,
-    "activeDays": 123
+    "linesNet": 116363,
+    "linesAdded": 203756,
+    "linesDeleted": 87393,
+    "commits": 2056,
+    "activeDays": 124
   }
 }
