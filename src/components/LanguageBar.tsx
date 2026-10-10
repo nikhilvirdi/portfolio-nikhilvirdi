@@ -172,6 +172,7 @@ function useCountUp(target: number, start: boolean, durationMs: number = 1000): 
 }
 
 const MUTED = 'var(--color-muted-foreground, #737373)';
+const FOREGROUND = 'var(--color-foreground, #f2f2f0)';
 const ACCENT = '#39d353'; // GitHub green matching activity heatmap level 4
 
 // 2.5D Depth offsets (px)
@@ -492,7 +493,7 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
         >
           {/* Section header & live tooltip */}
           <div className="flex items-center justify-between mb-3 min-h-[24px]">
-            <span className="text-[13px] leading-tight font-normal" style={{ color: MUTED }}>
+            <span className="text-[13px] leading-tight font-normal" style={{ color: FOREGROUND }}>
               Languages across my projects
             </span>
 
