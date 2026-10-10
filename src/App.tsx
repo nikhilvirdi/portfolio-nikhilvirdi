@@ -88,7 +88,7 @@ export default function App() {
                 alt="Riyasat-e-Duggar logo"
                 className="inline-block h-[1em] w-[1em] align-[-0.15em] mx-1 object-contain"
               />{' '}
-              Riyasat-e-Duggar, a page about the history, culture, and identity of my home region. I document whatever I'm learning on Notion and sometimes GitHub too, can talk about cricket for hours, and regularly fall into random Wikipedia rabbit holes. I also run on chai and apparently complain about things more than I realize. I'm a chill human, though. Mostly.
+              Riyasat-e-Duggar, a page about the history, culture, and identity of my home region. I document whatever I'm learning on <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#FFFFFF] text-[#171717]">Notion</span> and sometimes <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#24292F] text-[#FFFFFF]">GitHub</span> too, can talk about cricket for hours, and regularly fall into random Wikipedia rabbit holes. I also run on chai and apparently complain about things more than I realize. I'm a chill human, though. Mostly.
             </p>
             <p className="font-outfit text-[22px] font-normal leading-relaxed text-foreground">
               And btw, if you're reading this late at night, there's a good chance I'm in my room, coding something up.
@@ -208,7 +208,7 @@ export default function App() {
               alt="Riyasat-e-Duggar logo"
               className="inline-block h-[1em] w-[1em] align-[-0.15em] mx-1 object-contain"
             />{' '}
-            Riyasat-e-Duggar, a page about the history, culture, and identity of my home region. I document whatever I'm learning on Notion and sometimes GitHub too, can talk about cricket for hours, and regularly fall into random Wikipedia rabbit holes. I also run on chai and apparently complain about things more than I realize. I'm a chill human, though. Mostly.
+            Riyasat-e-Duggar, a page about the history, culture, and identity of my home region. I document whatever I'm learning on <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#FFFFFF] text-[#171717]">Notion</span> and sometimes <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#24292F] text-[#FFFFFF]">GitHub</span> too, can talk about cricket for hours, and regularly fall into random Wikipedia rabbit holes. I also run on chai and apparently complain about things more than I realize. I'm a chill human, though. Mostly.
           </p>
           <p className="font-outfit text-base sm:text-lg font-normal leading-relaxed text-foreground">
             And btw, if you're reading this late at night, there's a good chance I'm in my room, coding something up.
