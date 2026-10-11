@@ -516,7 +516,14 @@ const TechText = ({
         moved > 1
           ? `${signed(Math.round(glyph.offset.x))}, ${signed(Math.round(-glyph.offset.y))}`
           : `${glyph.char}  ${Math.round(glyph.box.x2 - glyph.box.x1)} × ${Math.round(glyph.box.y2 - glyph.box.y1)}`;
-      ctx.fillText(label, Math.round(frame.x1), Math.round(frame.y1) - 7);
+
+      const textMetrics = ctx.measureText(label);
+      const textWidth = textMetrics.width;
+      // Clamp horizontally within canvas bounds so dimension label never clips past left/right boundaries
+      const labelX = Math.max(4, Math.min(Math.round(frame.x1), width - textWidth - 4));
+      // Clamp vertically within canvas bounds so the dimension label is never hidden by top boundary
+      const labelY = Math.max(11, Math.min(height - 4, Math.round(frame.y1) - 6));
+      ctx.fillText(label, labelX, labelY);
     };
 
     const tick = (now: number) => {

@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
+import TechText from './ui/TechText';
 
 import javaSvg from 'devicon/icons/java/java-original.svg';
 import typescriptSvg from 'devicon/icons/typescript/typescript-original.svg';
@@ -509,11 +510,22 @@ export default function TechStackFloating() {
   return (
     <section
       id="tech-stack"
-      className="py-16 px-16 bg-background"
+      className="py-16 px-16 bg-background font-heading"
     >
-      <h2 className="font-heading text-5xl font-bold tracking-tight text-foreground">
-        Tech Stack
-      </h2>
+      <div
+        className="font-heading -ml-3"
+        style={{ width: '290px', height: '60px', position: 'relative' }}
+      >
+        <TechText
+          text="Tech Stack"
+          fontFamily=""
+          fontWeight={700}
+          reveal="letter"
+          dashLength={4}
+          dashGap={2}
+          specks={15}
+        />
+      </div>
       <div
         ref={containerRef}
         onMouseMove={handleMouseMove}
