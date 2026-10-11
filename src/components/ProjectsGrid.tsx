@@ -26,16 +26,68 @@ export interface Project {
 
 const PROJECTS: Project[] = [
   {
-    title: 'RedFlag-CI',
-    logo: '/logos/redflag-ci.svg',
+    title: 'ASTRA-NET',
+    logo: '/logos/astra-net.png',
+    status: 'Live',
+    liveUrl: 'https://astra-net-8mu.pages.dev/',
+    whatItIs:
+      "A live, honest sky companion. It shows what's actually happening above your exact location right now: the ISS passing overhead, real satellites tracing their true positions, whether an aurora might reach your latitude tonight, and what's actually visible in the sky from where you're standing.",
+    whatItDoes:
+      "Most space tools show a fact with no context, a dot moving on a map, a Kp-index number, a headline about a solar flare, with nothing connecting them. ASTRA-NET's Causal Engine chains them together: a coronal mass ejection is detected, run through a physics-based transit model to estimate arrival time, checked against live geomagnetic data, then compared to your actual latitude to tell you whether it'll be visible tonight. Every prediction is later scored against what really happened, so the app's confidence stays earned instead of just claimed. One rule governs everything: if the data isn't real and verifiable, it doesn't show up.",
+    howItWorks:
+      'A TypeScript monorepo end to end, so the frontend and backend can never disagree on a formula. React, Three.js, and React Three Fiber render the live 3D sky (real satellite orbits, real star catalog, real constellation lines), Zustand handles state and GSAP the motion. The backend is Node/Express with PostgreSQL and Prisma, polling around a dozen free sources (NASA, NOAA, N2YO, CelesTrak, JPL Horizons, Open-Meteo, among others) on its own schedule and pushing updates out over Server-Sent Events, so visitors never hit those APIs directly.',
+    links: [
+      { label: 'GitHub', url: 'https://github.com/nikhilvirdi/ASTRA-NET' },
+      { label: 'Live', url: 'https://astra-net-8mu.pages.dev/' },
+    ],
+  },
+  {
+    title: 'GridLab',
+    logo: '/logos/gridlab.png',
+    status: 'Shipped',
+    liveUrl: 'https://nikhilvirdi.github.io/GridLab/',
+    whatItIs:
+      'A grid-based pathfinding visualizer built for DAA coursework. Pick two points, pick from seven algorithms, and watch the search happen in real time.',
+    whatItDoes:
+      'Runs BFS, DFS, A*, JPS, Theta*, Bidirectional BFS, and Greedy on the same 50x50 grid, with maze generation, five terrain biomes that carry real movement costs, diagonal movement, and a side-by-side comparison mode for running two algorithms at once.',
+    howItWorks:
+      'React, TypeScript, Vite, and Tailwind CSS, with Framer Motion driving the UI animations.',
+    links: [
+      { label: 'GitHub', url: 'https://github.com/nikhilvirdi/GridLab' },
+      { label: 'Live', url: 'https://nikhilvirdi.github.io/GridLab/' },
+    ],
+  },
+  {
+    title: 'Network Intrusion Detection MLP',
+    logo: '/logos/network-intrusion-detection-mlp.svg',
     status: 'Shipped',
     whatItIs:
-      'A GitHub App that watches pull requests for risky changes to AI agent configuration before they get merged. v2.0.0 is its final planned release.',
+      'A PyTorch multi-layer perceptron that classifies network traffic as normal or one of four attack families, trained on the NSL-KDD dataset.',
     whatItDoes:
-      "AI coding agents read their permissions and instructions from files sitting in a repo, an MCP config, a CLAUDE.md, a .cursor/rules file, and a pull request is where that configuration actually changes. RedFlag CI runs two deterministic checks: one flags drift in agent config (a new MCP server, a swapped tool version, a widened permission, a changed hook), the other scans rule files for hidden Unicode tricks and lookalike characters that can hide instructions in a diff that looks completely normal. If a PR doesn't touch any of those files, it stays silent. No dashboard noise, no false-positive fatigue.",
+      'Built to learn deep learning fundamentals hands-on: the forward and backward pass, loss functions, optimizers, and what overfitting actually looks like, using a dataset whose test set deliberately includes attack types the model never saw during training.',
     howItWorks:
-      "Node.js and TypeScript in strict mode, Express 5, and Octokit for the GitHub integration, with Zod handling payload validation. There are no LLM calls anywhere in the pipeline. Every check is a plain, deterministic function over file content, so the same diff always produces the same result. It's benchmarked against a 139-scenario adversarial test corpus, currently sitting at 1.000 precision and 1.000 recall.",
-    links: [{ label: 'GitHub', url: 'https://github.com/nikhilvirdi/RedFlag-CI' }],
+      'Two notebook stages kept side by side rather than just the final result: a baseline model at 76% accuracy, then a regularized version (Dropout, BatchNorm, L2, early stopping) at 78%. Preprocessing with pandas and scikit-learn, trained in Google Colab.',
+    links: [
+      {
+        label: 'GitHub',
+        url: 'https://github.com/nikhilvirdi/Network-Intrusion-Detection-MLP-NSL-KDD',
+      },
+    ],
+  },
+  {
+    title: 'Stenod',
+    logo: '/logos/stenod.svg',
+    status: 'In Progress',
+    whatItIs:
+      'A local, deterministic memory daemon for AI coding sessions, published on npm as steno-daemon and run via the stenod CLI. Still actively in progress.',
+    whatItDoes:
+      'AI coding tools lose context the moment a session ends. Stenod runs alongside them, capturing filesystem changes, terminal activity, and AI-provider network traffic during a coding session, and compiles all of it into a handoff manifest that lets work resume cleanly, in the same tool or a different one, without re-explaining everything from scratch.',
+    howItWorks:
+      "Node.js and TypeScript, watching the filesystem and terminal directly rather than depending on any one AI tool's internals. The project deliberately avoids hosted AI accounts, silent automatic AI calls, and cloud logins, everything runs locally and deterministically, with a companion dashboard that never relays data off the machine. It's currently under active architecture work, being rebuilt with a broader multi-tool capture system than its first version supported.",
+    links: [
+      { label: 'GitHub', url: 'https://github.com/nikhilvirdi/stenod' },
+      { label: 'npm', url: 'https://www.npmjs.com/package/steno-daemon' },
+    ],
   },
   {
     title: 'JHusk',
@@ -58,53 +110,6 @@ const PROJECTS: Project[] = [
     ],
   },
   {
-    title: 'ASTRA-NET',
-    logo: '/logos/astra-net.png',
-    status: 'Live',
-    liveUrl: 'https://astra-net-8mu.pages.dev/',
-    whatItIs:
-      "A live, honest sky companion. It shows what's actually happening above your exact location right now: the ISS passing overhead, real satellites tracing their true positions, whether an aurora might reach your latitude tonight, and what's actually visible in the sky from where you're standing.",
-    whatItDoes:
-      "Most space tools show a fact with no context, a dot moving on a map, a Kp-index number, a headline about a solar flare, with nothing connecting them. ASTRA-NET's Causal Engine chains them together: a coronal mass ejection is detected, run through a physics-based transit model to estimate arrival time, checked against live geomagnetic data, then compared to your actual latitude to tell you whether it'll be visible tonight. Every prediction is later scored against what really happened, so the app's confidence stays earned instead of just claimed. One rule governs everything: if the data isn't real and verifiable, it doesn't show up.",
-    howItWorks:
-      'A TypeScript monorepo end to end, so the frontend and backend can never disagree on a formula. React, Three.js, and React Three Fiber render the live 3D sky (real satellite orbits, real star catalog, real constellation lines), Zustand handles state and GSAP the motion. The backend is Node/Express with PostgreSQL and Prisma, polling around a dozen free sources (NASA, NOAA, N2YO, CelesTrak, JPL Horizons, Open-Meteo, among others) on its own schedule and pushing updates out over Server-Sent Events, so visitors never hit those APIs directly.',
-    links: [
-      { label: 'GitHub', url: 'https://github.com/nikhilvirdi/ASTRA-NET' },
-      { label: 'Live', url: 'https://astra-net-8mu.pages.dev/' },
-    ],
-  },
-  {
-    title: 'Stenod',
-    logo: '/logos/stenod.svg',
-    status: 'In Progress',
-    whatItIs:
-      'A local, deterministic memory daemon for AI coding sessions, published on npm as steno-daemon and run via the stenod CLI. Still actively in progress.',
-    whatItDoes:
-      'AI coding tools lose context the moment a session ends. Stenod runs alongside them, capturing filesystem changes, terminal activity, and AI-provider network traffic during a coding session, and compiles all of it into a handoff manifest that lets work resume cleanly, in the same tool or a different one, without re-explaining everything from scratch.',
-    howItWorks:
-      "Node.js and TypeScript, watching the filesystem and terminal directly rather than depending on any one AI tool's internals. The project deliberately avoids hosted AI accounts, silent automatic AI calls, and cloud logins, everything runs locally and deterministically, with a companion dashboard that never relays data off the machine. It's currently under active architecture work, being rebuilt with a broader multi-tool capture system than its first version supported.",
-    links: [
-      { label: 'GitHub', url: 'https://github.com/nikhilvirdi/stenod' },
-      { label: 'npm', url: 'https://www.npmjs.com/package/steno-daemon' },
-    ],
-  },
-  {
-    title: 'GridLab',
-    logo: '/logos/gridlab.png',
-    status: 'Shipped',
-    liveUrl: 'https://nikhilvirdi.github.io/GridLab/',
-    whatItIs:
-      'A grid-based pathfinding visualizer built for DAA coursework. Pick two points, pick from seven algorithms, and watch the search happen in real time.',
-    whatItDoes:
-      'Runs BFS, DFS, A*, JPS, Theta*, Bidirectional BFS, and Greedy on the same 50x50 grid, with maze generation, five terrain biomes that carry real movement costs, diagonal movement, and a side-by-side comparison mode for running two algorithms at once.',
-    howItWorks:
-      'React, TypeScript, Vite, and Tailwind CSS, with Framer Motion driving the UI animations.',
-    links: [
-      { label: 'GitHub', url: 'https://github.com/nikhilvirdi/GridLab' },
-      { label: 'Live', url: 'https://nikhilvirdi.github.io/GridLab/' },
-    ],
-  },
-  {
     title: 'Cockpit',
     logo: '/logos/cockpit.svg',
     status: 'Shipped',
@@ -117,21 +122,16 @@ const PROJECTS: Project[] = [
     links: [{ label: 'GitHub', url: 'https://github.com/nikhilvirdi/Cockpit' }],
   },
   {
-    title: 'Network Intrusion Detection MLP',
-    logo: '/logos/network-intrusion-detection-mlp.svg',
+    title: 'RedFlag-CI',
+    logo: '/logos/redflag-ci.svg',
     status: 'Shipped',
     whatItIs:
-      'A PyTorch multi-layer perceptron that classifies network traffic as normal or one of four attack families, trained on the NSL-KDD dataset.',
+      'A GitHub App that watches pull requests for risky changes to AI agent configuration before they get merged. v2.0.0 is its final planned release.',
     whatItDoes:
-      'Built to learn deep learning fundamentals hands-on: the forward and backward pass, loss functions, optimizers, and what overfitting actually looks like, using a dataset whose test set deliberately includes attack types the model never saw during training.',
+      "AI coding agents read their permissions and instructions from files sitting in a repo, an MCP config, a CLAUDE.md, a .cursor/rules file, and a pull request is where that configuration actually changes. RedFlag CI runs two deterministic checks: one flags drift in agent config (a new MCP server, a swapped tool version, a widened permission, a changed hook), the other scans rule files for hidden Unicode tricks and lookalike characters that can hide instructions in a diff that looks completely normal. If a PR doesn't touch any of those files, it stays silent. No dashboard noise, no false-positive fatigue.",
     howItWorks:
-      'Two notebook stages kept side by side rather than just the final result: a baseline model at 76% accuracy, then a regularized version (Dropout, BatchNorm, L2, early stopping) at 78%. Preprocessing with pandas and scikit-learn, trained in Google Colab.',
-    links: [
-      {
-        label: 'GitHub',
-        url: 'https://github.com/nikhilvirdi/Network-Intrusion-Detection-MLP-NSL-KDD',
-      },
-    ],
+      "Node.js and TypeScript in strict mode, Express 5, and Octokit for the GitHub integration, with Zod handling payload validation. There are no LLM calls anywhere in the pipeline. Every check is a plain, deterministic function over file content, so the same diff always produces the same result. It's benchmarked against a 139-scenario adversarial test corpus, currently sitting at 1.000 precision and 1.000 recall.",
+    links: [{ label: 'GitHub', url: 'https://github.com/nikhilvirdi/RedFlag-CI' }],
   },
   {
     title: 'CI/CD Pipeline Anatomy',
