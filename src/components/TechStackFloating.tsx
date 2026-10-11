@@ -172,6 +172,7 @@ interface FloatingIconProps {
   mouseY: React.RefObject<number>;
   containerRef: React.RefObject<HTMLElement | null>;
   measureRef?: (el: HTMLDivElement | null) => void;
+  canTilt?: boolean;
 }
 
 function FloatingIcon({
@@ -180,12 +181,57 @@ function FloatingIcon({
   mouseY,
   containerRef,
   measureRef,
+  canTilt = false,
 }: FloatingIconProps) {
   const localRef = useRef<HTMLDivElement | null>(null);
+  const logoRef = useRef<HTMLDivElement | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
+
   const offsetX = useMotionValue(0);
   const offsetY = useMotionValue(0);
   const springX = useSpring(offsetX, { damping: 20, stiffness: 200 });
   const springY = useSpring(offsetY, { damping: 20, stiffness: 200 });
+
+  // 3D tilt & scale values
+  const tiltX = useMotionValue(0);
+  const tiltY = useMotionValue(0);
+  const scaleVal = useMotionValue(1);
+
+  const tiltSpringConfig = { damping: 18, stiffness: 240, mass: 0.4 };
+  const springRotateX = useSpring(tiltX, tiltSpringConfig);
+  const springRotateY = useSpring(tiltY, tiltSpringConfig);
+  const springScale = useSpring(scaleVal, tiltSpringConfig);
+
+  const handlePointerEnter = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!canTilt || e.pointerType === 'touch') return;
+    setIsHovered(true);
+    scaleVal.set(1.15);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!canTilt || e.pointerType === 'touch') return;
+    const el = logoRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const normX = Math.max(-1, Math.min(1, (e.clientX - centerX) / (rect.width / 2)));
+    const normY = Math.max(-1, Math.min(1, (e.clientY - centerY) / (rect.height / 2)));
+
+    const MAX_TILT = 16;
+    tiltX.set(normY * MAX_TILT);
+    tiltY.set(-normX * MAX_TILT);
+  };
+
+  const handlePointerLeave = () => {
+    setIsHovered(false);
+    tiltX.set(0);
+    tiltY.set(0);
+    scaleVal.set(1);
+  };
 
   const setRef = (el: HTMLDivElement | null) => {
     localRef.current = el;
@@ -283,26 +329,81 @@ function FloatingIcon({
             repeatType: 'mirror',
             ease: 'easeInOut',
           }}
-          className="relative text-foreground/80 hover:text-foreground transition-colors flex flex-col items-center"
+          className="relative flex flex-col items-center"
         >
-          <img
-            src={item.svg}
-            alt={item.name}
-            width={38}
-            height={38}
-            className={`w-[38px] h-[38px] select-none pointer-events-none object-contain ${item.invert ? 'invert' : ''}`}
-            style={{ width: 38, height: 38 }}
-          />
-          <span className="text-[10px] tracking-wide text-muted font-tag mt-1 whitespace-nowrap">
-            {item.name}
-          </span>
+          <div
+            className="flex flex-col items-center cursor-pointer group"
+            onPointerEnter={handlePointerEnter}
+            onPointerMove={handlePointerMove}
+            onPointerLeave={handlePointerLeave}
+          >
+            {/* Separate 3D tilt perspective wrapper */}
+            <div style={{ perspective: 600 }} className="flex items-center justify-center">
+              <motion.div
+                ref={logoRef}
+                style={{
+                  rotateX: springRotateX,
+                  rotateY: springRotateY,
+                  scale: springScale,
+                  transformStyle: 'preserve-3d',
+                }}
+                className="relative will-change-transform"
+              >
+                <img
+                  src={item.svg}
+                  alt={item.name}
+                  width={38}
+                  height={38}
+                  className={`w-[38px] h-[38px] select-none pointer-events-none object-contain transition-[filter] duration-200 ${
+                    item.invert ? 'invert' : ''
+                  } ${isHovered ? 'drop-shadow-[0_8px_16px_rgba(255,255,255,0.18)]' : ''}`}
+                  style={{ width: 38, height: 38 }}
+                />
+              </motion.div>
+            </div>
+            <span
+              className={`text-[10px] tracking-wide font-tag mt-1 whitespace-nowrap transition-colors duration-200 ${
+                isHovered ? 'text-white' : 'text-muted'
+              }`}
+            >
+              {item.name}
+            </span>
+          </div>
         </motion.div>
       </motion.div>
     </div>
   );
 }
 
+function useCanTilt() {
+  const [canTilt, setCanTilt] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const hoverQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const update = () => {
+      setCanTilt(hoverQuery.matches && !motionQuery.matches);
+    };
+
+    update();
+
+    hoverQuery.addEventListener('change', update);
+    motionQuery.addEventListener('change', update);
+
+    return () => {
+      hoverQuery.removeEventListener('change', update);
+      motionQuery.removeEventListener('change', update);
+    };
+  }, []);
+
+  return canTilt;
+}
+
 export default function TechStackFloating() {
+  const canTilt = useCanTilt();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mouseX = useRef<number>(-9999);
   const mouseY = useRef<number>(-9999);
@@ -427,6 +528,7 @@ export default function TechStackFloating() {
             mouseX={mouseX}
             mouseY={mouseY}
             containerRef={containerRef}
+            canTilt={canTilt}
             measureRef={(el) => {
               if (el) iconRefs.current[item.name] = el;
             }}
