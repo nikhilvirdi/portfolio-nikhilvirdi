@@ -1,26 +1,19 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import {
-  motion,
-  useMotionValue,
-  useSpring,
-  useTransform,
-  useReducedMotion,
-  AnimatePresence,
-  type MotionValue,
-} from 'framer-motion';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { WorksWheel, LOGO_SCALE_OVERRIDES, DEFAULT_LOGO_SIZE } from './ui/works-wheel';
 
 // ============================================================================
 // Types & Project Data (preserved exactly from existing portfolio)
 // ============================================================================
 
-type ProjectStatus = 'Shipped' | 'Live' | 'In Progress' | 'Reference';
+export type ProjectStatus = 'Shipped' | 'Live' | 'In Progress' | 'Reference';
 
-interface ProjectLink {
+export interface ProjectLink {
   label: string;
   url: string;
 }
 
-interface Project {
+export interface Project {
   title: string;
   logo?: string;
   status: ProjectStatus;
@@ -113,6 +106,7 @@ const PROJECTS: Project[] = [
   },
   {
     title: 'Cockpit',
+    logo: '/logos/cockpit.svg',
     status: 'Shipped',
     whatItIs:
       'A local dev utility that gives you one glance at the state of all your projects instead of juggling terminal tabs.',
@@ -124,6 +118,7 @@ const PROJECTS: Project[] = [
   },
   {
     title: 'Network Intrusion Detection MLP',
+    logo: '/logos/network-intrusion-detection-mlp.svg',
     status: 'Shipped',
     whatItIs:
       'A PyTorch multi-layer perceptron that classifies network traffic as normal or one of four attack families, trained on the NSL-KDD dataset.',
@@ -140,6 +135,7 @@ const PROJECTS: Project[] = [
   },
   {
     title: 'CI/CD Pipeline Anatomy',
+    logo: '/logos/cicd-pipeline-anatomy.svg',
     status: 'Reference',
     liveUrl: 'https://nikhilvirdi.github.io/Pipeline-Anatomy/',
     whatItIs:
@@ -155,352 +151,7 @@ const PROJECTS: Project[] = [
   },
 ];
 
-const LOGO_LESS_PROJECT_TITLES = [
-  'Cockpit',
-  'Network Intrusion Detection MLP',
-  'CI/CD Pipeline Anatomy',
-];
-
-// ============================================================================
-// Stack Spread Spatial Configuration
-// ============================================================================
-
-interface CardLayoutDef {
-  projectIndex: number;
-  stackOffset: { x: number; y: number }; // Initial cluster offset in px
-  stackRotate: number; // Initial cluster rotation in degrees
-  z: number;
-  target: { x: number; y: number }; // Target spread position (% of stage bounds) on desktop
-  targetSm: { x: number; y: number }; // Target spread position (% of stage bounds) on mobile
-}
-
-const CARD_LAYOUTS: CardLayoutDef[] = [
-  // 0: RedFlag-CI -> Top Left
-  {
-    projectIndex: 0,
-    stackOffset: { x: -16, y: -18 },
-    stackRotate: -15,
-    z: 2,
-    target: { x: -33, y: -34 },
-    targetSm: { x: -24, y: -37 },
-  },
-  // 1: ASTRA-NET -> Top Center
-  {
-    projectIndex: 2,
-    stackOffset: { x: 2, y: -20 },
-    stackRotate: -2,
-    z: 3,
-    target: { x: 0, y: -37 },
-    targetSm: { x: 24, y: -37 },
-  },
-  // 2: JHusk -> Top Right
-  {
-    projectIndex: 1,
-    stackOffset: { x: 18, y: -14 },
-    stackRotate: 16,
-    z: 4,
-    target: { x: 33, y: -34 },
-    targetSm: { x: -24, y: -19 },
-  },
-  // 3: Stenod -> Mid Left
-  {
-    projectIndex: 3,
-    stackOffset: { x: -20, y: 2 },
-    stackRotate: -6,
-    z: 5,
-    target: { x: -36, y: 0 },
-    targetSm: { x: 24, y: -19 },
-  },
-  // 4: GridLab -> Mid Right
-  {
-    projectIndex: 4,
-    stackOffset: { x: 20, y: 4 },
-    stackRotate: 8,
-    z: 6,
-    target: { x: 36, y: 0 },
-    targetSm: { x: -24, y: 19 },
-  },
-  // 5: Cockpit -> Bottom Left
-  {
-    projectIndex: 5,
-    stackOffset: { x: -14, y: 16 },
-    stackRotate: 11,
-    z: 7,
-    target: { x: -33, y: 34 },
-    targetSm: { x: 24, y: 19 },
-  },
-  // 6: Network Intrusion Detection MLP -> Bottom Center
-  {
-    projectIndex: 6,
-    stackOffset: { x: 4, y: 15 },
-    stackRotate: -8,
-    z: 8,
-    target: { x: 0, y: 37 },
-    targetSm: { x: -24, y: 37 },
-  },
-  // 7: CI/CD Pipeline Anatomy -> Bottom Right
-  {
-    projectIndex: 7,
-    stackOffset: { x: 16, y: 18 },
-    stackRotate: -5,
-    z: 9,
-    target: { x: 33, y: 34 },
-    targetSm: { x: 24, y: 37 },
-  },
-];
-
-const SCATTER_START = 0.02;
-const SCATTER_END = 0.98;
-
-const PARALLAX_SPRING = { stiffness: 90, damping: 22, mass: 0.6 };
-
-function usePointerParallax(active: boolean, enabled: boolean) {
-  const rawX = useMotionValue(0);
-  const rawY = useMotionValue(0);
-  const x = useSpring(rawX, PARALLAX_SPRING);
-  const y = useSpring(rawY, PARALLAX_SPRING);
-
-  useEffect(() => {
-    if (!enabled) return;
-
-    if (!active) {
-      rawX.set(0);
-      rawY.set(0);
-      return;
-    }
-
-    const onMove = (event: PointerEvent) => {
-      rawX.set((event.clientX / window.innerWidth) * 2 - 1);
-      rawY.set((event.clientY / window.innerHeight) * 2 - 1);
-    };
-
-    const onLeave = () => {
-      rawX.set(0);
-      rawY.set(0);
-    };
-
-    window.addEventListener('pointermove', onMove, { passive: true });
-    document.addEventListener('pointerleave', onLeave);
-
-    return () => {
-      window.removeEventListener('pointermove', onMove);
-      document.removeEventListener('pointerleave', onLeave);
-    };
-  }, [active, enabled, rawX, rawY]);
-
-  return { x, y };
-}
-
-// Custom hook to cleanly measure scroll progression within either #main-scroll-pane or window
-function useSectionScrollProgress(targetRef: React.RefObject<HTMLDivElement | null>) {
-  const progress = useMotionValue(0);
-
-  useEffect(() => {
-    const target = targetRef.current;
-    if (!target) return;
-
-    const getScrollContainer = (): HTMLElement | Window => {
-      if (typeof window === 'undefined') return window;
-      const pane = document.getElementById('main-scroll-pane');
-      if (pane && window.innerWidth >= 1024 && pane.scrollHeight > pane.clientHeight) {
-        return pane;
-      }
-      return window;
-    };
-
-    const update = () => {
-      const el = targetRef.current;
-      if (!el) return;
-
-      const container = getScrollContainer();
-      const rect = el.getBoundingClientRect();
-
-      let currentScrolled: number;
-      let totalScrollableDistance: number;
-
-      if (container instanceof HTMLElement) {
-        const cRect = container.getBoundingClientRect();
-        currentScrolled = cRect.top - rect.top;
-        totalScrollableDistance = rect.height - cRect.height;
-      } else {
-        currentScrolled = -rect.top;
-        totalScrollableDistance = rect.height - window.innerHeight;
-      }
-
-      const p = totalScrollableDistance > 0
-        ? Math.max(0, Math.min(1, currentScrolled / totalScrollableDistance))
-        : 0;
-
-      progress.set(p);
-    };
-
-    update();
-
-    const container = getScrollContainer();
-    const eventTarget = container instanceof HTMLElement ? container : window;
-
-    eventTarget.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update, { passive: true });
-
-    return () => {
-      eventTarget.removeEventListener('scroll', update);
-      window.removeEventListener('resize', update);
-    };
-  }, [targetRef, progress]);
-
-  return progress;
-}
-
-// ============================================================================
-// Interactive Spread Card Component
-// ============================================================================
-
-interface CardProps {
-  layoutDef: CardLayoutDef;
-  project: Project;
-  progress: MotionValue<number>;
-  isReduced: boolean;
-  isMobile: boolean;
-  stageSize: { width: number; height: number };
-  pointer: { x: MotionValue<number>; y: MotionValue<number> };
-  onSelect: (p: Project) => void;
-  isSelected: boolean;
-}
-
-function SpreadCard({
-  layoutDef,
-  project,
-  progress,
-  isReduced,
-  isMobile,
-  stageSize,
-  pointer,
-  onSelect,
-  isSelected,
-}: CardProps) {
-  const { stackOffset, stackRotate, target, targetSm, z } = layoutDef;
-
-  const endXPercent = isMobile ? targetSm.x : target.x;
-  const endYPercent = isMobile ? targetSm.y : target.y;
-
-  // Convert target percentage of stage into exact pixel coordinates
-  const targetPxX = (stageSize.width * endXPercent) / 100;
-  const targetPxY = (stageSize.height * endYPercent) / 100;
-
-  // Interpolate position from clustered stack (progress 0) to spread boundary (progress 1)
-  const translate = useTransform(
-    [progress, pointer.x, pointer.y],
-    ([p, px, py]: number[]) => {
-      if (isReduced) {
-        return `calc(-50% + ${targetPxX.toFixed(1)}px) calc(-50% + ${targetPxY.toFixed(1)}px)`;
-      }
-
-      const curX = stackOffset.x + (targetPxX - stackOffset.x) * p;
-      const curY = stackOffset.y + (targetPxY - stackOffset.y) * p;
-
-      // Subtle parallax drift on desktop once spread completes
-      const drift = p * (isMobile ? 0 : 0.85);
-      const dx = px * 14 * drift;
-      const dy = py * 12 * drift;
-
-      return `calc(-50% + ${(curX - dx).toFixed(1)}px) calc(-50% + ${(curY - dy).toFixed(1)}px)`;
-    }
-  );
-
-  const rotate = useTransform(progress, [0, 1], [
-    isReduced ? 0 : stackRotate,
-    0,
-  ]);
-
-  const scale = useTransform(progress, [0, 1], [
-    isReduced ? 1 : 0.88,
-    1,
-  ]);
-
-  // Card container opacity: 1 (packed) → 0 (spread)
-  const containerOpacity = useTransform(progress, [0, 1], [1, 0]);
-
-  return (
-    <motion.div
-      className="absolute left-1/2 top-1/2 will-change-transform cursor-pointer select-none outline-none"
-      style={{
-        zIndex: isSelected ? 25 : z,
-        translate,
-        rotate,
-        scale,
-      }}
-      tabIndex={0}
-      role="button"
-      aria-label={`Select project: ${project.title}`}
-      onClick={(e) => {
-        e.stopPropagation();
-        onSelect(project);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onSelect(project);
-        }
-      }}
-    >
-      {/* Card container with dynamic opacity */}
-      <motion.div
-        className={`group absolute inset-0 flex items-center justify-center overflow-hidden rounded-xl border transition-all duration-300 ${
-          isSelected
-            ? 'border-white/60 ring-2 ring-white/20 bg-zinc-900 shadow-[0_12px_40px_rgba(0,0,0,0.8)] scale-105'
-            : 'border-white/10 bg-zinc-950/85 hover:border-white/35 hover:bg-zinc-900/90 shadow-[0_8px_30px_rgba(0,0,0,0.6)]'
-        } ${
-          isMobile
-            ? 'w-[145px] h-[105px] p-2.5'
-            : 'w-[195px] lg:w-[215px] h-[135px] lg:h-[145px] p-3.5'
-        }`}
-        style={{
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          opacity: containerOpacity,
-        }}
-      >
-        {/* Subtle SVG fractal noise texture */}
-        <div
-          className="absolute inset-0 pointer-events-none opacity-[0.05] mix-blend-overlay"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-          }}
-        />
-      </motion.div>
-
-      {/* Centered Logo/Visual - always visible, positioned independently */}
-      <div
-        className={`relative z-10 flex items-center justify-center pointer-events-auto ${
-          isMobile
-            ? 'w-[145px] h-[105px] p-2.5'
-            : 'w-[195px] lg:w-[215px] h-[135px] lg:h-[145px] p-3.5'
-        }`}
-      >
-        <div className="w-full h-full flex items-center justify-center">
-          {project.logo ? (
-            <img
-              src={project.logo}
-              alt={project.title}
-              className="max-h-[52px] sm:max-h-[64px] max-w-[76%] object-contain select-none pointer-events-none drop-shadow-sm transition-transform duration-300 group-hover:scale-105"
-            />
-          ) : (
-            <h4
-              className={`${
-                LOGO_LESS_PROJECT_TITLES.includes(project.title)
-                  ? 'font-jakarta font-bold'
-                  : 'font-heading font-semibold'
-              } text-[13px] sm:text-base text-foreground text-center px-1.5 sm:px-2 leading-snug select-none line-clamp-2`}
-            >
-              {project.title}
-            </h4>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
+const LOGO_LESS_PROJECT_TITLES: string[] = [];
 // ============================================================================
 // Iframe Frame Components (for live web application projects)
 // ============================================================================
@@ -648,66 +299,7 @@ function PipelineAnatomyFrame({ liveUrl }: { liveUrl: string }) {
 // ============================================================================
 
 export default function ProjectsGrid() {
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const stageRef = useRef<HTMLDivElement>(null);
-
-  const reduceMotion = useReducedMotion();
-  const isReduced = reduceMotion === true;
-
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-  const [stageSize, setStageSize] = useState({ width: 844, height: 640 });
-
-  // Measure stage element dimensions for responsive spread interpolation
-  useEffect(() => {
-    const updateDimensions = () => {
-      const mobile = window.innerWidth < 768 || window.matchMedia('(pointer: coarse)').matches;
-      setIsMobile(mobile);
-      if (stageRef.current) {
-        setStageSize({
-          width: stageRef.current.clientWidth || 844,
-          height: stageRef.current.clientHeight || 640,
-        });
-      }
-    };
-
-    updateDimensions();
-    window.addEventListener('resize', updateDimensions);
-
-    const ro = new ResizeObserver(updateDimensions);
-    if (stageRef.current) {
-      ro.observe(stageRef.current);
-    }
-
-    return () => {
-      window.removeEventListener('resize', updateDimensions);
-      ro.disconnect();
-    };
-  }, []);
-
-  // Section scroll progression: hold -> spread -> settle
-  const rawProgress = useSectionScrollProgress(wrapRef);
-  const scatterProgress = useTransform(
-    rawProgress,
-    [0, SCATTER_START, SCATTER_END, 1],
-    [0, 0, 1, 1]
-  );
-
-  // Pointer parallax activates only after cards are fully spread
-  const [isSpreadComplete, setIsSpreadComplete] = useState(false);
-  useEffect(() => {
-    const unsub = scatterProgress.on('change', (v) => {
-      setIsSpreadComplete(v >= 0.95);
-    });
-    return () => unsub();
-  }, [scatterProgress]);
-
-  const parallaxEnabled = !isReduced && !isMobile;
-  const pointer = usePointerParallax(isSpreadComplete, parallaxEnabled);
-
-  // Center instructional text animation
-  const centerTextOpacity = useTransform(scatterProgress, [0.28, 0.65], [0, 1]);
-  const centerTextScale = useTransform(scatterProgress, [0.28, 0.85], [0.88, 1]);
 
   // Handle escape key to close selected project view
   useEffect(() => {
@@ -726,59 +318,17 @@ export default function ProjectsGrid() {
     setSelectedProject((prev) => (prev?.title === project.title ? null : project));
   }, []);
 
-  // Tailored scroll length: ~130vh on desktop, ~115vh on mobile
-  const scrollLength = isMobile ? 115 : 130;
-
   return (
-    <div
-      ref={wrapRef}
-      className="relative w-[844px] max-w-full"
-      style={{ height: `${scrollLength}vh` }}
-    >
-      {/* Sticky Viewport Stage */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col items-center justify-center">
-        {/* Center instructional text: fades into view during the spread */}
-        <motion.div
-          className="pointer-events-none absolute inset-0 z-[5] flex flex-col items-center justify-center px-4 text-center select-none"
-          style={{
-            opacity: isReduced ? 1 : centerTextOpacity,
-            scale: isReduced ? 1 : centerTextScale,
-          }}
-        >
-          <h3 className="font-heading text-xl sm:text-2xl md:text-3xl font-medium tracking-tight text-foreground">
-            Tap on any project
-            <br />
-            to explore and preview it
-          </h3>
-        </motion.div>
+    <div className="relative w-[844px] max-w-full h-[580px] sm:h-[640px]">
+      <WorksWheel
+        items={PROJECTS}
+        onSelect={handleSelect}
+        label={`Tap on any project\nto explore and preview it`}
+        action="View"
+      />
 
-        {/* Stack Spread Cards Container */}
-        <div
-          ref={stageRef}
-          className="relative w-full h-[580px] sm:h-[640px] flex items-center justify-center"
-        >
-          {CARD_LAYOUTS.map((layout) => {
-            const project = PROJECTS[layout.projectIndex];
-            const isSelected = selectedProject?.title === project.title;
-            return (
-              <SpreadCard
-                key={project.title}
-                layoutDef={layout}
-                project={project}
-                progress={scatterProgress}
-                isReduced={isReduced}
-                isMobile={isMobile}
-                stageSize={stageSize}
-                pointer={pointer}
-                onSelect={handleSelect}
-                isSelected={isSelected}
-              />
-            );
-          })}
-        </div>
-
-        {/* Selected Project In-Place View within the SAME Area */}
-        <AnimatePresence>
+      {/* Selected Project In-Place View within the SAME Area */}
+      <AnimatePresence>
           {selectedProject && (
             <motion.div
               key="project-details-overlay"
@@ -896,7 +446,10 @@ export default function ProjectsGrid() {
                       <img
                         src={selectedProject.logo}
                         alt={selectedProject.title}
-                        className="max-h-[140px] sm:max-h-[180px] max-w-[80%] object-contain select-none"
+                        className={`object-contain select-none ${
+                          LOGO_SCALE_OVERRIDES[selectedProject.title]?.overlay ??
+                          DEFAULT_LOGO_SIZE.overlay
+                        }`}
                       />
                     ) : (
                       <h4
@@ -951,7 +504,6 @@ export default function ProjectsGrid() {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
     </div>
   );
 }
