@@ -10,6 +10,7 @@ export default {
         background: '#000000',
         foreground: '#f2f2f0',
         muted: '#71717a',
+        'muted-foreground': '#71717a',
         'accent-blue': '#38bdf8',
         'accent-green': '#22c55e',
         'accent-amber': '#f59e0b',
