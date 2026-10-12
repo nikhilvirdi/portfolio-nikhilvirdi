@@ -323,7 +323,7 @@ export default function ProjectsGrid() {
       <WorksWheel
         items={PROJECTS}
         onSelect={handleSelect}
-        label={`Tap on any project\nto explore and preview it`}
+        label={`Scroll down to\nexplore each project.`}
         action="View"
       />
 
@@ -346,7 +346,7 @@ export default function ProjectsGrid() {
                 exit={{ opacity: 0, scale: 0.94, y: 14 }}
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative w-full max-w-4xl max-h-[85vh] overflow-y-auto border border-white/10 bg-zinc-950 p-6 sm:p-8 rounded-xl flex flex-col space-y-6 shadow-2xl"
+                className="relative w-full max-w-4xl max-h-full min-h-0 overflow-y-auto border border-transparent bg-black p-6 sm:p-8 rounded-xl flex flex-col space-y-6 shadow-2xl"
               >
                 {/* Header row with "Back to projects", links, and close */}
                 <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -441,7 +441,7 @@ export default function ProjectsGrid() {
                     )}
                   </div>
                 ) : (
-                  <div className="py-8 sm:py-12 flex items-center justify-center border border-white/5 rounded-lg bg-zinc-900/30">
+                  <div className="py-8 sm:py-12 flex items-center justify-center border border-transparent rounded-lg bg-black">
                     {selectedProject.logo ? (
                       <img
                         src={selectedProject.logo}
