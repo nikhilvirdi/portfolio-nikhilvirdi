@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WorksWheel, LOGO_SCALE_OVERRIDES, DEFAULT_LOGO_SIZE } from './ui/works-wheel';
+import JHuskTimeline from './JHuskTimeline';
 
 // ============================================================================
 // Types & Project Data (preserved exactly from existing portfolio)
@@ -300,6 +301,7 @@ function PipelineAnatomyFrame({ liveUrl }: { liveUrl: string }) {
 
 export default function ProjectsGrid() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // Handle escape key to close selected project view
   useEffect(() => {
@@ -312,6 +314,30 @@ export default function ProjectsGrid() {
       window.addEventListener('keydown', handleKeyDown);
     }
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedProject]);
+
+  // Handle outside click/tap to close selected project view
+  useEffect(() => {
+    if (!selectedProject) return;
+
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (cardRef.current && !cardRef.current.contains(target)) {
+        setSelectedProject(null);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleOutsideClick);
+      document.addEventListener('touchstart', handleOutsideClick);
+    }, 0);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+    };
   }, [selectedProject]);
 
   const handleSelect = useCallback((project: Project) => {
@@ -340,7 +366,9 @@ export default function ProjectsGrid() {
               onClick={() => setSelectedProject(null)}
             >
               <motion.div
+                ref={cardRef}
                 key="project-details-card"
+                id="project-details-card"
                 initial={{ opacity: 0, scale: 0.94, y: 14 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.94, y: 14 }}
@@ -348,55 +376,56 @@ export default function ProjectsGrid() {
                 onClick={(e) => e.stopPropagation()}
                 className="relative w-full max-w-4xl max-h-full min-h-0 overflow-y-auto border border-transparent bg-black p-6 sm:p-8 rounded-xl flex flex-col space-y-6 shadow-2xl"
               >
-                {/* Header row with "Back to projects", links, and close */}
-                <div className="flex items-center justify-between gap-4 flex-wrap">
+                {/* Header row: project links and close icon aligned in the top-right */}
+                <div className="flex items-start justify-end gap-3 sm:gap-4 w-full">
+                  {selectedProject.links && selectedProject.links.length > 0 && (
+                    <div className="flex items-center justify-end gap-2 flex-wrap min-w-0">
+                      {selectedProject.links.map((link) => (
+                        <a
+                          key={link.url}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-tag font-medium text-foreground bg-transparent border border-white/20 hover:border-white/50 hover:bg-white/5 transition-colors rounded-sm"
+                        >
+                          <span>{link.label}</span>
+                          <svg
+                            className="w-3 h-3 opacity-70"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                            <polyline points="15 3 21 3 21 9" />
+                            <line x1="10" y1="14" x2="21" y2="3" />
+                          </svg>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => setSelectedProject(null)}
-                    className="inline-flex items-center gap-2 text-xs sm:text-sm font-tag font-medium text-muted hover:text-foreground transition-colors group cursor-pointer"
+                    className="inline-flex items-center justify-center h-[30px] w-[30px] text-zinc-400 hover:text-white bg-transparent border border-white/20 hover:border-white/50 hover:bg-white/5 transition-colors rounded-sm cursor-pointer shrink-0"
+                    aria-label="Close project view"
                   >
-                    <span className="transition-transform group-hover:-translate-x-1">←</span>
-                    <span>Back to projects</span>
-                  </button>
-
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    {selectedProject.links && selectedProject.links.length > 0 && (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {selectedProject.links.map((link) => (
-                          <a
-                            key={link.url}
-                            href={link.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-tag font-medium text-foreground bg-transparent border border-white/20 hover:border-white/50 hover:bg-white/5 transition-colors rounded-sm"
-                          >
-                            <span>{link.label}</span>
-                            <svg
-                              className="w-3 h-3 opacity-70"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                              <polyline points="15 3 21 3 21 9" />
-                              <line x1="10" y1="14" x2="21" y2="3" />
-                            </svg>
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setSelectedProject(null)}
-                      className="text-zinc-400 hover:text-white transition-colors p-1 leading-none text-xl ml-1 cursor-pointer"
-                      aria-label="Close project view"
+                    <svg
+                      className="w-3.5 h-3.5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     >
-                      ✕
-                    </button>
-                  </div>
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
                 </div>
 
                 {/* Title */}
@@ -440,6 +469,8 @@ export default function ProjectsGrid() {
                       </div>
                     )}
                   </div>
+                ) : selectedProject.title === 'JHusk' ? (
+                  <JHuskTimeline scrollerId="project-details-card" />
                 ) : (
                   <div className="py-8 sm:py-12 flex items-center justify-center border border-transparent rounded-lg bg-black">
                     {selectedProject.logo ? (
