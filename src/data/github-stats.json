@@ -1,30 +1,30 @@
 {
-  "generatedAt": "2026-10-11T21:59:27.463Z",
+  "generatedAt": "2026-10-16T11:25:55.383Z",
   "languages": [
     {
       "name": "Python",
       "bytes": 5446222,
-      "percent": 42.8
+      "percent": 42.6
     },
     {
       "name": "TypeScript",
-      "bytes": 4432534,
-      "percent": 34.9
-    },
-    {
-      "name": "Java",
-      "bytes": 911334,
-      "percent": 7.2
+      "bytes": 4545637,
+      "percent": 35.6
     },
     {
       "name": "HTML",
-      "bytes": 896926,
-      "percent": 7.1
+      "bytes": 896412,
+      "percent": 7
+    },
+    {
+      "name": "Java",
+      "bytes": 857147,
+      "percent": 6.7
     },
     {
       "name": "JavaScript",
-      "bytes": 593991,
-      "percent": 4.7
+      "bytes": 588407,
+      "percent": 4.6
     },
     {
       "name": "Kotlin",
@@ -38,8 +38,8 @@
     },
     {
       "name": "CSS",
-      "bytes": 67552,
-      "percent": 0.5
+      "bytes": 80110,
+      "percent": 0.6
     },
     {
       "name": "Go",
@@ -83,10 +83,10 @@
     }
   ],
   "totals": {
-    "linesNet": 127682,
-    "linesAdded": 216189,
-    "linesDeleted": 88507,
-    "commits": 2114,
-    "activeDays": 128
+    "linesNet": 129567,
+    "linesAdded": 224452,
+    "linesDeleted": 94885,
+    "commits": 2116,
+    "activeDays": 133
   }
 }
