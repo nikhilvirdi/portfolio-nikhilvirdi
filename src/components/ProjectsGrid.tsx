@@ -352,7 +352,6 @@ export default function ProjectsGrid() {
         label={`Scroll down to\nexplore each project.`}
         action="View"
       />
-
       {/* Selected Project In-Place View within the SAME Area */}
       <AnimatePresence>
           {selectedProject && (
@@ -376,8 +375,8 @@ export default function ProjectsGrid() {
                 onClick={(e) => e.stopPropagation()}
                 className="relative w-full max-w-4xl max-h-full min-h-0 overflow-y-auto border border-transparent bg-black p-6 sm:p-8 rounded-xl flex flex-col space-y-6 shadow-2xl"
               >
-                {/* Header row: project links and close icon aligned in the top-right */}
-                <div className="flex items-start justify-end gap-3 sm:gap-4 w-full">
+                {/* Header row: project links, interactive pet, and close icon aligned in the top-right */}
+                <div className="flex items-center justify-end gap-3 sm:gap-4 w-full">
                   {selectedProject.links && selectedProject.links.length > 0 && (
                     <div className="flex items-center justify-end gap-2 flex-wrap min-w-0">
                       {selectedProject.links.map((link) => (

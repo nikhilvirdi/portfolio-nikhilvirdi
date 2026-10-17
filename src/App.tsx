@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import CustomCursor from './components/CustomCursor';
@@ -9,10 +9,18 @@ import GitHubActivity from './components/GitHubActivity';
 import CodingActivity from './components/CodingActivity';
 import ContactGrid from './components/ContactGrid';
 import TechStackMobile from './components/TechStackMobile';
+import RawTextPanel from './components/RawTextPanel';
+import ProjectPet from './components/ProjectPet';
 
 const AvatarModel = lazy(() => import('./components/AvatarModel'));
 
 export default function App() {
+  const [isEasterEggOpen, setIsEasterEggOpen] = useState(false);
+
+  const toggleEasterEgg = () => {
+    setIsEasterEggOpen(prev => !prev);
+  };
+
   return (
     <>
       <div className="hidden lg:flex h-screen w-screen overflow-hidden bg-background text-foreground font-body">
@@ -47,7 +55,7 @@ export default function App() {
                   </Html>
                 }
               >
-                <AvatarModel />
+                <AvatarModel onEasterEggClick={toggleEasterEgg} />
               </Suspense>
               <OrbitControls enableZoom={false} enablePan={false} enableRotate={true} />
             </Canvas>
@@ -178,7 +186,7 @@ export default function App() {
                   </Html>
                 }
               >
-                <AvatarModel />
+                <AvatarModel onEasterEggClick={toggleEasterEgg} />
               </Suspense>
               <OrbitControls enableZoom={false} enablePan={false} enableRotate={true} />
             </Canvas>
@@ -267,6 +275,14 @@ export default function App() {
         <ContactGrid />
       </section>
     </div>
+
+    {/* Persistent viewport-fixed pixel-art character companion */}
+    <div className="fixed top-4 right-4 sm:top-5 sm:right-5 lg:top-6 lg:right-6 z-30 pointer-events-auto select-none">
+      <ProjectPet onClick={toggleEasterEgg} />
+    </div>
+
+    {/* Raw Text Easter Egg Panel */}
+    <RawTextPanel isOpen={isEasterEggOpen} onClose={() => setIsEasterEggOpen(false)} />
   </>
   );
 }
