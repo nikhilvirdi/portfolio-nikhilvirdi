@@ -1,7 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
 import { BASE_TECH_DEFS, type TechDef } from './TechStackFloating';
-import TechText from './ui/TechText';
 
 interface MobileTechItem extends TechDef {
   x: number; // pixels
@@ -440,20 +439,9 @@ export default function TechStackMobile() {
 
   return (
     <section id="tech-stack-mobile" className="py-10 bg-background font-heading">
-      <div
-        className="font-heading -ml-2.5 mb-6"
-        style={{ width: '220px', height: '44px', position: 'relative' }}
-      >
-        <TechText
-          text="Tech Stack"
-          fontFamily=""
-          fontWeight={700}
-          reveal="letter"
-          dashLength={4}
-          dashGap={2}
-          specks={15}
-        />
-      </div>
+      <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-8">
+        Tech Stack
+      </h2>
       <div
         ref={containerRef}
         className="relative w-full h-[540px] overflow-hidden"
