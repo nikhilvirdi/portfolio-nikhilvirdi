@@ -122,6 +122,7 @@ export const Response = memo(
     controls = false,
     lineNumbers = false,
     plugins,
+    linkSafety = { enabled: false },
     ...props
   }: ResponseProps) => {
     const combinedPlugins = useMemo(
@@ -146,6 +147,7 @@ export const Response = memo(
         controls={controls}
         lineNumbers={lineNumbers}
         plugins={combinedPlugins}
+        linkSafety={linkSafety}
         {...props}
       />
     );

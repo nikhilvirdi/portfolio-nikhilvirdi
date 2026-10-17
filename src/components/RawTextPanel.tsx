@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RandomMarkdownBlock } from './random-markdown-block';
 
@@ -8,7 +8,27 @@ interface RawTextPanelProps {
 }
 
 export default function RawTextPanel({ isOpen, onClose }: RawTextPanelProps) {
+  const [currentPage, setCurrentPage] = useState<1 | 2>(1);
+  const [showNav, setShowNav] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setCurrentPage(1);
+      setShowNav(false);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [currentPage, isOpen]);
+
+  const handlePage1Complete = useCallback(() => {
+    setShowNav(true);
+  }, []);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -60,8 +80,47 @@ export default function RawTextPanel({ isOpen, onClose }: RawTextPanelProps) {
             aria-modal="true"
             aria-label="Random markdown document"
           >
-            <div className="bg-[#0a0a0c] text-[#f2f2f0] rounded-lg p-4 sm:p-5 max-h-[85vh] overflow-y-auto">
-              <RandomMarkdownBlock isOpen={isOpen} />
+            {/* Minimal monochrome page navigation chevrons - revealed after Page 1 completes reveal */}
+            <AnimatePresence>
+              {showNav && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.35, ease: "easeOut" }}
+                  className="absolute top-3.5 right-4 sm:top-4 sm:right-5 z-20 flex items-center gap-1 select-none"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    aria-label="Previous page"
+                    className="text-[#f2f2f0]/70 hover:text-[#f2f2f0] disabled:text-[#f2f2f0]/20 disabled:hover:text-[#f2f2f0]/20 disabled:cursor-default transition-colors text-base sm:text-lg leading-none p-1 focus:outline-none"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage(2)}
+                    disabled={currentPage === 2}
+                    aria-label="Next page"
+                    className="text-[#f2f2f0]/70 hover:text-[#f2f2f0] disabled:text-[#f2f2f0]/20 disabled:hover:text-[#f2f2f0]/20 disabled:cursor-default transition-colors text-base sm:text-lg leading-none p-1 focus:outline-none"
+                  >
+                    ›
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div
+              ref={scrollContainerRef}
+              className="bg-[#0a0a0c] text-[#f2f2f0] rounded-lg p-4 sm:p-5 max-h-[85vh] overflow-y-auto"
+            >
+              <RandomMarkdownBlock
+                isOpen={isOpen}
+                page={currentPage}
+                onPage1Complete={handlePage1Complete}
+              />
             </div>
           </motion.div>
         </div>
