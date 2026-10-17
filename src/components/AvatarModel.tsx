@@ -4,9 +4,13 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF, Center } from '@react-three/drei';
 import { getHeroProgress } from '../utils/heroScroll';
 
-export default function AvatarModel() {
+interface AvatarModelProps {
+  onEasterEggClick?: () => void;
+}
+
+export default function AvatarModel({ onEasterEggClick }: AvatarModelProps = {}) {
   const { scene } = useGLTF('/models/avatar-2.glb');
-  const { gl } = useThree();
+  const { gl, camera } = useThree();
 
   const groupRef = useRef<THREE.Group | null>(null);
 
@@ -23,14 +27,28 @@ export default function AvatarModel() {
   const clickTimeRef = useRef<number>(-999);
   const currentScaleY = useRef<number>(1);
   const currentScaleXZ = useRef<number>(1);
+  const lastTriggerTimeRef = useRef<number>(0);
 
-  // Trigger squash-and-stretch on click of avatar or canvas
+  // Trigger squash-and-stretch on click of avatar with debounce guard
   const triggerBounce = () => {
+    const now = performance.now();
+    // Guard against duplicate invocations from simultaneous DOM and R3F events
+    if (now - lastTriggerTimeRef.current < 250) {
+      return;
+    }
+    lastTriggerTimeRef.current = now;
+
     isTriggeredRef.current = true;
+    onEasterEggClick?.();
   };
 
   useEffect(() => {
     const domEl = gl.domElement;
+    domEl.tabIndex = 0;
+    domEl.setAttribute('role', 'button');
+    domEl.setAttribute('aria-label', 'Interactive 3D Avatar');
+    domEl.style.outline = 'none';
+
     let downPos = { x: 0, y: 0 };
     let downTime = 0;
 
@@ -42,20 +60,41 @@ export default function AvatarModel() {
     const onPointerUp = (e: PointerEvent) => {
       const dist = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
       const duration = performance.now() - downTime;
-      // Trigger only on genuine clicks, not camera drag-rotations
-      if (dist < 6 && duration < 400) {
+
+      // Only evaluate genuine clicks (not camera rotation drags)
+      if (dist < 8 && duration < 450 && groupRef.current) {
+        const rect = domEl.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
+
+        const hits = raycaster.intersectObject(groupRef.current, true);
+        if (hits.length > 0) {
+          triggerBounce();
+        }
+      }
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
         triggerBounce();
       }
     };
 
     domEl.addEventListener('pointerdown', onPointerDown);
     domEl.addEventListener('pointerup', onPointerUp);
+    domEl.addEventListener('keydown', onKeyDown);
 
     return () => {
       domEl.removeEventListener('pointerdown', onPointerDown);
       domEl.removeEventListener('pointerup', onPointerUp);
+      domEl.removeEventListener('keydown', onKeyDown);
+      document.body.style.cursor = 'auto';
     };
-  }, [gl]);
+  }, [gl, camera]);
 
   useFrame((state, delta) => {
     const group = groupRef.current;
@@ -136,8 +175,21 @@ export default function AvatarModel() {
           e.stopPropagation();
           triggerBounce();
         }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={() => {
+          document.body.style.cursor = 'auto';
+        }}
       >
         <primitive object={scene} />
+
+        {/* Generous invisible collider matching avatar's visible bounds (head to toe, shoulders & arms) */}
+        <mesh visible={true} position={[0, 0, 0]}>
+          <cylinderGeometry args={[0.22, 0.22, 0.98, 16]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
       </group>
     </Center>
   );

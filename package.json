@@ -25,6 +25,7 @@
     "react-github-calendar": "^5.0.9",
     "react-icons": "^5.7.0",
     "recharts": "^3.10.1",
+    "streamdown": "^2.7.0",
     "tailwind-merge": "^3.7.0",
     "three": "^0.186.0"
   },
