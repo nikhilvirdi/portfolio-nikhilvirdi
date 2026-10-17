@@ -1,5 +1,14 @@
-import { useState, useRef, useEffect, useId } from 'react';
-import * as React from 'react';
+import { useState, useRef, useEffect, useId, useMemo } from 'react';
+import {
+  BarChart,
+  Bar,
+  Cell,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  LabelList,
+} from 'recharts';
 import githubStats from '../data/github-stats.json';
 import { BASE_TECH_DEFS } from './TechStackFloating';
 import kotlinSvg from 'devicon/icons/kotlin/kotlin-original.svg';
@@ -8,6 +17,7 @@ import openglSvg from 'devicon/icons/opengl/opengl-original.svg';
 import bashSvg from 'devicon/icons/bash/bash-original.svg';
 import matlabSvg from 'devicon/icons/matlab/matlab-original.svg';
 import aarch64Svg from 'devicon/icons/aarch64/aarch64-original.svg';
+import cSvg from 'devicon/icons/c/c-original.svg';
 
 export interface LanguageEntry {
   name: string;
@@ -34,64 +44,28 @@ export interface GitHubStatsData {
 // ============================================================================
 
 const LINGUIST_COLORS: Record<string, string> = {
-  Python: '#3572A5',
+  Python: '#3d82bd',
   TypeScript: '#3178c6',
   HTML: '#e34c26',
   Java: '#b07219',
   JavaScript: '#f1e05a',
   Kotlin: '#A97BFF',
-  CSS: '#563d7c',
+  C: '#6b8299',
+  CSS: '#7c5ba8',
   Go: '#00ADD8',
   GLSL: '#5686a5',
-  Dockerfile: '#384d54',
-  PowerShell: '#012456',
+  Dockerfile: '#5b7d87',
+  PowerShell: '#2f6bc7',
   Shell: '#89e051',
-};
-
-// Lighten-for-dark-background tweak so deep tones stand out with crisp clarity on pure black
-const COLOR_TWEAKS: Record<string, string> = {
-  CSS: '#7c5ba8', // Lifted from deep purple #563d7c
-  PowerShell: '#2f6bc7', // Lifted from deep navy #012456
-  Dockerfile: '#5b7d87', // Lifted from deep #384d54
-  Python: '#3d82bd', // Subtle lift from #3572A5 for optimal contrast
+  MATLAB: '#e16737',
+  Other: '#8b949e',
 };
 
 const FALLBACK_COLOR = '#8b949e';
 
-const getBarBaseColor = (name: string): string => {
-  return COLOR_TWEAKS[name] ?? LINGUIST_COLORS[name] ?? FALLBACK_COLOR;
+const getLanguageColor = (name: string): string => {
+  return LINGUIST_COLORS[name] ?? FALLBACK_COLOR;
 };
-
-function hexToRgb(hex: string): [number, number, number] {
-  let clean = hex.replace('#', '');
-  if (clean.length === 3) {
-    clean = clean
-      .split('')
-      .map((c) => c + c)
-      .join('');
-  }
-  const num = parseInt(clean, 16);
-  return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
-}
-
-// Replicating GitHubActivity 3D face shading:
-// Front face: base language color
-// Top face: lighter from overhead illumination (+38% towards white)
-// Right face: darker shadow (0.68 multiplier matching GitHubActivity line 782)
-function get3DFaceColors(baseHex: string) {
-  const [r, g, b] = hexToRgb(baseHex);
-  const front = `rgb(${r}, ${g}, ${b})`;
-  const topR = Math.min(255, Math.round(r + (255 - r) * 0.38));
-  const topG = Math.min(255, Math.round(g + (255 - g) * 0.38));
-  const topB = Math.min(255, Math.round(b + (255 - b) * 0.38));
-  const top = `rgb(${topR}, ${topG}, ${topB})`;
-  const rightR = Math.round(r * 0.68);
-  const rightG = Math.round(g * 0.68);
-  const rightB = Math.round(b * 0.68);
-  const right = `rgb(${rightR}, ${rightG}, ${rightB})`;
-
-  return { front, top, right };
-}
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -175,10 +149,6 @@ const MUTED = 'var(--color-muted-foreground, #737373)';
 const FOREGROUND = 'var(--color-foreground, #f2f2f0)';
 const ACCENT = '#39d353'; // GitHub green matching activity heatmap level 4
 
-// 2.5D Depth offsets (px)
-const DX = 6;
-const DY = 4.5;
-
 // Map languages to Tech Stack definitions or devicon fallbacks
 const TECH_NAME_ALIASES: Record<string, string> = {
   HTML: 'HTML5',
@@ -189,22 +159,21 @@ const TECH_NAME_ALIASES: Record<string, string> = {
 
 const EXTRA_LANGUAGE_LOGOS: Record<string, { svg: string; invert?: boolean }> = {
   Kotlin: { svg: kotlinSvg },
+  C: { svg: cSvg },
   PowerShell: { svg: powershellSvg },
   GLSL: { svg: openglSvg },
   Shell: { svg: bashSvg },
   Bash: { svg: bashSvg },
   MATLAB: { svg: matlabSvg },
-  M: { svg: matlabSvg }, // M files are typically MATLAB or Objective-C; MATLAB is more common
+  M: { svg: matlabSvg },
   Assembly: { svg: aarch64Svg },
-  VHDL: { svg: aarch64Svg }, // Hardware description language, use architecture icon as closest match
+  VHDL: { svg: aarch64Svg },
 };
 
 function getLanguageLogo(name: string): { svg: string; invert?: boolean } | null {
-  // "Other" category doesn't get a logo
   if (name === 'Other') {
     return null;
   }
-  
   const targetName = TECH_NAME_ALIASES[name] || name;
   const tech = BASE_TECH_DEFS.find((t) => t.name.toLowerCase() === targetName.toLowerCase());
   if (tech) {
@@ -213,9 +182,116 @@ function getLanguageLogo(name: string): { svg: string; invert?: boolean } | null
   return EXTRA_LANGUAGE_LOGOS[name] || null;
 }
 
-// Global flag tracking if the language visualization has already triggered entrance
-// across responsive layout variants (desktop and mobile component trees).
+// Global flag tracking if the stats count-up has already triggered entrance
 let globalHasEntered = false;
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    payload: {
+      language: string;
+      percentage: number;
+      bytes: number;
+      color: string;
+    };
+  }>;
+}
+
+const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="rounded-md border border-white/15 bg-black/95 px-3 py-2 text-xs shadow-2xl backdrop-blur-md pointer-events-none font-tag">
+        <div className="flex items-center gap-2">
+          <div
+            className="size-2 rounded-full shrink-0"
+            style={{ backgroundColor: data.color }}
+          />
+          <span className="font-medium text-white">{data.language}</span>
+          <span className="font-semibold text-white ml-2 tabular-nums">
+            {data.percentage < 0.1 ? '<0.1%' : `${data.percentage.toFixed(1)}%`}
+          </span>
+        </div>
+        {data.bytes > 0 && (
+          <div className="text-[11px] text-zinc-400 mt-1 pl-4">
+            {formatBytes(data.bytes)}
+          </div>
+        )}
+      </div>
+    );
+  }
+  return null;
+};
+
+const renderCustomLabel = (props: any) => {
+  const { x, y, width, value } = props;
+  if (
+    value === undefined ||
+    value === null ||
+    x === undefined ||
+    y === undefined ||
+    width === undefined
+  ) {
+    return null;
+  }
+  const numX = Number(x);
+  const numY = Number(y);
+  const numW = Number(width);
+  const num = Number(value);
+  const text = num < 0.1 ? '<0.1%' : `${num.toFixed(1)}%`;
+  return (
+    <text
+      x={numX + numW / 2}
+      y={numY - 6}
+      fill="#a1a1aa"
+      textAnchor="middle"
+      fontSize={9.5}
+      className="font-tag tabular-nums select-none"
+    >
+      {text}
+    </text>
+  );
+};
+
+const renderCustomTick = (props: any) => {
+  const { x, y, payload } = props;
+  if (!payload || x === undefined || y === undefined) return null;
+  const numX = Number(x);
+  const numY = Number(y);
+  const langName = String(payload.value);
+  const logo = getLanguageLogo(langName);
+
+  if (logo) {
+    return (
+      <g transform={`translate(${numX - 8}, ${numY + 6})`}>
+        <image
+          href={logo.svg}
+          xlinkHref={logo.svg}
+          width={16}
+          height={16}
+          style={{
+            filter: logo.invert ? 'invert(1)' : undefined,
+            opacity: 0.9,
+          }}
+        />
+        <title>{langName}</title>
+      </g>
+    );
+  }
+
+  return (
+    <text
+      x={numX}
+      y={numY + 18}
+      fill="#a1a1aa"
+      textAnchor="middle"
+      fontSize={10}
+      className="font-tag select-none"
+    >
+      {langName}
+    </text>
+  );
+};
 
 // ============================================================================
 // Main Component
@@ -224,12 +300,12 @@ let globalHasEntered = false;
 export default function LanguageBar({ className = '' }: { className?: string }) {
   const stats = githubStats as GitHubStatsData | undefined;
   const rawLanguages = stats?.languages ?? [];
-  
+
   // Group languages: > 0.1% shown individually, <= 0.1% grouped as "Other"
-  const languages: LanguageEntry[] = React.useMemo(() => {
+  const languages: LanguageEntry[] = useMemo(() => {
     const visible: LanguageEntry[] = [];
     const hidden: LanguageEntry[] = [];
-    
+
     for (const lang of rawLanguages) {
       if (lang.percent > 0.1) {
         visible.push(lang);
@@ -237,12 +313,12 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
         hidden.push(lang);
       }
     }
-    
+
     // If there are hidden languages, create "Other" entry
     if (hidden.length > 0) {
       const otherBytes = hidden.reduce((sum, lang) => sum + lang.bytes, 0);
       const otherPercent = hidden.reduce((sum, lang) => sum + lang.percent, 0);
-      
+
       if (otherPercent > 0) {
         visible.push({
           name: 'Other',
@@ -251,10 +327,20 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
         });
       }
     }
-    
+
     return visible;
   }, [rawLanguages]);
-  
+
+  const chartData = useMemo(() => {
+    return languages.map((l) => ({
+      language: l.name,
+      percentage: l.percent,
+      bytes: l.bytes,
+      color: getLanguageColor(l.name),
+      patternId: `lang-diagonal-hatch-${l.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+    }));
+  }, [languages]);
+
   const totals = stats?.totals ?? {
     linesNet: 0,
     commits: 0,
@@ -269,85 +355,7 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
   const [isReduced, setIsReduced] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const chartAreaRef = useRef<HTMLDivElement>(null);
-  const allReposRef = useRef<HTMLDivElement>(null);
-  const rightmostBarRef = useRef<HTMLDivElement>(null);
-
-  // Baseline vertical distance from bottom of chart container (aligns with "all repositories" on desktop)
-  const [baselineBottom, setBaselineBottom] = useState<number>(43);
-  // Baseline horizontal right inset matching rightmost percentage/bar
-  const [rightOffset, setRightOffset] = useState<number>(16);
-
   const tooltipId = useId();
-
-  // Synchronize baseline vertically with "all repositories" and horizontally with rightmost bar
-  useEffect(() => {
-    const updateGeometry = () => {
-      if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-        if (chartAreaRef.current && allReposRef.current) {
-          const chartRect = chartAreaRef.current.getBoundingClientRect();
-          const repoRect = allReposRef.current.getBoundingClientRect();
-
-          // Check if chart and allRepos are actually visible and side-by-side
-          if (chartRect.width > 0 && repoRect.width > 0 && repoRect.left >= chartRect.right - 20) {
-            // Align chart baseline to the "all repositories" text baseline level
-            const repoBaselineY = repoRect.top + repoRect.height * 0.72;
-            const calculatedBottom = Math.round(chartRect.bottom - repoBaselineY);
-
-            if (calculatedBottom >= 25 && calculatedBottom <= 80) {
-              setBaselineBottom((prev) => (Math.abs(prev - calculatedBottom) >= 1 ? calculatedBottom : prev));
-            }
-          } else if (chartRect.width > 0) {
-            setBaselineBottom(38);
-          }
-        }
-      } else {
-        // Mobile fallback where sections are stacked vertically
-        setBaselineBottom(38);
-      }
-
-      // Extend baseline across complete language-chart width ending around rightmost percentage/bar
-      if (chartAreaRef.current && rightmostBarRef.current) {
-        const chartRect = chartAreaRef.current.getBoundingClientRect();
-        const barRect = rightmostBarRef.current.getBoundingClientRect();
-        if (chartRect.width > 0 && barRect.width > 0) {
-          const rightEdge = barRect.right + DX;
-          const calcRight = Math.max(0, Math.round(chartRect.right - rightEdge));
-          setRightOffset((prev) => (Math.abs(prev - calcRight) >= 1 ? calcRight : prev));
-        }
-      }
-    };
-
-    updateGeometry();
-    window.addEventListener('resize', updateGeometry);
-    const timer = setTimeout(updateGeometry, 150);
-
-    const resizeObserver =
-      typeof ResizeObserver !== 'undefined'
-        ? new ResizeObserver(() => {
-            if (!hasEntered && globalHasEntered) {
-              setHasEntered(true);
-            }
-            updateGeometry();
-          })
-        : null;
-
-    if (chartAreaRef.current && resizeObserver) {
-      resizeObserver.observe(chartAreaRef.current);
-    }
-
-    if (typeof document !== 'undefined' && 'fonts' in document) {
-      document.fonts.ready.then(updateGeometry);
-    }
-
-    return () => {
-      window.removeEventListener('resize', updateGeometry);
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-      }
-      clearTimeout(timer);
-    };
-  }, [hasEntered]);
 
   // Scroll entrance trigger
   useEffect(() => {
@@ -396,7 +404,7 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
         }
       },
       {
-        root: pane, // null when outside #main-scroll-pane (e.g. mobile tree)
+        root: pane,
         threshold: 0.05,
         rootMargin: '40px 0px',
       }
@@ -404,7 +412,6 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
 
     observer.observe(target);
 
-    // Also handle dynamic viewport resize or scroll when switching layouts
     const handleCheck = () => {
       if (globalHasEntered || checkVisibility()) {
         observer.disconnect();
@@ -432,11 +439,7 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
     };
   }, []);
 
-  // Compute scale for linear y-axis
-  const maxPercent = Math.max(...languages.map((l) => l.percent), 10);
-  const maxScale = Math.ceil(maxPercent / 10) * 10; // e.g. 50%
-
-  const activeItem = languages.find((l) => l.name === activeLang);
+  const activeItem = chartData.find((l) => l.language === activeLang);
 
   // Animated stat values counting up on entrance
   const countUpDuration = isReduced ? 0 : 1000;
@@ -484,15 +487,15 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
       {/* Two-column layout on desktop, stacked on mobile */}
       <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 items-stretch">
         {/* ================================================================= */}
-        {/* Left ~55%: 2.5D Vertical Bar Graph                                */}
+        {/* Left ~55%: Dashed-Bar Language Distribution Chart                 */}
         {/* ================================================================= */}
         <div
           role="img"
           aria-label={ariaSummary}
           className="w-full lg:w-[55%] flex-shrink-0 flex flex-col justify-between"
         >
-          {/* Section header & live tooltip */}
-          <div className="flex items-center justify-between mb-3 min-h-[24px]">
+          {/* Section header & live tooltip badge */}
+          <div className="flex items-center justify-between mb-2 min-h-[24px]">
             <span className="text-[13px] leading-tight font-normal" style={{ color: FOREGROUND }}>
               Languages across my projects
             </span>
@@ -508,202 +511,110 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
             >
               {activeItem && (
                 <span>
-                  <strong className="text-white font-medium">{activeItem.name}</strong>:{' '}
-                  {activeItem.percent < 0.1 ? '<0.1%' : `${activeItem.percent.toFixed(1)}%`} (
+                  <strong className="text-white font-medium">{activeItem.language}</strong>:{' '}
+                  {activeItem.percentage < 0.1 ? '<0.1%' : `${activeItem.percentage.toFixed(1)}%`} (
                   {formatBytes(activeItem.bytes)})
                 </span>
               )}
             </div>
           </div>
 
-          {/* Bar Chart Area with Horizontal Gridlines & Baseline Aligned to 'all repositories' */}
-          <div
-            ref={chartAreaRef}
-            className="relative w-full h-[185px] sm:h-[205px] flex items-end gap-1.5 sm:gap-2.5 pt-7 pl-3 sm:pl-4 pr-3 sm:pr-4"
-            style={{
-              paddingBottom: `${baselineBottom}px`,
-            }}
-          >
-            {/* Baseline Gridline */}
-            <div
-              className="absolute left-0 pointer-events-none border-b border-zinc-800/70"
-              style={{
-                bottom: `${baselineBottom}px`,
-                right: `${rightOffset}px`,
-              }}
-              aria-hidden="true"
-            />
-            {/* 33% dashed gridline */}
-            <div
-              className="absolute left-0 pointer-events-none border-b border-zinc-800/40 border-dashed"
-              style={{
-                bottom: `calc(${baselineBottom}px + (100% - ${28 + baselineBottom}px) * 0.33)`,
-                right: `${rightOffset}px`,
-              }}
-              aria-hidden="true"
-            />
-            {/* 66% dashed gridline */}
-            <div
-              className="absolute left-0 pointer-events-none border-b border-zinc-800/40 border-dashed"
-              style={{
-                bottom: `calc(${baselineBottom}px + (100% - ${28 + baselineBottom}px) * 0.66)`,
-                right: `${rightOffset}px`,
-              }}
-              aria-hidden="true"
-            />
-            {/* 100% dashed gridline */}
-            <div
-              className="absolute left-0 top-7 pointer-events-none border-b border-zinc-800/40 border-dashed"
-              style={{
-                right: `${rightOffset}px`,
-              }}
-              aria-hidden="true"
-            />
-
-            {/* 2.5D Vertical Bars */}
-            {languages.map((item, index) => {
-              const isHovered = activeLang === item.name;
-              const isDimmed = activeLang !== null && !isHovered;
-              const isLast = index === languages.length - 1;
-              const logo = getLanguageLogo(item.name);
-
-              // Calculate normalized height percentage
-              const rawHeightPercent = (item.percent / maxScale) * 100;
-              // 4px minimum height so tiny languages still show a visible 3D block
-              const targetHeight = `max(4px, ${rawHeightPercent}%)`;
-              const currentHeight = isReduced || hasEntered ? targetHeight : '0px';
-
-              const percentDisplay = item.percent < 0.1 ? '<0.1%' : `${item.percent.toFixed(1)}%`;
-              const baseColor = getBarBaseColor(item.name);
-              const { front, top, right } = get3DFaceColors(baseColor);
-
-              // Staggered grow animation: ~900ms ease-out, staggered 70ms left-to-right
-              const growTransition = isReduced
-                ? 'none'
-                : hasEntered
-                ? `height 900ms cubic-bezier(0.16, 1, 0.3, 1) ${index * 70}ms`
-                : 'none';
-
-              // % labels fade in as each bar finishes
-              const percentFadeTransition = isReduced
-                ? 'none'
-                : hasEntered
-                ? `opacity 300ms ease-out ${index * 70 + 750}ms`
-                : 'none';
-
-              return (
-                <div
-                  key={item.name}
-                  tabIndex={0}
-                  role="button"
-                  aria-label={`${item.name}: ${percentDisplay} (${formatBytes(item.bytes)})`}
-                  aria-describedby={isHovered ? tooltipId : undefined}
-                  onMouseEnter={() => setActiveLang(item.name)}
+          {/* Chart Wrapper: responsive and horizontally scrollable on extra small screens */}
+          <div className="w-full min-w-0 overflow-x-auto overflow-y-hidden scrollbar-none">
+            <div className="w-full min-w-[340px] h-[200px] sm:h-[210px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={chartData}
+                  margin={{
+                    top: 22,
+                    right: 6,
+                    bottom: 24,
+                    left: 6,
+                  }}
+                  barCategoryGap="16%"
+                  onMouseMove={(state: any) => {
+                    if (state && state.activePayload && state.activePayload.length) {
+                      setActiveLang(state.activePayload[0].payload.language);
+                    }
+                  }}
                   onMouseLeave={() => setActiveLang(null)}
-                  onFocus={() => setActiveLang(item.name)}
-                  onBlur={() => setActiveLang(null)}
-                  className="relative flex-1 min-w-0 h-full flex flex-col justify-end items-center cursor-pointer outline-none group"
                 >
-                  {/* % Label above the bar (fades in as bar completes growth) */}
-                  <span
-                    className="absolute -top-5 text-[8.5px] sm:text-[9.5px] tabular-nums font-tag text-zinc-400 select-none whitespace-nowrap"
-                    style={{
-                      opacity: isReduced || hasEntered ? (isDimmed ? 0.35 : 1) : 0,
-                      transition: percentFadeTransition,
-                    }}
-                  >
-                    {percentDisplay}
-                  </span>
-
-                  {/* 3D Bar Assembly (Front Face + Top Face + Right Side Face) */}
-                  <div
-                    ref={isLast ? rightmostBarRef : undefined}
-                    className="relative w-full max-w-[20px] sm:max-w-[26px] transition-all"
-                    style={{
-                      height: currentHeight,
-                      transition: growTransition,
-                      opacity: isDimmed ? 0.4 : 1,
-                      filter: isHovered ? 'brightness(1.18)' : 'none',
-                    }}
-                  >
-                    {/* 1. Lighter Top Face (parallelogram riding on top of front face) */}
-                    <div
-                      className="absolute pointer-events-none"
-                      style={{
-                        top: `-${DY}px`,
-                        left: 0,
-                        width: `calc(100% + ${DX}px)`,
-                        height: `${DY}px`,
-                        backgroundColor: top,
-                        clipPath: `polygon(${DX}px 0%, 100% 0%, calc(100% - ${DX}px) 100%, 0% 100%)`,
-                        boxShadow: isHovered ? '0 0 8px rgba(255,255,255,0.4)' : 'none',
-                      }}
-                    />
-
-                    {/* 2. Darker Right Side Face (parallelogram riding on right edge) */}
-                    <div
-                      className="absolute pointer-events-none"
-                      style={{
-                        top: `-${DY}px`,
-                        left: '100%',
-                        width: `${DX}px`,
-                        height: `calc(100% + ${DY}px)`,
-                        backgroundColor: right,
-                        clipPath: `polygon(0 ${DY}px, 100% 0%, 100% calc(100% - ${DY}px), 0 100%)`,
-                      }}
-                    />
-
-                    {/* 3. Front Face (true language color) */}
-                    <div
-                      className="w-full h-full rounded-tl-[1px]"
-                      style={{
-                        backgroundColor: front,
-                      }}
-                    />
-                  </div>
-
-                  {/* Small Language Logo: centered directly below the bar, replacing rotated text */}
-                  {logo && (
-                    <div
-                      className="absolute top-[calc(100%+8px)] sm:top-[calc(100%+9px)] left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-none"
-                    >
-                      <img
-                        src={logo.svg}
-                        alt={item.name}
-                        width={18}
-                        height={18}
-                        className={`w-4 h-4 sm:w-[18px] sm:h-[18px] select-none pointer-events-none object-contain transition-all duration-200 ${
-                          logo.invert ? 'invert' : ''
-                        }`}
-                        style={{
-                          opacity: isReduced || hasEntered ? (isDimmed ? 0.35 : 0.95) : 0,
-                          filter: isHovered ? 'brightness(1.2)' : 'none',
-                          transition: percentFadeTransition,
-                        }}
-                      />
-                    </div>
-                  )}
-                  
-                  {/* Fallback text label for languages without logos (e.g., "Other") */}
-                  {!logo && (
-                    <div
-                      className="absolute top-[calc(100%+8px)] sm:top-[calc(100%+9px)] left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-none"
-                    >
-                      <span
-                        className="text-[9px] sm:text-[10px] font-tag text-zinc-400 select-none whitespace-nowrap"
-                        style={{
-                          opacity: isReduced || hasEntered ? (isDimmed ? 0.35 : 0.85) : 0,
-                          filter: isHovered ? 'brightness(1.2)' : 'none',
-                          transition: percentFadeTransition,
-                        }}
+                  <defs>
+                    {chartData.map((item) => (
+                      <pattern
+                        key={item.patternId}
+                        id={item.patternId}
+                        patternUnits="userSpaceOnUse"
+                        width="8"
+                        height="8"
                       >
-                        {item.name}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                        <rect
+                          width="8"
+                          height="8"
+                          fill={item.color}
+                          opacity="0.1"
+                        />
+                        <path
+                          d="M0,8 L8,0 M4,12 L12,4 M-4,4 L4,-4"
+                          stroke={item.color}
+                          strokeWidth="1.5"
+                          opacity="0.6"
+                        />
+                        <path
+                          d="M2,10 L10,2 M6,14 L14,6 M-2,6 L6,-2"
+                          stroke={item.color}
+                          strokeWidth="1"
+                          opacity="0.3"
+                        />
+                      </pattern>
+                    ))}
+                  </defs>
+
+                  <YAxis hide domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.15)]} />
+
+                  <XAxis
+                    dataKey="language"
+                    tick={renderCustomTick}
+                    tickLine={false}
+                    axisLine={false}
+                    interval={0}
+                  />
+
+                  <Tooltip
+                    cursor={false}
+                    content={<CustomTooltip />}
+                  />
+
+                  <Bar
+                    dataKey="percentage"
+                    radius={[4, 4, 0, 0]}
+                    minPointSize={6}
+                    isAnimationActive={!isReduced}
+                    animationDuration={900}
+                    animationEasing="ease-out"
+                  >
+                    <LabelList dataKey="percentage" content={renderCustomLabel} />
+                    {chartData.map((entry) => {
+                      const isHovered = activeLang === entry.language;
+                      const isDimmed = activeLang !== null && !isHovered;
+                      return (
+                        <Cell
+                          key={entry.language}
+                          fill={`url(#${entry.patternId})`}
+                          stroke={entry.color}
+                          strokeWidth={isHovered ? 1.5 : 1}
+                          opacity={isDimmed ? 0.35 : 1}
+                          style={{
+                            transition: 'opacity 150ms ease, stroke-width 150ms ease',
+                            cursor: 'pointer',
+                          }}
+                        />
+                      );
+                    })}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 
@@ -786,7 +697,6 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
                 </span>
               </div>
               <div
-                ref={allReposRef}
                 className="mt-0.5 truncate text-[12px]"
                 style={{ color: MUTED }}
               >
