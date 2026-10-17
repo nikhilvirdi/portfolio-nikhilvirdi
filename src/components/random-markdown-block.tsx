@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Response } from "@/components/ai/response";
 
-export const content = `Hi lol supp?
+export const content = `Hi lol supp?  
 This is a very random markdown written by me for no purpose.
 
 | Name | Role | Age |
@@ -38,7 +38,7 @@ $$i\\hbar \\frac{\\partial}{\\partial t} \\Psi(x,t) = \\hat{H} \\Psi(x,t)$$
 
 // Natural progressive chunks preserving GFM tables and code blocks while streaming words
 const CHUNKS = [
-  "Hi ", "lol ", "supp?\n",
+  "Hi ", "lol ", "supp?  \n",
   "This ", "is ", "a ", "very ", "random ", "markdown ", "written ", "by ", "me ", "for ", "no ", "purpose.\n\n",
   "| Name | Role | Age |\n|------|------|-----|\n",
   "| Nikhil Virdi | CS Undergrad | 20 |\n\n",

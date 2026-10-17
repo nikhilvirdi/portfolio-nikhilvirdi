@@ -11,6 +11,8 @@ export default {
         foreground: '#f2f2f0',
         muted: '#71717a',
         'muted-foreground': '#71717a',
+        border: 'rgba(255, 255, 255, 0.1)',
+        sidebar: '#0d0d0f',
         'accent-blue': '#38bdf8',
         'accent-green': '#22c55e',
         'accent-amber': '#f59e0b',

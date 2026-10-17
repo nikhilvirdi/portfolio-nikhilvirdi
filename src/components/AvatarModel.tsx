@@ -32,8 +32,8 @@ export default function AvatarModel({ onEasterEggClick }: AvatarModelProps = {})
   // Trigger squash-and-stretch on click of avatar with debounce guard
   const triggerBounce = () => {
     const now = performance.now();
-    // Guard against duplicate invocations from simultaneous DOM and R3F events
-    if (now - lastTriggerTimeRef.current < 250) {
+    // Guard against duplicate invocations
+    if (now - lastTriggerTimeRef.current < 350) {
       return;
     }
     lastTriggerTimeRef.current = now;
@@ -62,10 +62,12 @@ export default function AvatarModel({ onEasterEggClick }: AvatarModelProps = {})
       const duration = performance.now() - downTime;
 
       // Only evaluate genuine clicks (not camera rotation drags)
-      if (dist < 8 && duration < 450 && groupRef.current) {
+      if (dist < 8 && duration < 500 && groupRef.current) {
         const rect = domEl.getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
         const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+        groupRef.current.updateWorldMatrix(true, true);
 
         const raycaster = new THREE.Raycaster();
         raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
@@ -171,10 +173,6 @@ export default function AvatarModel({ onEasterEggClick }: AvatarModelProps = {})
       <group
         ref={groupRef}
         rotation={[BASE_ROTATION_X, BASE_ROTATION_Y, 0]}
-        onClick={(e) => {
-          e.stopPropagation();
-          triggerBounce();
-        }}
         onPointerOver={(e) => {
           e.stopPropagation();
           document.body.style.cursor = 'pointer';
@@ -187,7 +185,7 @@ export default function AvatarModel({ onEasterEggClick }: AvatarModelProps = {})
 
         {/* Generous invisible collider matching avatar's visible bounds (head to toe, shoulders & arms) */}
         <mesh visible={true} position={[0, 0, 0]}>
-          <cylinderGeometry args={[0.22, 0.22, 0.98, 16]} />
+          <cylinderGeometry args={[0.26, 0.26, 1.05, 16]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
       </group>

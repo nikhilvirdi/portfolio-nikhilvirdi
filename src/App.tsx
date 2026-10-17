@@ -14,6 +14,9 @@ import ProjectPet from './components/ProjectPet';
 
 const AvatarModel = lazy(() => import('./components/AvatarModel'));
 
+// Feature flag: set to true to re-enable the pixel-art pet companion
+const ENABLE_PIXEL_PET = false;
+
 export default function App() {
   const [isEasterEggOpen, setIsEasterEggOpen] = useState(false);
 
@@ -276,10 +279,12 @@ export default function App() {
       </section>
     </div>
 
-    {/* Persistent viewport-fixed pixel-art character companion */}
-    <div className="fixed top-4 right-4 sm:top-5 sm:right-5 lg:top-6 lg:right-6 z-30 pointer-events-auto select-none">
-      <ProjectPet onClick={toggleEasterEgg} />
-    </div>
+    {/* Persistent viewport-fixed pixel-art character companion (set ENABLE_PIXEL_PET = true above to re-enable) */}
+    {ENABLE_PIXEL_PET && (
+      <div className="fixed top-4 right-4 sm:top-5 sm:right-5 lg:top-6 lg:right-6 z-30 pointer-events-auto select-none">
+        <ProjectPet />
+      </div>
+    )}
 
     {/* Raw Text Easter Egg Panel */}
     <RawTextPanel isOpen={isEasterEggOpen} onClose={() => setIsEasterEggOpen(false)} />
