@@ -1,1 +1,1 @@
-personal portfolio of me :  https://nikhilvirdi.dev
+just a personal portfolio page of me :  https://nikhilvirdi.dev
