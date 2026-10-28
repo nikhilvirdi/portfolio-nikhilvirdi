@@ -8,7 +8,7 @@ interface RawTextPanelProps {
 }
 
 export default function RawTextPanel({ isOpen, onClose }: RawTextPanelProps) {
-  const [currentPage, setCurrentPage] = useState<1 | 2>(1);
+  const [currentPage, setCurrentPage] = useState<1 | 2 | 3>(1);
   const [showNav, setShowNav] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -92,7 +92,7 @@ export default function RawTextPanel({ isOpen, onClose }: RawTextPanelProps) {
                 >
                   <button
                     type="button"
-                    onClick={() => setCurrentPage(1)}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1) as 1 | 2 | 3)}
                     disabled={currentPage === 1}
                     aria-label="Previous page"
                     className="text-[#f2f2f0]/70 hover:text-[#f2f2f0] disabled:text-[#f2f2f0]/20 disabled:hover:text-[#f2f2f0]/20 disabled:cursor-default transition-colors text-base sm:text-lg leading-none p-1 focus:outline-none"
@@ -101,8 +101,8 @@ export default function RawTextPanel({ isOpen, onClose }: RawTextPanelProps) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setCurrentPage(2)}
-                    disabled={currentPage === 2}
+                    onClick={() => setCurrentPage((p) => Math.min(3, p + 1) as 1 | 2 | 3)}
+                    disabled={currentPage === 3}
                     aria-label="Next page"
                     className="text-[#f2f2f0]/70 hover:text-[#f2f2f0] disabled:text-[#f2f2f0]/20 disabled:hover:text-[#f2f2f0]/20 disabled:cursor-default transition-colors text-base sm:text-lg leading-none p-1 focus:outline-none"
                   >
