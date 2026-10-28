@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Response } from "@/components/ai/response";
+// import { EasterEggHeatmap } from "./EasterEggHeatmap";
 
 export const content = `Hi lol supp?  
 This is a very random markdown written by me for no purpose.
@@ -36,15 +37,21 @@ schro's equation:
 $$i\\hbar \\frac{\\partial}{\\partial t} \\Psi(x,t) = \\hat{H} \\Psi(x,t)$$
 `;
 
+// Previous artwork section (preserved so it can be restored later):
+// some piece of random art from me:
+// ![some piece of random art from me](/art/pieceOfArt.jpeg)
+
 export const page2Content = `i write docs tooo, wanna read ?  
 dw i'll be releasing them sooon.
 
 **NP-hardness** [https://en.wikipedia.org/wiki/NP-hardness](https://en.wikipedia.org/wiki/NP-hardness)
 
-some piece of random art from me:
+me in real world:
 
-![some piece of random art from me](/art/pieceOfArt.jpeg)
+![me in real world](/realNik-face.png)
 `;
+// Temporarily commented out:
+// this is my github heatmap, ik it is already there in github activity but i want it here also
 
 // Natural progressive chunks preserving GFM tables and code blocks while streaming words
 const CHUNKS = [
@@ -78,8 +85,13 @@ const PAGE_2_CHUNKS = [
   "i ", "write ", "docs ", "tooo, ", "wanna ", "read ?  \n",
   "dw ", "i'll ", "be ", "releasing ", "them ", "sooon.\n\n",
   "**NP-hardness** ", "[https://en.wikipedia.org/wiki/NP-hardness](https://en.wikipedia.org/wiki/NP-hardness)\n\n",
-  "some ", "piece ", "of ", "random ", "art ", "from ", "me:\n\n",
-  "![some piece of random art from me](/art/pieceOfArt.jpeg)\n"
+  // Previous artwork chunks (preserved so they can be restored later):
+  // "some ", "piece ", "of ", "random ", "art ", "from ", "me:\n\n",
+  // "![some piece of random art from me](/art/pieceOfArt.jpeg)\n\n",
+  "me ", "in ", "real ", "world:\n\n",
+  "![me in real world](/realNik-face.png)\n"
+  // Temporarily commented out:
+  // "this ", "is ", "my ", "github ", "heatmap, ", "ik ", "it ", "is ", "already ", "there ", "in ", "github ", "activity ", "but ", "i ", "want ", "it ", "here ", "also\n"
 ];
 
 export interface RandomMarkdownBlockProps {
@@ -184,6 +196,9 @@ export function RandomMarkdownBlock({
       <Response isAnimating={isAnimating}>
         {displayedContent}
       </Response>
+      {/* {page === 2 && (
+        <EasterEggHeatmap />
+      )} */}
     </div>
   );
 }

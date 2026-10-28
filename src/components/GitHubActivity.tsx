@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import LanguageBar from "./LanguageBar"
+import RoundTheYear from "./RoundTheYear"
+import { Orbit } from "lucide-react"
 
 type GitHubActivityDay = { date: string; count: number; level: number }
 
@@ -293,7 +295,7 @@ export const resolvePalette = (p: PaletteInput | undefined, dark: boolean): stri
 }
 // #endregion
 
-type View = "2d" | "3d"
+export type View = "2d" | "3d" | "round"
 
 export interface ContributionSkylineProps {
   /** One entry per day, `YYYY-MM-DD`. Repeated dates add up. Omit for a generated sample year. */
@@ -404,6 +406,16 @@ const CubeIcon = () => (
     <path d="M1.8 4.6 8 8l6.2-3.4M8 8v6.8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
   </svg>
 )
+
+const RoundIcon = () => (
+  <Orbit size={14} strokeWidth={1.75} aria-hidden="true" style={{ maxWidth: "none" }} />
+)
+
+const VIEW_OPTIONS = [
+  { id: "2d", label: "Simple", title: "Simple" },
+  { id: "3d", label: "City Blocks", title: "City Blocks" },
+  { id: "round", label: "Round the Year", title: "Round the Year" },
+] as const
 
 const MUTED = "var(--color-muted-foreground, #737373)"
 
@@ -530,7 +542,7 @@ function ContributionSkyline({
   const stageRef = React.useRef<HTMLDivElement>(null)
   const canvasRef = React.useRef<HTMLCanvasElement>(null)
   const tipRef = React.useRef<HTMLDivElement>(null)
-  const engine = React.useRef<{ kick: () => void; load: () => void; retheme: () => void; tipWidth: (w: number) => void } | null>(null)
+  const engine = React.useRef<{ kick: () => void; load: () => void; retheme: () => void; tipWidth: (w: number) => void; relayout: () => void } | null>(null)
 
   const plural = unitPlural ?? unit + "s"
   const nf = React.useMemo(() => new Intl.NumberFormat(locale), [locale])
@@ -701,6 +713,7 @@ function ContributionSkyline({
     }
 
     const relayout = () => {
+      if (viewRef.current === "round") return
       const w = Math.round(stage.clientWidth)
       if (!w || !n) return
       W = w
@@ -936,7 +949,7 @@ function ContributionSkyline({
     }
 
     const kick = () => {
-      if (raf) return
+      if (raf || viewRef.current === "round") return
       last = performance.now()
       raf = requestAnimationFrame(tick)
     }
@@ -1132,6 +1145,7 @@ function ContributionSkyline({
         tipW = w
         draw()
       },
+      relayout,
     }
 
     return () => {
@@ -1155,7 +1169,10 @@ function ContributionSkyline({
   }, [locale])
 
   React.useEffect(() => {
-    engine.current?.kick()
+    if (view !== "round") {
+      engine.current?.relayout()
+      engine.current?.kick()
+    }
   }, [view, legendLevel])
 
   React.useEffect(() => {
@@ -1201,13 +1218,13 @@ function ContributionSkyline({
 
       if (topRelativeToViewport <= triggerDown) {
         // Section is in view (or scrolled past) -> transition to 3D skyline
-        if (!isManualToggle.current && viewRef.current !== "3d") {
+        if (!isManualToggle.current && viewRef.current === "2d") {
           setView("3d")
         }
       } else if (topRelativeToViewport >= triggerUp) {
         // Section has moved below trigger threshold (user scrolled back up) -> return to 2D heatmap
         isManualToggle.current = false
-        if (viewRef.current !== "2d") {
+        if (viewRef.current === "3d") {
           setView("2d")
         }
       }
@@ -1289,28 +1306,28 @@ function ContributionSkyline({
               className="absolute top-0.5 bottom-0.5 left-0.5 w-8 rounded transition-transform duration-500 motion-reduce:transition-none"
               style={{
                 background: "var(--color-foreground, #171717)",
-                transform: is3d ? "translateX(100%)" : "translateX(0)",
+                transform: `translateX(${(view === "round" ? 2 : is3d ? 1 : 0) * 100}%)`,
                 transitionTimingFunction: ease,
               }}
             />
-            {(["2d", "3d"] as const).map((v) => (
+            {VIEW_OPTIONS.map((opt) => (
               <button
-                key={v}
+                key={opt.id}
                 type="button"
-                aria-pressed={view === v}
-                aria-label={v === "2d" ? "Flat heat map" : "3D skyline"}
-                title={v === "2d" ? "Flat heat map" : "3D skyline"}
+                aria-pressed={view === opt.id}
+                aria-label={opt.label}
+                title={opt.title}
                 onClick={() => {
                   isManualToggle.current = true
-                  setView(v)
+                  setView(opt.id)
                 }}
                 className="relative z-10 grid h-7 w-8 cursor-pointer place-items-center rounded border-0 bg-transparent p-0 transition-colors duration-500 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
                 style={{
-                  color: view === v ? "var(--color-background, #ffffff)" : MUTED,
+                  color: view === opt.id ? "var(--color-background, #ffffff)" : MUTED,
                   outlineColor: "var(--color-foreground, #171717)",
                 }}
               >
-                {v === "2d" ? <GridIcon /> : <CubeIcon />}
+                {opt.id === "2d" ? <GridIcon /> : opt.id === "3d" ? <CubeIcon /> : <RoundIcon />}
               </button>
             ))}
           </div>
@@ -1318,7 +1335,22 @@ function ContributionSkyline({
       </header>
 
       <div className="relative">
-        <div className="relative pt-3 sm:pt-4">
+        {view === "round" && (
+          <div className="relative pt-3 sm:pt-4">
+            <RoundTheYear
+              cells={model.cells}
+              weeks={model.weeks}
+              months={model.months}
+              stats={model.stats}
+              colors={theme.swatches}
+              duration={6000}
+              className="w-full"
+            />
+          </div>
+        )}
+
+        <div style={{ display: view === "round" ? "none" : "block" }}>
+          <div className="relative pt-3 sm:pt-4">
           <div
             ref={stageRef}
             className="relative w-full overflow-hidden rounded-md outline-offset-4 has-[:focus-visible]:outline-2"
@@ -1458,6 +1490,7 @@ function ContributionSkyline({
             </div>
           )}
         </div>
+        </div>
 
         <LanguageBar />
       </div>
@@ -1469,7 +1502,7 @@ function ContributionSkyline({
   )
 }
 
-const GITHUB_CACHE_KEY = "github_activity_contributions"
+export const GITHUB_CACHE_KEY = "github_activity_contributions"
 
 function saveCachedGitHubContributions(data: ContributionDay[]): void {
   try {
@@ -1481,7 +1514,7 @@ function saveCachedGitHubContributions(data: ContributionDay[]): void {
   }
 }
 
-function loadCachedGitHubContributions(): ContributionDay[] | null {
+export function loadCachedGitHubContributions(): ContributionDay[] | null {
   try {
     if (typeof window === "undefined" || !window.localStorage) {
       return null
