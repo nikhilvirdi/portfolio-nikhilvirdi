@@ -21,9 +21,19 @@ type Tile = {
   day: number
   angle: number
   r: number
+  w: number
+  h: number
+  radius: number
   level: number
   startTime: number
   endTime: number
+}
+
+type RingDef = {
+  r: number
+  w: number
+  h: number
+  radius: number
 }
 
 const TAU = Math.PI * 2
@@ -96,6 +106,7 @@ export default function RoundTheYear({
       colors[4] ?? "#39d353",
     ],
     hand: colors[4] ?? "#39d353",
+    accent: colors[4] ?? "#39d353",
   }), [colors])
 
   // Detect user motion preference
@@ -134,7 +145,7 @@ export default function RoundTheYear({
     return () => window.removeEventListener("resize", onResize)
   }, [])
 
-  // Circular layout and deterministic BFS traversal timing
+  // Circular layout and deterministic BFS traversal timing with progressive tile sizing
   const model = React.useMemo(() => {
     const valid = cells.filter((cell) =>
       Number.isFinite(cell.week) && cell.week >= 0 &&
@@ -145,14 +156,37 @@ export default function RoundTheYear({
     const startAngle = -Math.PI / 2
     const step = TAU / weekCount
 
-    // Proportional dimensions based on 450px reference canvas
+    // Dynamic scale relative to 450px reference canvas
     const scale = clamp(size / 450, 0.65, 1.15)
-    const cellSize = Math.max(6.5, 10 * scale)
-    const cellRadius = Math.max(1.2, 2 * scale)
-    const innerRadius = 96 * scale
-    const ringStep = 13.5 * scale
-    const outerRadius = innerRadius + 6 * ringStep
-    const labelRadius = outerRadius + 20 * scale
+    const gap = 2.0 * scale
+    const innerEdge = 88 * scale
+
+    // Progressive radius-dependent sizing for each of the 7 concentric rings:
+    // Outer rings have larger circumference, so tile width scales with arc length,
+    // and radial height scales appropriately to keep cells naturally square/balanced
+    // while maintaining a narrow, uniform gap between all cells.
+    const ringDefs: RingDef[] = []
+    let currentEdge = innerEdge
+
+    for (let day = 0; day < 7; day++) {
+      // Estimated radial height based on ring index
+      let h = (8.3 + day * 1.55) * scale
+      let r = currentEdge + h / 2
+      let arc = r * step
+      let w = arc - gap
+      // Maintain consistent aspect ratio (~1.08:1 compact square)
+      h = w * 0.92
+      r = currentEdge + h / 2
+      arc = r * step
+      w = arc - gap
+      const cornerRadius = Math.max(1.2 * scale, Math.min(w, h) * 0.18)
+
+      ringDefs.push({ r, w, h, radius: cornerRadius })
+      currentEdge = r + h / 2 + gap
+    }
+
+    const outerEdge = ringDefs[6].r + ringDefs[6].h / 2
+    const labelRadius = outerEdge + 17 * scale
 
     // BFS Traversal: wave travels week-by-week, staggered across the 7 weekdays
     const alpha = 0.75 // intra-week cell stagger
@@ -162,8 +196,8 @@ export default function RoundTheYear({
 
     const tiles: Tile[] = valid.map((cell) => {
       const ring = cell.day
+      const ringDef = ringDefs[ring] ?? ringDefs[0]
       const angle = startAngle + (cell.week + 0.5) * step
-      const r = innerRadius + ring * ringStep
       const score = (cell.week + (ring / 7) * alpha) / maxScore
       const startTime = sweepDuration * score
       const endTime = startTime + cellWindow
@@ -173,14 +207,17 @@ export default function RoundTheYear({
         week: cell.week,
         day: ring,
         angle,
-        r,
+        r: ringDef.r,
+        w: ringDef.w,
+        h: ringDef.h,
+        radius: ringDef.radius,
         level: clamp(Math.round(cell.level), 0, 4),
         startTime,
         endTime,
       }
     })
 
-    // Month markers around perimeter
+    // Month markers around perimeter in chronological order
     const markers: { label: string; angle: number; startTime: number }[] = []
     if (months && months.length > 0) {
       for (const m of months) {
@@ -214,16 +251,15 @@ export default function RoundTheYear({
     return {
       tiles,
       markers,
+      ringDefs,
       weeks: weekCount,
       startAngle,
       step,
       cx: size / 2,
       cy: size / 2,
-      innerRadius,
-      outerRadius,
+      innerEdge,
+      outerEdge,
       labelRadius,
-      cellSize,
-      cellRadius,
       sweepDuration,
     }
   }, [cells, weeks, months, size])
@@ -243,9 +279,9 @@ export default function RoundTheYear({
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.clearRect(0, 0, size, size)
 
-    const { cx, cy, tiles, markers, cellSize, cellRadius, sweepDuration, startAngle } = model
+    const { cx, cy, tiles, markers, sweepDuration, startAngle } = model
 
-    // 1. Draw compact square contribution tiles with rounded corners
+    // 1. Draw progressively-sized rounded square/rectangle contribution tiles
     for (let i = 0; i < tiles.length; i++) {
       const tile = tiles[i]
 
@@ -276,7 +312,7 @@ export default function RoundTheYear({
       ctx.globalAlpha = opacity
 
       ctx.beginPath()
-      drawRoundedRect(ctx, -cellSize / 2, -cellSize / 2, cellSize, cellSize, cellRadius)
+      drawRoundedRect(ctx, -tile.w / 2, -tile.h / 2, tile.w, tile.h, tile.radius)
       ctx.fillStyle = palette.levels[tile.level] ?? palette.levels[0]
       ctx.fill()
 
@@ -329,8 +365,8 @@ export default function RoundTheYear({
       ctx.lineWidth = 1.2
       ctx.lineCap = "round"
       ctx.beginPath()
-      ctx.moveTo(cx + Math.cos(handAngle) * (model.innerRadius - 4), cy + Math.sin(handAngle) * (model.innerRadius - 4))
-      ctx.lineTo(cx + Math.cos(handAngle) * (model.outerRadius + 4), cy + Math.sin(handAngle) * (model.outerRadius + 4))
+      ctx.moveTo(cx + Math.cos(handAngle) * (model.innerEdge - 2), cy + Math.sin(handAngle) * (model.innerEdge - 2))
+      ctx.lineTo(cx + Math.cos(handAngle) * (model.outerEdge + 3), cy + Math.sin(handAngle) * (model.outerEdge + 3))
       ctx.stroke()
       ctx.restore()
     }
@@ -398,7 +434,7 @@ export default function RoundTheYear({
     return () => document.removeEventListener("visibilitychange", handleVisibility)
   }, [stats.current.days])
 
-  // Interactive hover tooltip
+  // Interactive hover tooltip with rotated local bounding box hit testing
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current
     if (!canvas || progressRef.current < 0.25) return
@@ -406,12 +442,12 @@ export default function RoundTheYear({
     const px = e.clientX - rect.left
     const py = e.clientY - rect.top
 
-    const { cx, cy, innerRadius, outerRadius, cellSize, tiles } = model
+    const { cx, cy, innerEdge, outerEdge, tiles } = model
     const dx = px - cx
     const dy = py - cy
     const dist = Math.sqrt(dx * dx + dy * dy)
 
-    if (dist < innerRadius - cellSize || dist > outerRadius + cellSize) {
+    if (dist < innerEdge - 8 || dist > outerEdge + 8) {
       if (hoveredIdxRef.current !== -1) {
         hoveredIdxRef.current = -1
         setHoveredCell(null)
@@ -421,17 +457,23 @@ export default function RoundTheYear({
     }
 
     let bestIdx = -1
-    let minDist = cellSize * 0.9
 
     for (let i = 0; i < tiles.length; i++) {
       const tile = tiles[i]
       if (progressRef.current < 1 && progressRef.current < tile.startTime) continue
       const tx = cx + Math.cos(tile.angle) * tile.r
       const ty = cy + Math.sin(tile.angle) * tile.r
-      const d = Math.hypot(px - tx, py - ty)
-      if (d < minDist) {
-        minDist = d
+
+      const ox = px - tx
+      const oy = py - ty
+      const cosA = Math.cos(-tile.angle)
+      const sinA = Math.sin(-tile.angle)
+      const localX = ox * cosA - oy * sinA
+      const localY = ox * sinA + oy * cosA
+
+      if (Math.abs(localX) <= tile.w / 2 + 1 && Math.abs(localY) <= tile.h / 2 + 1) {
         bestIdx = i
+        break
       }
     }
 
@@ -488,29 +530,27 @@ export default function RoundTheYear({
           className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center"
         >
           <span
+            className="font-semibold tabular-nums"
             style={{
               fontFamily: numberFontFamily,
-              fontSize: `clamp(1.75rem, ${size * 0.08}px, 3.25rem)`,
-              lineHeight: 1,
-              letterSpacing: "-0.04em",
-              fontVariantNumeric: "tabular-nums",
-              fontWeight: 600,
-              color: "#ffffff",
+              fontSize: `clamp(2rem, ${size * 0.095}px, 3.25rem)`,
+              lineHeight: 0.95,
+              letterSpacing: "-0.02em",
+              color: palette.accent,
             }}
           >
             {displayStreak}
           </span>
           <span
+            className="text-[13px] leading-tight"
             style={{
-              marginTop: "0.35rem",
-              color: "rgba(255, 255, 255, 0.65)",
-              fontFamily: labelFontFamily,
-              fontSize: "clamp(9px, 1.8vw, 11px)",
-              fontWeight: 600,
-              letterSpacing: "0.14em",
+              marginTop: "0.25rem",
+              color: "var(--color-muted-foreground, #71717a)",
+              fontFamily: numberFontFamily,
+              letterSpacing: "normal",
             }}
           >
-            STREAK
+            Streak
           </span>
         </div>
 

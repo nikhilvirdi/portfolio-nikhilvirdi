@@ -123,6 +123,7 @@ export const Response = memo(
     lineNumbers = false,
     plugins,
     linkSafety = { enabled: false },
+    components,
     ...props
   }: ResponseProps) => {
     const combinedPlugins = useMemo(
@@ -137,6 +138,33 @@ export const Response = memo(
       [plugins]
     );
 
+    const mergedComponents = useMemo(
+      () => ({
+        img: ({ src, alt, className: imgClass, ...rest }: React.ComponentProps<"img">) => {
+          if (typeof src === "string" && src.includes("riyasat_e_duggar")) {
+            return (
+              <img
+                src={src}
+                alt={alt || "Riyasat-e-Duggar logo"}
+                className="inline-block h-[1em] w-[1em] align-[-0.15em] mx-1 object-contain"
+                {...rest}
+              />
+            );
+          }
+          return (
+            <img
+              src={src}
+              alt={alt}
+              className={cn("w-[210px] max-w-full h-auto object-contain rounded-[4px] block my-2", imgClass)}
+              {...rest}
+            />
+          );
+        },
+        ...components,
+      }),
+      [components]
+    );
+
     return (
       <Streamdown
         className={cn(
@@ -148,6 +176,7 @@ export const Response = memo(
         lineNumbers={lineNumbers}
         plugins={combinedPlugins}
         linkSafety={linkSafety}
+        components={mergedComponents as any}
         {...props}
       />
     );
