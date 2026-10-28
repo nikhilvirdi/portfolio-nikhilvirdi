@@ -2,14 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Response } from "@/components/ai/response";
+import { TerminalExpertise } from "./TerminalExpertise";
 // import { EasterEggHeatmap } from "./EasterEggHeatmap";
 
 export const content = `Hi lol supp?  
 This is a very random markdown written by me for no purpose.
 
-| Name | Role | Age |
-|------|------|-----|
-| Nikhil Virdi | CS Undergrad | 20 |
+| Name | Role | Age | Hometown |
+|------|------|-----|----------|
+| Nikhil Virdi | CS Undergrad | 20 | J&K |
 
 Inspiration  
 *Idle engineers tend to become politicians, so there is a certain social value in keeping engineers busy.* — Nikhil Virdi
@@ -17,7 +18,7 @@ Inspiration
 some random code
 \`\`\`javascript
 const philosophies = [
-  'spread hate',
+  'grind hard',
   'be kind',
   'larp is life',
   'wh0 cares i ball',
@@ -32,16 +33,16 @@ function getRandomPhilosophy(options) {
 const philosophy = getRandomPhilosophy(philosophies);
 console.log(philosophy);
 \`\`\`
-
-schro's equation:
-$$i\\hbar \\frac{\\partial}{\\partial t} \\Psi(x,t) = \\hat{H} \\Psi(x,t)$$
 `;
 
 // Previous artwork section (preserved so it can be restored later):
 // some piece of random art from me:
 // ![some piece of random art from me](/art/pieceOfArt.jpeg)
 
-export const page2Content = `i write docs tooo, wanna read ?  
+export const page2Content = `schro's equation:
+$$i\\hbar \\frac{\\partial}{\\partial t} \\Psi(x,t) = \\hat{H} \\Psi(x,t)$$
+
+i write docs tooo, wanna read ?  
 dw i'll be releasing them sooon.
 
 **NP-hardness** [https://en.wikipedia.org/wiki/NP-hardness](https://en.wikipedia.org/wiki/NP-hardness)
@@ -49,7 +50,11 @@ dw i'll be releasing them sooon.
 me in real world:
 
 ![me in real world](/realNik-face.png)
+
+btw yk I run ![Riyasat-e-Duggar logo](/socials/riyasat_e_duggar.svg) Riyasat-e-Duggar, a page about the history, culture, and identity of my home region.
 `;
+
+export const page3Content = `you can use this terminal to know more about my CS expertise:`;
 // Temporarily commented out:
 // this is my github heatmap, ik it is already there in github activity but i want it here also
 
@@ -57,14 +62,14 @@ me in real world:
 const CHUNKS = [
   "Hi ", "lol ", "supp?  \n",
   "This ", "is ", "a ", "very ", "random ", "markdown ", "written ", "by ", "me ", "for ", "no ", "purpose.\n\n",
-  "| Name | Role | Age |\n|------|------|-----|\n",
-  "| Nikhil Virdi | CS Undergrad | 20 |\n\n",
+  "| Name | Role | Age | Hometown |\n|------|------|-----|----------|\n",
+  "| Nikhil Virdi | CS Undergrad | 20 | J&K |\n\n",
   "Inspiration  \n",
   "*Idle ", "engineers ", "tend ", "to ", "become ", "politicians, ", "so ", "there ", "is ", "a ", "certain ", "social ", "value ", "in ", "keeping ", "engineers ", "busy.* ", "— Nikhil Virdi\n\n",
   "some ", "random ", "code\n",
   "```javascript\n",
   "const philosophies = [\n",
-  "  'spread hate',\n",
+  "  'grind hard',\n",
   "  'be kind',\n",
   "  'larp is life',\n",
   "  'wh0 cares i ball',\n",
@@ -76,12 +81,12 @@ const CHUNKS = [
   "}\n\n",
   "const philosophy = getRandomPhilosophy(philosophies);\n",
   "console.log(philosophy);\n",
-  "```\n\n",
-  "schro's ", "equation:\n",
-  "$$i\\hbar \\frac{\\partial}{\\partial t} \\Psi(x,t) = \\hat{H} \\Psi(x,t)$$\n"
+  "```\n"
 ];
 
 const PAGE_2_CHUNKS = [
+  "schro's ", "equation:\n",
+  "$$i\\hbar \\frac{\\partial}{\\partial t} \\Psi(x,t) = \\hat{H} \\Psi(x,t)$$\n\n",
   "i ", "write ", "docs ", "tooo, ", "wanna ", "read ?  \n",
   "dw ", "i'll ", "be ", "releasing ", "them ", "sooon.\n\n",
   "**NP-hardness** ", "[https://en.wikipedia.org/wiki/NP-hardness](https://en.wikipedia.org/wiki/NP-hardness)\n\n",
@@ -89,14 +94,20 @@ const PAGE_2_CHUNKS = [
   // "some ", "piece ", "of ", "random ", "art ", "from ", "me:\n\n",
   // "![some piece of random art from me](/art/pieceOfArt.jpeg)\n\n",
   "me ", "in ", "real ", "world:\n\n",
-  "![me in real world](/realNik-face.png)\n"
+  "![me in real world](/realNik-face.png)\n\n",
+  "btw ", "yk ", "I ", "run ", "![Riyasat-e-Duggar logo](/socials/riyasat_e_duggar.svg) ", "Riyasat-e-Duggar, ",
+  "a ", "page ", "about ", "the ", "history, ", "culture, ", "and ", "identity ", "of ", "my ", "home ", "region.\n"
   // Temporarily commented out:
   // "this ", "is ", "my ", "github ", "heatmap, ", "ik ", "it ", "is ", "already ", "there ", "in ", "github ", "activity ", "but ", "i ", "want ", "it ", "here ", "also\n"
 ];
 
+const PAGE_3_CHUNKS = [
+  "you ", "can ", "use ", "this ", "terminal ", "to ", "know ", "more ", "about ", "my ", "CS ", "expertise:"
+];
+
 export interface RandomMarkdownBlockProps {
   isOpen?: boolean;
-  page?: 1 | 2;
+  page?: 1 | 2 | 3;
   className?: string;
   onPage1Complete?: () => void;
 }
@@ -111,7 +122,7 @@ export function RandomMarkdownBlock({
   const [isAnimating, setIsAnimating] = useState<boolean>(true);
   const timerRef = useRef<number | null>(null);
   const completeTimeoutRef = useRef<number | null>(null);
-  const streamedPagesRef = useRef<{ 1: boolean; 2: boolean }>({ 1: false, 2: false });
+  const streamedPagesRef = useRef<{ 1: boolean; 2: boolean; 3: boolean }>({ 1: false, 2: false, 3: false });
   const onPage1CompleteRef = useRef(onPage1Complete);
 
   useEffect(() => {
@@ -132,12 +143,14 @@ export function RandomMarkdownBlock({
     if (!isOpen) {
       setDisplayedContent("");
       setIsAnimating(false);
-      streamedPagesRef.current = { 1: false, 2: false };
+      streamedPagesRef.current = { 1: false, 2: false, 3: false };
       return;
     }
 
-    const currentTargetContent = page === 1 ? content : page2Content;
-    const currentChunks = page === 1 ? CHUNKS : PAGE_2_CHUNKS;
+    const currentTargetContent =
+      page === 1 ? content : page === 2 ? page2Content : page3Content;
+    const currentChunks =
+      page === 1 ? CHUNKS : page === 2 ? PAGE_2_CHUNKS : PAGE_3_CHUNKS;
 
     // If this page was already streamed during this session, show immediately
     if (streamedPagesRef.current[page]) {
@@ -196,6 +209,9 @@ export function RandomMarkdownBlock({
       <Response isAnimating={isAnimating}>
         {displayedContent}
       </Response>
+      {page === 3 && (
+        <TerminalExpertise />
+      )}
       {/* {page === 2 && (
         <EasterEggHeatmap />
       )} */}
