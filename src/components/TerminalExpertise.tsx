@@ -130,6 +130,21 @@ export function TerminalExpertise({ className }: TerminalExpertiseProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const historyScrollRef = useRef<HTMLDivElement>(null);
   const tempInputRef = useRef<string>("");
+  const shouldScrollRef = useRef<boolean>(false);
+
+  // Scroll terminal history to newest output only after command execution
+  useEffect(() => {
+    if (shouldScrollRef.current && historyScrollRef.current) {
+      historyScrollRef.current.scrollTop = historyScrollRef.current.scrollHeight;
+      shouldScrollRef.current = false;
+      const frameId = requestAnimationFrame(() => {
+        if (historyScrollRef.current) {
+          historyScrollRef.current.scrollTop = historyScrollRef.current.scrollHeight;
+        }
+      });
+      return () => cancelAnimationFrame(frameId);
+    }
+  }, [history]);
 
   // Select next suggestion from the shuffled queue, refilling without repeating the current one
   const getNextSuggestion = useCallback(() => {
@@ -186,14 +201,8 @@ export function TerminalExpertise({ className }: TerminalExpertiseProps) {
         isHeatmap,
         heatmapYear,
       };
+      shouldScrollRef.current = true;
       setHistory((prev) => [...prev, newItem]);
-
-      // Scroll to newest output after command execution
-      setTimeout(() => {
-        if (historyScrollRef.current) {
-          historyScrollRef.current.scrollTop = historyScrollRef.current.scrollHeight;
-        }
-      }, 0);
     }
 
     setCommandList((prev) => [...prev, trimmed]);
@@ -267,7 +276,7 @@ export function TerminalExpertise({ className }: TerminalExpertiseProps) {
       {history.length > 0 && (
         <div
           ref={historyScrollRef}
-          className="overflow-y-auto max-h-[220px] sm:max-h-[250px] space-y-1.5 mb-1.5 pr-1"
+          className="overflow-y-auto max-h-[180px] sm:max-h-[220px] space-y-1.5 mb-1.5 pr-1"
         >
           {history.map((item) => (
             <div key={item.id} className="space-y-0.5">

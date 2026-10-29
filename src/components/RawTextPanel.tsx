@@ -114,7 +114,7 @@ export default function RawTextPanel({ isOpen, onClose }: RawTextPanelProps) {
 
             <div
               ref={scrollContainerRef}
-              className="bg-[#0a0a0c] text-[#f2f2f0] rounded-lg p-4 sm:p-5 max-h-[85vh] overflow-y-auto"
+              className="bg-[#0a0a0c] text-[#f2f2f0] rounded-lg p-4 sm:p-5"
             >
               <RandomMarkdownBlock
                 isOpen={isOpen}
