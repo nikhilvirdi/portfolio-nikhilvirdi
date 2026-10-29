@@ -24,6 +24,10 @@ export default function App() {
     setIsEasterEggOpen(prev => !prev);
   };
 
+  // const openEasterEgg = () => {
+  //   setIsEasterEggOpen(true);
+  // };
+
   return (
     <>
       <div className="hidden lg:flex h-screen w-screen overflow-hidden bg-background text-foreground font-body">
@@ -75,19 +79,32 @@ export default function App() {
         {/* Hero section */}
         <section
           id="hero"
-          className="min-h-screen pt-[19vh] pb-20 pr-16 pl-12 bg-background"
+          className="min-h-[100svh] pt-[19vh] pb-10 pr-16 pl-12 bg-background"
         >
           <HeroBioReveal />
         </section>
 
-        {/* About section */}
+                {/* About section (commented out so it can be restored later)
         <section
           id="about"
           className="pt-12 pb-16 px-16 bg-background"
         >
           <h2 className="font-heading text-5xl font-bold tracking-tight text-foreground">
-            About Nikhil Virdi
+            About Me
           </h2>
+          <div className="mt-3">
+            <button
+              type="button"
+              className="about-me-link"
+              onClick={openEasterEgg}
+              aria-label="Open the About Me Easter egg"
+            >
+              <span>click here to know</span>
+              <span className="about-me-link-arrow" aria-hidden="true">
+                →
+              </span>
+            </button>
+          </div>
           <div className="mt-8 max-w-3xl space-y-6">
             <p className="font-outfit text-[22px] font-normal leading-relaxed text-foreground">
               I'm <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#F5D76E] text-[#171717]">Nikhil Virdi</span>, a 20 year old. I'm just a Jammu guy currently living in Bangalore, pursuing <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#7656A5] text-white">Computer Science</span> & Engineering and enjoying the exposure here. I'm more drawn to <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#8B624A] text-white">Backend Development</span>, mainly using <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#166534] text-white">Node.js</span> and <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#FFFFFF] text-[#111111]">Express</span>, and I'm trying to fit <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#2463C5] text-white">Golang</span> into the stack as well, toward the same goal. <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#C83F49] text-white">Java</span> is my primary programming language, mostly because that's what I use for practicing DSA problems. I enjoy <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#596579] text-white">System Design</span>, especially sketching out system architectures, and I've been exploring <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#326CE5] text-white">DevOps</span> along the way. Right now I'm diving into <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#B87543] text-[#171717]">AI Engineering</span>, less into core ML and more into <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#A94F68] text-[#FFFFFF]">Deep Learning</span>, GenAI, and LLMs. Frontend doesn't excite me much.
@@ -106,6 +123,7 @@ export default function App() {
             </p>
           </div>
         </section>
+        */}
 
         {/* Tech Stack section */}
         <TechStackFloating />
@@ -161,7 +179,7 @@ export default function App() {
       {/* Hero block: avatar centered on top, heading full-width below */}
       <section
         id="hero-mobile"
-        className="w-full pt-8 pb-10 bg-background flex flex-col items-center gap-6"
+        className="w-full min-h-[100svh] pt-8 pb-6 bg-background flex flex-col items-center gap-6"
       >
         <div className="w-full h-[420px] flex items-center justify-center">
           <Suspense
@@ -200,14 +218,27 @@ export default function App() {
         </div>
       </section>
 
-      {/* About section: same content, full width */}
+            {/* About section: same content, full width (commented out so it can be restored later)
       <section
         id="about-mobile"
         className="py-10 bg-background"
       >
         <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-          About Nikhil Virdi
+          About Me
         </h2>
+        <div className="mt-3">
+          <button
+            type="button"
+            className="about-me-link"
+            onClick={openEasterEgg}
+            aria-label="Open the About Me Easter egg"
+          >
+            <span>click here to know</span>
+            <span className="about-me-link-arrow" aria-hidden="true">
+              →
+            </span>
+          </button>
+        </div>
         <div className="mt-6 space-y-4 max-w-3xl">
           <p className="font-outfit text-base sm:text-lg font-normal leading-relaxed text-foreground">
             I'm <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#F5D76E] text-[#171717]">Nikhil Virdi</span>, a 20 year old. I'm just a Jammu guy currently living in Bangalore, pursuing <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#7656A5] text-white">Computer Science</span> and enjoying the exposure here. I'm more drawn to <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#8B624A] text-white">backend development</span>, mainly using <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#166534] text-white">Node.js</span> and <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#FFFFFF] text-[#111111]">Express</span>, and I'm trying to fit <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#2463C5] text-white">Golang</span> into the stack as well, toward the same goal. <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#C83F49] text-white">Java</span> is my primary programming language, mostly because that's what I use for practicing DSA problems. I enjoy <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#596579] text-white">System Design</span>, especially sketching out system architectures, and I've been exploring <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#326CE5] text-white">DevOps</span> along the way. Right now I'm diving into <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#B87543] text-[#171717]">AI engineering</span>, less into core ML and more into <span className="inline px-1 py-[1px] rounded-[2px] box-decoration-clone [box-decoration-break:clone] [-webkit-box-decoration-break:clone] bg-[#A94F68] text-[#FFFFFF]">Deep Learning</span>, GenAI, and LLMs. Frontend doesn't excite me much.
@@ -226,6 +257,7 @@ export default function App() {
           </p>
         </div>
       </section>
+      */}
 
       {/* Tech Stack section: static responsive grid */}
       <TechStackMobile />

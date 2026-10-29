@@ -2,8 +2,9 @@
 
 import * as React from "react"
 import LanguageBar from "./LanguageBar"
-import RoundTheYear from "./RoundTheYear"
-import { Orbit } from "lucide-react"
+// Circular GitHub contribution wheel (commented out):
+// import RoundTheYear from "./RoundTheYear"
+// import { Orbit } from "lucide-react"
 
 type GitHubActivityDay = { date: string; count: number; level: number }
 
@@ -295,7 +296,7 @@ export const resolvePalette = (p: PaletteInput | undefined, dark: boolean): stri
 }
 // #endregion
 
-export type View = "2d" | "3d" | "round"
+export type View = "2d" | "3d" // | "round"
 
 export interface ContributionSkylineProps {
   /** One entry per day, `YYYY-MM-DD`. Repeated dates add up. Omit for a generated sample year. */
@@ -407,14 +408,14 @@ const CubeIcon = () => (
   </svg>
 )
 
-const RoundIcon = () => (
-  <Orbit size={14} strokeWidth={1.75} aria-hidden="true" style={{ maxWidth: "none" }} />
-)
+// const RoundIcon = () => (
+//   <Orbit size={14} strokeWidth={1.75} aria-hidden="true" style={{ maxWidth: "none" }} />
+// )
 
 const VIEW_OPTIONS = [
   { id: "2d", label: "Simple", title: "Simple" },
   { id: "3d", label: "City Blocks", title: "City Blocks" },
-  { id: "round", label: "Round the Year", title: "Round the Year" },
+  // { id: "round", label: "Round the Year", title: "Round the Year" },
 ] as const
 
 const MUTED = "var(--color-muted-foreground, #737373)"
@@ -713,7 +714,7 @@ function ContributionSkyline({
     }
 
     const relayout = () => {
-      if (viewRef.current === "round") return
+      // if (viewRef.current === "round") return
       const w = Math.round(stage.clientWidth)
       if (!w || !n) return
       W = w
@@ -949,7 +950,8 @@ function ContributionSkyline({
     }
 
     const kick = () => {
-      if (raf || viewRef.current === "round") return
+      // if (raf || viewRef.current === "round") return
+      if (raf) return
       last = performance.now()
       raf = requestAnimationFrame(tick)
     }
@@ -1169,10 +1171,10 @@ function ContributionSkyline({
   }, [locale])
 
   React.useEffect(() => {
-    if (view !== "round") {
+    // if (view !== "round") {
       engine.current?.relayout()
       engine.current?.kick()
-    }
+    // }
   }, [view, legendLevel])
 
   React.useEffect(() => {
@@ -1306,7 +1308,8 @@ function ContributionSkyline({
               className="absolute top-0.5 bottom-0.5 left-0.5 w-8 rounded transition-transform duration-500 motion-reduce:transition-none"
               style={{
                 background: "var(--color-foreground, #171717)",
-                transform: `translateX(${(view === "round" ? 2 : is3d ? 1 : 0) * 100}%)`,
+                // transform: `translateX(${(view === "round" ? 2 : is3d ? 1 : 0) * 100}%)`,
+                transform: `translateX(${(is3d ? 1 : 0) * 100}%)`,
                 transitionTimingFunction: ease,
               }}
             />
@@ -1327,7 +1330,8 @@ function ContributionSkyline({
                   outlineColor: "var(--color-foreground, #171717)",
                 }}
               >
-                {opt.id === "2d" ? <GridIcon /> : opt.id === "3d" ? <CubeIcon /> : <RoundIcon />}
+                {/* {opt.id === "2d" ? <GridIcon /> : opt.id === "3d" ? <CubeIcon /> : <RoundIcon />} */}
+                {opt.id === "2d" ? <GridIcon /> : <CubeIcon />}
               </button>
             ))}
           </div>
@@ -1335,6 +1339,7 @@ function ContributionSkyline({
       </header>
 
       <div className="relative">
+        {/* Circular GitHub contribution wheel (commented out):
         {view === "round" && (
           <div className="relative pt-3 sm:pt-4">
             <RoundTheYear
@@ -1348,8 +1353,10 @@ function ContributionSkyline({
             />
           </div>
         )}
+        */}
 
-        <div style={{ display: view === "round" ? "none" : "block" }}>
+        {/* <div style={{ display: view === "round" ? "none" : "block" }}> */}
+        <div>
           <div className="relative pt-3 sm:pt-4">
           <div
             ref={stageRef}

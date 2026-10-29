@@ -7,7 +7,7 @@ import { TerminalExpertise } from "./TerminalExpertise";
 // import { EasterEggHeatmap } from "./EasterEggHeatmap";
 
 export const content = `Hi lol supp?  
-This is a very random markdown written by me for no purpose.
+This is a very random markdown written by me for literally no purpose.
 
 | Name | Role | Age | Hometown |
 |------|------|-----|----------|
@@ -54,16 +54,12 @@ me in real world:
 
 btw yk I run ![Riyasat-e-Duggar logo](/socials/riyasat_e_duggar.svg) Riyasat-e-Duggar, a page about the history, culture, and identity of my home region.
 
-you can use this terminal to know more about my CS expertise:`;
-
-export const page3Content = ``;
-// Temporarily commented out:
-// this is my github heatmap, ik it is already there in github activity but i want it here also
+you can use this terminal to know more about me and my CS expertise:`;
 
 // Natural progressive chunks preserving GFM tables and code blocks while streaming words
 const CHUNKS = [
   "Hi ", "lol ", "supp?  \n",
-  "This ", "is ", "a ", "very ", "random ", "markdown ", "written ", "by ", "me ", "for ", "no ", "purpose.\n\n",
+  "This ", "is ", "a ", "very ", "random ", "markdown ", "written ", "by ", "me ", "for ", "literally ", "no ", "purpose.\n\n",
   "| Name | Role | Age | Hometown |\n|------|------|-----|----------|\n",
   "| Nikhil Virdi | CS Undergrad | 20 | J&K |\n\n",
   "Inspiration  \n",
@@ -99,16 +95,14 @@ const PAGE_2_CHUNKS = [
   "![me in real world](/realNik.png)\n\n",
   "btw ", "yk ", "I ", "run ", "![Riyasat-e-Duggar logo](/socials/riyasat_e_duggar.svg) ", "Riyasat-e-Duggar, ",
   "a ", "page ", "about ", "the ", "history, ", "culture, ", "and ", "identity ", "of ", "my ", "home ", "region.\n\n",
-  "you ", "can ", "use ", "this ", "terminal ", "to ", "know ", "more ", "about ", "my ", "CS ", "expertise:"
+  "you ", "can ", "use ", "this ", "terminal ", "to ", "know ", "more ", "about ", "me ", "and ", "my ", "CS ", "expertise:"
   // Temporarily commented out:
   // "this ", "is ", "my ", "github ", "heatmap, ", "ik ", "it ", "is ", "already ", "there ", "in ", "github ", "activity ", "but ", "i ", "want ", "it ", "here ", "also\n"
 ];
 
-const PAGE_3_CHUNKS: string[] = [];
-
 export interface RandomMarkdownBlockProps {
   isOpen?: boolean;
-  page?: 1 | 2 | 3;
+  page?: 1 | 2;
   className?: string;
   onPage1Complete?: () => void;
 }
@@ -121,9 +115,10 @@ export function RandomMarkdownBlock({
 }: RandomMarkdownBlockProps) {
   const [displayedContent, setDisplayedContent] = useState<string>("");
   const [isAnimating, setIsAnimating] = useState<boolean>(true);
+  const [page2Complete, setPage2Complete] = useState<boolean>(false);
   const timerRef = useRef<number | null>(null);
   const completeTimeoutRef = useRef<number | null>(null);
-  const streamedPagesRef = useRef<{ 1: boolean; 2: boolean; 3: boolean }>({ 1: false, 2: false, 3: false });
+  const streamedPagesRef = useRef<{ 1: boolean; 2: boolean }>({ 1: false, 2: false });
   const onPage1CompleteRef = useRef(onPage1Complete);
 
   useEffect(() => {
@@ -144,19 +139,21 @@ export function RandomMarkdownBlock({
     if (!isOpen) {
       setDisplayedContent("");
       setIsAnimating(false);
-      streamedPagesRef.current = { 1: false, 2: false, 3: false };
+      setPage2Complete(false);
+      streamedPagesRef.current = { 1: false, 2: false };
       return;
     }
 
-    const currentTargetContent =
-      page === 1 ? content : page === 2 ? page2Content : page3Content;
-    const currentChunks =
-      page === 1 ? CHUNKS : page === 2 ? PAGE_2_CHUNKS : PAGE_3_CHUNKS;
+    const currentTargetContent = page === 1 ? content : page2Content;
+    const currentChunks = page === 1 ? CHUNKS : PAGE_2_CHUNKS;
 
     // If this page was already streamed during this session, show immediately
     if (streamedPagesRef.current[page]) {
       setDisplayedContent(currentTargetContent);
       setIsAnimating(false);
+      if (page === 2) {
+        setPage2Complete(true);
+      }
       if (page === 1) {
         onPage1CompleteRef.current?.();
       }
@@ -166,6 +163,9 @@ export function RandomMarkdownBlock({
     // Reset and start progressive reveal
     setDisplayedContent("");
     setIsAnimating(true);
+    if (page === 2) {
+      setPage2Complete(false);
+    }
     let index = 0;
     let accumulated = "";
 
@@ -181,6 +181,10 @@ export function RandomMarkdownBlock({
         }
         streamedPagesRef.current[page] = true;
         setIsAnimating(false);
+
+        if (page === 2) {
+          setPage2Complete(true);
+        }
 
         if (page === 1) {
           completeTimeoutRef.current = window.setTimeout(() => {
@@ -199,18 +203,20 @@ export function RandomMarkdownBlock({
         window.clearTimeout(completeTimeoutRef.current);
         completeTimeoutRef.current = null;
       }
-      if (accumulated.length > 0) {
-        streamedPagesRef.current[page] = true;
-      }
     };
   }, [isOpen, page]);
+
+  const isTerminalReady =
+    page === 2 &&
+    page2Complete &&
+    displayedContent.includes("you can use this terminal");
 
   return (
     <div className={cn("flex flex-col flex-1 min-h-0", className)}>
       <Response isAnimating={isAnimating} className={page === 2 ? "shrink-0" : undefined}>
         {displayedContent}
       </Response>
-      {page === 2 && (
+      {isTerminalReady && (
         <TerminalExpertise className="flex-1 min-h-0 mt-2" />
       )}
       {/* {page === 2 && (

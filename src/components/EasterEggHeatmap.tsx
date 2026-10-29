@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { loadCachedGitHubContributions } from "./GitHubActivity";
+import { loadCachedLeetCodeContributions } from "./CodingActivity";
+import leetcodeSnapshot from "../data/leetcode-activity.json";
 
 export interface EasterEggHeatmapProps {
   years?: number[];
   className?: string;
   style?: React.CSSProperties;
+  source?: "github" | "leetcode";
 }
 
 interface DayData {
@@ -86,6 +89,41 @@ function buildCalendarYearGrid(year: number) {
 let sharedContributionsMap: Map<string, DayData> | null = null;
 let sharedFetchPromise: Promise<Map<string, DayData>> | null = null;
 
+let sharedLeetCodeMap: Map<string, DayData> | null = null;
+let sharedLeetCodeFetchPromise: Promise<Map<string, DayData>> | null = null;
+
+function getInitialLeetCodeMap(): Map<string, DayData> {
+  if (sharedLeetCodeMap && sharedLeetCodeMap.size > 0) {
+    return sharedLeetCodeMap;
+  }
+  const map = new Map<string, DayData>();
+  const rawDays: Record<string, number> = {};
+
+  const cached = loadCachedLeetCodeContributions();
+  if (cached && cached.length > 0) {
+    for (const item of cached) {
+      rawDays[item.date] = item.count;
+    }
+  } else {
+    const snap = leetcodeSnapshot as { days?: Record<string, number> } | undefined;
+    if (snap?.days) {
+      Object.assign(rawDays, snap.days);
+    }
+  }
+
+  const entries = Object.entries(rawDays);
+  const nz = entries.map(([, count]) => count).filter((c) => c > 0).sort((a, b) => a - b);
+  const busy = nz.length ? nz[Math.floor(0.95 * (nz.length - 1))] : 0;
+
+  for (const [date, count] of entries) {
+    const level = count <= 0 ? 0 : busy <= 0 ? 4 : 1 + Math.min(3, Math.floor((count / busy) * 4));
+    map.set(date, { date, count, level });
+  }
+
+  sharedLeetCodeMap = map;
+  return map;
+}
+
 function hasDataForYears(map: Map<string, DayData>, targetYears: number[]): boolean {
   return targetYears.every((yr) => {
     const prefix = `${yr}-`;
@@ -100,8 +138,12 @@ export function EasterEggHeatmap({
   years = [2026],
   className = "",
   style,
+  source = "github",
 }: EasterEggHeatmapProps) {
   const [dataMap, setDataMap] = useState<Map<string, DayData>>(() => {
+    if (source === "leetcode") {
+      return getInitialLeetCodeMap();
+    }
     if (sharedContributionsMap && sharedContributionsMap.size > 0) {
       return sharedContributionsMap;
     }
@@ -120,7 +162,64 @@ export function EasterEggHeatmap({
   });
 
   useEffect(() => {
-    // If all requested years already have data, skip fetching
+    if (source === "leetcode") {
+      if (hasDataForYears(dataMap, years)) return;
+
+      if (!sharedLeetCodeFetchPromise) {
+        sharedLeetCodeFetchPromise = Promise.all([
+          fetch("https://alfa-leetcode-api.onrender.com/nikhilvirdi/calendar?year=2025").then((r) => (r.ok ? r.json() : null)),
+          fetch("https://alfa-leetcode-api.onrender.com/nikhilvirdi/calendar?year=2026").then((r) => (r.ok ? r.json() : null)),
+        ])
+          .then(([d2025, d2026]) => {
+            const rawDays: Record<string, number> = {};
+            const snap = leetcodeSnapshot as { days?: Record<string, number> } | undefined;
+            if (snap?.days) Object.assign(rawDays, snap.days);
+
+            const parse = (val: unknown) => {
+              if (typeof val === "string") {
+                try { return JSON.parse(val); } catch { return {}; }
+              }
+              return val && typeof val === "object" ? (val as Record<string, number>) : {};
+            };
+
+            for (const cal of [parse(d2025?.submissionCalendar), parse(d2026?.submissionCalendar)]) {
+              for (const [timestamp, count] of Object.entries(cal)) {
+                const val = Number(timestamp);
+                if (!Number.isNaN(val)) {
+                  const dateStr = new Date(val < 1e11 ? val * 1000 : val).toISOString().slice(0, 10);
+                  const num = Number(count);
+                  if (num > 0) rawDays[dateStr] = num;
+                }
+              }
+            }
+
+            const newMap = new Map<string, DayData>();
+            const entries = Object.entries(rawDays);
+            const nz = entries.map(([, count]) => count).filter((c) => c > 0).sort((a, b) => a - b);
+            const busy = nz.length ? nz[Math.floor(0.95 * (nz.length - 1))] : 0;
+
+            for (const [date, count] of entries) {
+              const level = count <= 0 ? 0 : busy <= 0 ? 4 : 1 + Math.min(3, Math.floor((count / busy) * 4));
+              newMap.set(date, { date, count, level });
+            }
+
+            sharedLeetCodeMap = newMap;
+            return newMap;
+          })
+          .catch(() => dataMap);
+      }
+
+      let isMounted = true;
+      sharedLeetCodeFetchPromise.then((map) => {
+        if (isMounted) setDataMap(map);
+      });
+
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    // GitHub fetch logic
     if (hasDataForYears(dataMap, years)) return;
 
     if (!sharedFetchPromise) {
@@ -174,7 +273,7 @@ export function EasterEggHeatmap({
     return () => {
       isMounted = false;
     };
-  }, [dataMap, years]);
+  }, [dataMap, years, source]);
 
   return (
     <div
@@ -197,7 +296,7 @@ export function EasterEggHeatmap({
               viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
               className="w-full h-auto block overflow-visible"
               preserveAspectRatio="xMinYMin meet"
-              aria-label={`GitHub contribution heatmap for ${year}`}
+              aria-label={`${source === "leetcode" ? "LeetCode submission" : "GitHub contribution"} heatmap for ${year}`}
             >
               {/* Blue rectangular year badge on the exact same header row as month labels */}
               <rect

@@ -276,3 +276,63 @@
   margin: 0 !important;
   vertical-align: -0.15em !important;
 }
+
+
+/* About Me interactive Easter egg link */
+.about-me-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  position: relative;
+  color: #999;
+  font-size: 15px;
+  font-family: inherit;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 220ms ease;
+  outline: none;
+}
+
+.about-me-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 260ms ease;
+}
+
+.about-me-link:hover,
+.about-me-link:focus-visible {
+  color: #fff;
+}
+
+.about-me-link:hover::after,
+.about-me-link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+.about-me-link-arrow {
+  display: inline-block;
+  transition: transform 220ms ease;
+}
+
+.about-me-link:hover .about-me-link-arrow,
+.about-me-link:focus-visible .about-me-link-arrow {
+  transform: translateX(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-me-link,
+  .about-me-link::after,
+  .about-me-link-arrow {
+    transition: none;
+  }
+}

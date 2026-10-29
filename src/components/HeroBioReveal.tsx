@@ -2,7 +2,6 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import { setHeroProgress } from '../utils/heroScroll';
 
 const LINES = [
-  "",
   "Yo gng! I'm Nik. I genuinely can't function",
   "without chai. It's less a drink and more a",
   "personality trait at this point. I do my best",

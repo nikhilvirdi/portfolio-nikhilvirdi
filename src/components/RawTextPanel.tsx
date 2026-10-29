@@ -8,7 +8,7 @@ interface RawTextPanelProps {
 }
 
 export default function RawTextPanel({ isOpen, onClose }: RawTextPanelProps) {
-  const [currentPage, setCurrentPage] = useState<1 | 2 | 3>(1);
+  const [currentPage, setCurrentPage] = useState<1 | 2>(1);
   const [showNav, setShowNav] = useState(false);
   const [page1Height, setPage1Height] = useState<number | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -113,24 +113,26 @@ export default function RawTextPanel({ isOpen, onClose }: RawTextPanelProps) {
                   transition={{ duration: 0.35, ease: "easeOut" }}
                   className="absolute top-3.5 right-4 sm:top-4 sm:right-5 z-20 flex items-center gap-1 select-none"
                 >
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1) as 1 | 2 | 3)}
-                    disabled={currentPage === 1}
-                    aria-label="Previous page"
-                    className="text-[#f2f2f0]/70 hover:text-[#f2f2f0] disabled:text-[#f2f2f0]/20 disabled:hover:text-[#f2f2f0]/20 disabled:cursor-default transition-colors text-base sm:text-lg leading-none p-1 focus:outline-none"
-                  >
-                    ‹
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((p) => Math.min(3, p + 1) as 1 | 2 | 3)}
-                    disabled={currentPage === 3}
-                    aria-label="Next page"
-                    className="text-[#f2f2f0]/70 hover:text-[#f2f2f0] disabled:text-[#f2f2f0]/20 disabled:hover:text-[#f2f2f0]/20 disabled:cursor-default transition-colors text-base sm:text-lg leading-none p-1 focus:outline-none"
-                  >
-                    ›
-                  </button>
+                  {currentPage === 2 && (
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(1)}
+                      aria-label="Previous page"
+                      className="text-[#f2f2f0]/70 hover:text-[#f2f2f0] transition-colors text-base sm:text-lg leading-none p-1 focus:outline-none"
+                    >
+                      ‹
+                    </button>
+                  )}
+                  {currentPage === 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(2)}
+                      aria-label="Next page"
+                      className="text-[#f2f2f0]/70 hover:text-[#f2f2f0] transition-colors text-base sm:text-lg leading-none p-1 focus:outline-none"
+                    >
+                      ›
+                    </button>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>

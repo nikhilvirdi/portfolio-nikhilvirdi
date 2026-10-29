@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from "react";
 import { cn } from "@/lib/utils";
 import { EasterEggHeatmap } from "./EasterEggHeatmap";
+import { loadCachedGitHubContributions } from "./GitHubActivity";
+import { loadCachedLeetCodeContributions } from "./CodingActivity";
+import leetcodeSnapshot from "../data/leetcode-activity.json";
 
 interface CommandHistoryItem {
   id: string;
@@ -8,17 +11,24 @@ interface CommandHistoryItem {
   output?: string;
   isHeatmap?: boolean;
   heatmapYear?: number;
+  heatmapSource?: "github" | "leetcode";
 }
 
 const INITIAL_SUGGESTIONS = ["whoami", "help"];
 
 const ALL_SUGGESTIONS = [
   "whoami",
-  "languages --list",
-  "languages --primary",
-  "domains --list",
-  "domains --exploring",
+  "expertise",
+  "backend --focus",
+  "devops --focus",
+  "languages",
   "git-map",
+  "git-streak",
+  "leet-map",
+  "leet-streak",
+  "interests",
+  "sudo chai",
+  "date",
   "help",
 ];
 
@@ -31,32 +41,179 @@ function shuffle<T>(array: T[]): T[] {
   return arr;
 }
 
-function getCommandResult(rawCmd: string): { output?: string; isClear?: boolean; isHeatmap?: boolean; heatmapYear?: number } {
+// GitHub streak computation and caching
+let gitHubStreaksCache: { current: number; longest: number } | null = null;
+
+function parseYMDToDays(ymd: string): number {
+  const [y, m, d] = ymd.split("-").map(Number);
+  return Math.floor(Date.UTC(y, m - 1, d) / (1000 * 60 * 60 * 24));
+}
+
+function computeGitHubStreaks(days: { date: string; count: number }[]): { current: number; longest: number } {
+  if (!days || days.length === 0) return { current: 0, longest: 0 };
+
+  const now = new Date();
+  const todayUTC = now.toISOString().slice(0, 10);
+  const localY = now.getFullYear();
+  const localM = String(now.getMonth() + 1).padStart(2, "0");
+  const localD = String(now.getDate()).padStart(2, "0");
+  const todayLocal = `${localY}-${localM}-${localD}`;
+  const maxAllowedDate = todayUTC > todayLocal ? todayUTC : todayLocal;
+
+  const activeDates = Array.from(
+    new Set(
+      days
+        .filter((d) => d.count > 0 && d.date <= maxAllowedDate)
+        .map((d) => d.date)
+    )
+  ).sort();
+
+  if (activeDates.length === 0) {
+    return { current: 0, longest: 0 };
+  }
+
+  let longest = 0;
+  let curRun = 0;
+  let prevDayNum: number | null = null;
+
+  for (const d of activeDates) {
+    const dayNum = parseYMDToDays(d);
+    if (prevDayNum === null || dayNum - prevDayNum !== 1) {
+      curRun = 1;
+    } else {
+      curRun++;
+    }
+    if (curRun > longest) {
+      longest = curRun;
+    }
+    prevDayNum = dayNum;
+  }
+
+  const lastActiveDate = activeDates[activeDates.length - 1];
+  const lastActiveNum = parseYMDToDays(lastActiveDate);
+  const todayNumUTC = parseYMDToDays(todayUTC);
+  const todayNumLocal = parseYMDToDays(todayLocal);
+
+  const gapUTC = todayNumUTC - lastActiveNum;
+  const gapLocal = todayNumLocal - lastActiveNum;
+  const minGap = Math.min(gapUTC, gapLocal);
+
+  const isCurrentStreakActive = minGap >= 0 && minGap <= 1;
+  const current = isCurrentStreakActive ? curRun : 0;
+
+  return { current, longest };
+}
+
+function getCachedGitHubStreaks(): { current: number; longest: number } | null {
+  if (gitHubStreaksCache) return gitHubStreaksCache;
+  const cached = loadCachedGitHubContributions();
+  if (cached && cached.length > 0) {
+    gitHubStreaksCache = computeGitHubStreaks(cached);
+    return gitHubStreaksCache;
+  }
+  return null;
+}
+
+// LeetCode streak computation and caching
+let leetCodeStreaksCache: { current: number; longest: number } | null = null;
+
+function computeLeetCodeStreaks(daysMap: Record<string, number>): { current: number; longest: number } {
+  const now = new Date();
+  const todayUTC = now.toISOString().slice(0, 10);
+  const localY = now.getFullYear();
+  const localM = String(now.getMonth() + 1).padStart(2, "0");
+  const localD = String(now.getDate()).padStart(2, "0");
+  const todayLocal = `${localY}-${localM}-${localD}`;
+  const maxAllowedDate = todayUTC > todayLocal ? todayUTC : todayLocal;
+
+  const activeDates = Object.keys(daysMap)
+    .filter((d) => (daysMap[d] || 0) > 0 && d <= maxAllowedDate)
+    .sort();
+
+  if (activeDates.length === 0) {
+    return { current: 0, longest: 0 };
+  }
+
+  let longest = 0;
+  let curRun = 0;
+  let prevDayNum: number | null = null;
+
+  for (const d of activeDates) {
+    const dayNum = parseYMDToDays(d);
+    if (prevDayNum === null || dayNum - prevDayNum !== 1) {
+      curRun = 1;
+    } else {
+      curRun++;
+    }
+    if (curRun > longest) {
+      longest = curRun;
+    }
+    prevDayNum = dayNum;
+  }
+
+  const lastActiveDate = activeDates[activeDates.length - 1];
+  const lastActiveNum = parseYMDToDays(lastActiveDate);
+  const todayNumUTC = parseYMDToDays(todayUTC);
+  const todayNumLocal = parseYMDToDays(todayLocal);
+
+  const gapUTC = todayNumUTC - lastActiveNum;
+  const gapLocal = todayNumLocal - lastActiveNum;
+  const minGap = Math.min(gapUTC, gapLocal);
+
+  const isCurrentStreakActive = minGap >= 0 && minGap <= 1;
+  const current = isCurrentStreakActive ? curRun : 0;
+
+  return { current, longest };
+}
+
+function getCachedLeetCodeStreaks(): { current: number; longest: number } | null {
+  if (leetCodeStreaksCache) return leetCodeStreaksCache;
+  const cached = loadCachedLeetCodeContributions();
+  const rawDays: Record<string, number> = {};
+
+  if (cached && cached.length > 0) {
+    for (const item of cached) {
+      rawDays[item.date] = item.count;
+    }
+  } else {
+    const snap = leetcodeSnapshot as { days?: Record<string, number> } | undefined;
+    if (snap?.days) {
+      Object.assign(rawDays, snap.days);
+    }
+  }
+
+  leetCodeStreaksCache = computeLeetCodeStreaks(rawDays);
+  return leetCodeStreaksCache;
+}
+
+function getCommandResult(rawCmd: string): {
+  output?: string;
+  isClear?: boolean;
+  isHeatmap?: boolean;
+  heatmapYear?: number;
+  heatmapSource?: "github" | "leetcode";
+} {
   const trimmed = rawCmd.trim();
   const normalized = trimmed.replace(/\s+/g, " ").toLowerCase();
 
-  if (normalized === "whoami") {
-    return { output: "Nikhil Virdi" };
+  // Technical commands
+  if (normalized === "expertise") {
+    return { output: "Backend Development, System Design, DevOps, Deep Learning" };
   }
-  if (normalized === "languages --list") {
-    return { output: "Java, Python, Go, C, JavaScript" };
+  if (normalized === "backend --focus") {
+    return { output: "Node.js, Express, exploring Go" };
   }
-  if (normalized === "languages --primary") {
-    return { output: "Java" };
+  if (normalized === "devops --focus") {
+    return { output: "Docker, Nginx, GitHub Actions (CI/CD pipelines)" };
   }
-  if (normalized === "domains --list") {
-    return { output: "Backend, System Design, DevOps, Deep Learning" };
-  }
-  if (normalized === "domains --exploring") {
-    return { output: "GenAI, Machine Learning, LLMs" };
-  }
-  if (normalized === "sudo chai") {
-    return { output: "send me your address i'll parcel a cup of chai" };
-  }
-  if (normalized === "git-map") {
-    return { isHeatmap: true, heatmapYear: 2026 };
+  if (normalized === "languages") {
+    return { output: "Java, Python, Go, C, JavaScript, TypeScript" };
   }
 
+  // git-map
+  if (normalized === "git-map") {
+    return { isHeatmap: true, heatmapYear: 2026, heatmapSource: "github" };
+  }
   const gitMapYearMatch = normalized.match(/^git-map(?:\s+--|--)(\d+)$/);
   if (gitMapYearMatch) {
     if (gitMapYearMatch[1].length === 4) {
@@ -71,33 +228,121 @@ function getCommandResult(rawCmd: string): { output?: string; isClear?: boolean;
         return { output: "oops, nothing to see here." };
       }
       if (parsedYear >= 2024 && parsedYear <= 2026) {
-        return { isHeatmap: true, heatmapYear: parsedYear };
+        return { isHeatmap: true, heatmapYear: parsedYear, heatmapSource: "github" };
       }
     }
   }
-
   if (normalized.startsWith("git-map")) {
     return { output: "oops, i have not coded any response for this." };
   }
 
+  // git-streak
+  if (normalized === "git-streak") {
+    const s = getCachedGitHubStreaks();
+    if (!s) {
+      return { output: "GitHub streak data temporarily unavailable." };
+    }
+    return { output: `${s.current} ${s.current === 1 ? "day" : "days"}` };
+  }
+  if (normalized === "git-streak --longest") {
+    const s = getCachedGitHubStreaks();
+    if (!s) {
+      return { output: "GitHub streak data temporarily unavailable." };
+    }
+    return { output: `${s.longest} ${s.longest === 1 ? "day" : "days"}` };
+  }
+  if (normalized.startsWith("git-streak")) {
+    return { output: "oops, i have not coded any response for this." };
+  }
+
+  // leet-map
+  if (normalized === "leet-map") {
+    return { isHeatmap: true, heatmapYear: 2026, heatmapSource: "leetcode" };
+  }
+  const leetMapYearMatch = normalized.match(/^leet-map(?:\s+--|--)(\d+)$/);
+  if (leetMapYearMatch) {
+    if (leetMapYearMatch[1].length === 4) {
+      const parsedYear = parseInt(leetMapYearMatch[1], 10);
+      if (parsedYear > 2026) {
+        return { output: "trying to act smart??" };
+      }
+      if (parsedYear === 2022 || parsedYear === 2023) {
+        return { output: "sadly, i was grinding PCM at that time" };
+      }
+      if (parsedYear === 2024 || parsedYear < 2022) {
+        return { output: "oops, nothing to see here." };
+      }
+      if (parsedYear >= 2025 && parsedYear <= 2026) {
+        return { isHeatmap: true, heatmapYear: parsedYear, heatmapSource: "leetcode" };
+      }
+    }
+  }
+  if (normalized.startsWith("leet-map")) {
+    return { output: "oops, i have not coded any response for this." };
+  }
+
+  // leet-streak
+  if (normalized === "leet-streak") {
+    const s = getCachedLeetCodeStreaks();
+    if (!s) {
+      return { output: "LeetCode streak data temporarily unavailable." };
+    }
+    return { output: `${s.current} ${s.current === 1 ? "day" : "days"}` };
+  }
+  if (normalized === "leet-streak --longest") {
+    const s = getCachedLeetCodeStreaks();
+    if (!s) {
+      return { output: "LeetCode streak data temporarily unavailable." };
+    }
+    return { output: `${s.longest} ${s.longest === 1 ? "day" : "days"}` };
+  }
+  if (normalized.startsWith("leet-streak")) {
+    return { output: "oops, i have not coded any response for this." };
+  }
+
+  // Personal and utility commands
+  if (normalized === "whoami") {
+    return { output: "Nikhil Virdi — CS undergrad from Jammu, living in Bangalore." };
+  }
+  if (normalized === "interests") {
+    return { output: "Cricket, geopolitics, reading about Himalayan peoples and culture" };
+  }
+  if (normalized === "sudo chai") {
+    return { output: "send me your address i'll parcel a cup of chai" };
+  }
+  if (normalized === "date") {
+    return { output: new Date().toDateString() };
+  }
   if (normalized === "help") {
     return {
       output: [
-        "Supported commands:",
-        "  whoami              Display current user identity",
-        "  languages --list    List all programming languages",
-        "  languages --primary Show primary programming language",
-        "  domains --list      List expertise domains",
-        "  domains --exploring List domains currently exploring",
-        "  git-map             Show current-year heatmap",
-        "  git-map --YYYY      Show a specific year's heatmap",
-        "  help                List supported commands and descriptions",
-        "  clear               Clear command and output history",
+        "  expertise              Display expertise domains",
+        "  backend --focus        Display backend technologies and focus",
+        "  devops --focus         Display DevOps tools and pipelines",
+        "  languages              List all programming languages",
+        "  git-map                Show current-year GitHub contribution heatmap",
+        "  git-map --YYYY         Show GitHub contribution heatmap for a specific year",
+        "  git-streak             Show current GitHub contribution streak",
+        "  git-streak --longest   Show longest GitHub contribution streak",
+        "  leet-map               Show current-year LeetCode submission heatmap",
+        "  leet-map --YYYY        Show LeetCode submission heatmap for a specific year",
+        "  leet-streak            Show current LeetCode submission streak",
+        "  leet-streak --longest  Show longest LeetCode submission streak",
+        "  whoami                 Display personal introduction",
+        "  interests              Display personal interests and hobbies",
+        "  sudo chai              Request a cup of chai",
+        "  date                   Display current date",
+        "  help                   List all supported commands and descriptions",
+        "  clear                  Clear command and output history",
+        "  exit                   Exit the terminal",
       ].join("\n"),
     };
   }
   if (normalized === "clear") {
     return { output: "", isClear: true };
+  }
+  if (normalized === "exit") {
+    return { output: "there's nowhere to exit, better close the tab." };
   }
 
   return { output: "oops, i have not coded any response for this." };
@@ -178,9 +423,46 @@ export function TerminalExpertise({ className }: TerminalExpertiseProps) {
     };
   }, [resetTimer]);
 
-  // Auto-focus input on mount
+  // Auto-focus input on mount and pre-fetch fresh streaks
   useEffect(() => {
     inputRef.current?.focus();
+
+    // Background fetch to ensure fresh GitHub streak data
+    fetch("https://github-contributions-api.jogruber.de/v4/nikhilvirdi?y=all&client=react-github-calendar")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (json && Array.isArray(json.contributions)) {
+          gitHubStreaksCache = computeGitHubStreaks(json.contributions);
+        }
+      })
+      .catch(() => {});
+
+    // Background fetch to ensure fresh LeetCode streak data
+    fetch("https://alfa-leetcode-api.onrender.com/nikhilvirdi/calendar?year=2026")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (json) {
+          const rawDays: Record<string, number> = {};
+          const snap = leetcodeSnapshot as { days?: Record<string, number> } | undefined;
+          if (snap?.days) {
+            Object.assign(rawDays, snap.days);
+          }
+          if (json.submissionCalendar) {
+            try {
+              const subCal =
+                typeof json.submissionCalendar === "string"
+                  ? JSON.parse(json.submissionCalendar)
+                  : json.submissionCalendar;
+              for (const [timestamp, count] of Object.entries(subCal)) {
+                const dateKey = new Date(Number(timestamp) * 1000).toISOString().slice(0, 10);
+                rawDays[dateKey] = Number(count);
+              }
+            } catch {}
+          }
+          leetCodeStreaksCache = computeLeetCodeStreaks(rawDays);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleExecute = useCallback(() => {
@@ -189,7 +471,7 @@ export function TerminalExpertise({ className }: TerminalExpertiseProps) {
       return;
     }
 
-    const { output, isClear, isHeatmap, heatmapYear } = getCommandResult(trimmed);
+    const { output, isClear, isHeatmap, heatmapYear, heatmapSource } = getCommandResult(trimmed);
 
     if (isClear) {
       setHistory([]);
@@ -200,6 +482,7 @@ export function TerminalExpertise({ className }: TerminalExpertiseProps) {
         output,
         isHeatmap,
         heatmapYear,
+        heatmapSource,
       };
       shouldScrollRef.current = true;
       setHistory((prev) => [...prev, newItem]);
@@ -288,7 +571,10 @@ export function TerminalExpertise({ className }: TerminalExpertiseProps) {
               </div>
               {item.isHeatmap ? (
                 <div className="pl-4 my-1 max-w-full overflow-hidden">
-                  <EasterEggHeatmap years={[item.heatmapYear ?? 2026]} />
+                  <EasterEggHeatmap
+                    years={[item.heatmapYear ?? 2026]}
+                    source={item.heatmapSource ?? "github"}
+                  />
                 </div>
               ) : item.output ? (
                 <div className="text-neutral-300 whitespace-pre-wrap pl-4 break-words">
