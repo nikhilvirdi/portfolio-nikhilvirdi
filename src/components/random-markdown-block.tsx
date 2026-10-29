@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 import { Response } from "@/components/ai/response";
 import { TerminalExpertise } from "./TerminalExpertise";
 // import { EasterEggHeatmap } from "./EasterEggHeatmap";
@@ -205,12 +206,12 @@ export function RandomMarkdownBlock({
   }, [isOpen, page]);
 
   return (
-    <div className={className}>
-      <Response isAnimating={isAnimating}>
+    <div className={cn("flex flex-col flex-1 min-h-0", className)}>
+      <Response isAnimating={isAnimating} className={page === 2 ? "shrink-0" : undefined}>
         {displayedContent}
       </Response>
       {page === 2 && (
-        <TerminalExpertise />
+        <TerminalExpertise className="flex-1 min-h-0 mt-2" />
       )}
       {/* {page === 2 && (
         <EasterEggHeatmap />
