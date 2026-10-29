@@ -10,6 +10,7 @@ interface RawTextPanelProps {
 export default function RawTextPanel({ isOpen, onClose }: RawTextPanelProps) {
   const [currentPage, setCurrentPage] = useState<1 | 2 | 3>(1);
   const [showNav, setShowNav] = useState(false);
+  const [page1Height, setPage1Height] = useState<number | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -17,6 +18,7 @@ export default function RawTextPanel({ isOpen, onClose }: RawTextPanelProps) {
     if (!isOpen) {
       setCurrentPage(1);
       setShowNav(false);
+      setPage1Height(null);
     }
   }, [isOpen]);
 
@@ -27,8 +29,29 @@ export default function RawTextPanel({ isOpen, onClose }: RawTextPanelProps) {
   }, [currentPage, isOpen]);
 
   const handlePage1Complete = useCallback(() => {
+    if (scrollContainerRef.current && scrollContainerRef.current.offsetHeight > 0) {
+      setPage1Height(scrollContainerRef.current.offsetHeight);
+    }
     setShowNav(true);
   }, []);
+
+  // Measure Page 1 height to ensure Page 2 maintains the exact same dimensions
+  useEffect(() => {
+    if (!isOpen || currentPage !== 1) return;
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    const updateHeight = () => {
+      if (el.offsetHeight > 0) {
+        setPage1Height(el.offsetHeight);
+      }
+    };
+
+    updateHeight();
+    const ro = new ResizeObserver(updateHeight);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isOpen, currentPage]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -114,12 +137,14 @@ export default function RawTextPanel({ isOpen, onClose }: RawTextPanelProps) {
 
             <div
               ref={scrollContainerRef}
-              className="bg-[#0a0a0c] text-[#f2f2f0] rounded-lg p-4 sm:p-5"
+              className="bg-[#0a0a0c] text-[#f2f2f0] rounded-lg p-4 sm:p-5 flex flex-col max-h-[85vh] overflow-hidden"
+              style={currentPage === 2 && page1Height ? { height: `${page1Height}px` } : undefined}
             >
               <RandomMarkdownBlock
                 isOpen={isOpen}
                 page={currentPage}
                 onPage1Complete={handlePage1Complete}
+                className="flex flex-col flex-1 min-h-0"
               />
             </div>
           </motion.div>
