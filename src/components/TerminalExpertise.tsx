@@ -268,7 +268,7 @@ export function TerminalExpertise({ className }: TerminalExpertiseProps) {
       aria-label="Interactive CS Expertise Terminal"
       onClick={handleContainerClick}
       className={cn(
-        "rounded-[4px] border border-transparent bg-black p-2.5 sm:p-3 my-2.5 w-full flex flex-col font-mono text-[12px] leading-[18px] cursor-text",
+        "rounded-[4px] border border-transparent bg-black p-2.5 sm:p-3 mt-2.5 mb-0 w-full flex-1 min-h-0 flex flex-col font-mono text-[12px] leading-[18px] cursor-text",
         className
       )}
     >
@@ -276,7 +276,7 @@ export function TerminalExpertise({ className }: TerminalExpertiseProps) {
       {history.length > 0 && (
         <div
           ref={historyScrollRef}
-          className="overflow-y-auto max-h-[180px] sm:max-h-[220px] space-y-1.5 mb-1.5 pr-1"
+          className="overflow-y-auto min-h-0 space-y-1.5 mb-1.5 pr-1"
         >
           {history.map((item) => (
             <div key={item.id} className="space-y-0.5">
