@@ -33,28 +33,29 @@ function getRandomPhilosophy(options) {
 const philosophy = getRandomPhilosophy(philosophies);
 console.log(philosophy);
 \`\`\`
+
+schro's equation:
+$$i\\hbar \\frac{\\partial}{\\partial t} \\Psi(x,t) = \\hat{H} \\Psi(x,t)$$
 `;
 
 // Previous artwork section (preserved so it can be restored later):
 // some piece of random art from me:
 // ![some piece of random art from me](/art/pieceOfArt.jpeg)
 
-export const page2Content = `schro's equation:
-$$i\\hbar \\frac{\\partial}{\\partial t} \\Psi(x,t) = \\hat{H} \\Psi(x,t)$$
-
-i write docs tooo, wanna read ?  
+export const page2Content = `i write docs tooo, wanna read ?  
 dw i'll be releasing them sooon.
 
 **NP-hardness** [https://en.wikipedia.org/wiki/NP-hardness](https://en.wikipedia.org/wiki/NP-hardness)
 
 me in real world:
 
-![me in real world](/realNik-face.png)
+![me in real world](/realNik.png)
 
 btw yk I run ![Riyasat-e-Duggar logo](/socials/riyasat_e_duggar.svg) Riyasat-e-Duggar, a page about the history, culture, and identity of my home region.
-`;
 
-export const page3Content = `you can use this terminal to know more about my CS expertise:`;
+you can use this terminal to know more about my CS expertise:`;
+
+export const page3Content = ``;
 // Temporarily commented out:
 // this is my github heatmap, ik it is already there in github activity but i want it here also
 
@@ -81,12 +82,12 @@ const CHUNKS = [
   "}\n\n",
   "const philosophy = getRandomPhilosophy(philosophies);\n",
   "console.log(philosophy);\n",
-  "```\n"
+  "```\n\n",
+  "schro's ", "equation:\n",
+  "$$i\\hbar \\frac{\\partial}{\\partial t} \\Psi(x,t) = \\hat{H} \\Psi(x,t)$$\n"
 ];
 
 const PAGE_2_CHUNKS = [
-  "schro's ", "equation:\n",
-  "$$i\\hbar \\frac{\\partial}{\\partial t} \\Psi(x,t) = \\hat{H} \\Psi(x,t)$$\n\n",
   "i ", "write ", "docs ", "tooo, ", "wanna ", "read ?  \n",
   "dw ", "i'll ", "be ", "releasing ", "them ", "sooon.\n\n",
   "**NP-hardness** ", "[https://en.wikipedia.org/wiki/NP-hardness](https://en.wikipedia.org/wiki/NP-hardness)\n\n",
@@ -94,16 +95,15 @@ const PAGE_2_CHUNKS = [
   // "some ", "piece ", "of ", "random ", "art ", "from ", "me:\n\n",
   // "![some piece of random art from me](/art/pieceOfArt.jpeg)\n\n",
   "me ", "in ", "real ", "world:\n\n",
-  "![me in real world](/realNik-face.png)\n\n",
+  "![me in real world](/realNik.png)\n\n",
   "btw ", "yk ", "I ", "run ", "![Riyasat-e-Duggar logo](/socials/riyasat_e_duggar.svg) ", "Riyasat-e-Duggar, ",
-  "a ", "page ", "about ", "the ", "history, ", "culture, ", "and ", "identity ", "of ", "my ", "home ", "region.\n"
+  "a ", "page ", "about ", "the ", "history, ", "culture, ", "and ", "identity ", "of ", "my ", "home ", "region.\n\n",
+  "you ", "can ", "use ", "this ", "terminal ", "to ", "know ", "more ", "about ", "my ", "CS ", "expertise:"
   // Temporarily commented out:
   // "this ", "is ", "my ", "github ", "heatmap, ", "ik ", "it ", "is ", "already ", "there ", "in ", "github ", "activity ", "but ", "i ", "want ", "it ", "here ", "also\n"
 ];
 
-const PAGE_3_CHUNKS = [
-  "you ", "can ", "use ", "this ", "terminal ", "to ", "know ", "more ", "about ", "my ", "CS ", "expertise:"
-];
+const PAGE_3_CHUNKS: string[] = [];
 
 export interface RandomMarkdownBlockProps {
   isOpen?: boolean;
@@ -209,7 +209,7 @@ export function RandomMarkdownBlock({
       <Response isAnimating={isAnimating}>
         {displayedContent}
       </Response>
-      {page === 3 && (
+      {page === 2 && (
         <TerminalExpertise />
       )}
       {/* {page === 2 && (
