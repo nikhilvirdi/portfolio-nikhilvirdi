@@ -8,7 +8,7 @@ interface RawTextPanelProps {
 }
 
 export default function RawTextPanel({ isOpen, onClose }: RawTextPanelProps) {
-  const [currentPage, setCurrentPage] = useState<1 | 2>(1);
+  const [currentPage, setCurrentPage] = useState<1 | 2 | 3>(1);
   const [showNav, setShowNav] = useState(false);
   const [page1Height, setPage1Height] = useState<number | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -113,20 +113,20 @@ export default function RawTextPanel({ isOpen, onClose }: RawTextPanelProps) {
                   transition={{ duration: 0.35, ease: "easeOut" }}
                   className="absolute top-3.5 right-4 sm:top-4 sm:right-5 z-20 flex items-center gap-1 select-none"
                 >
-                  {currentPage === 2 && (
+                  {currentPage > 1 && (
                     <button
                       type="button"
-                      onClick={() => setCurrentPage(1)}
+                      onClick={() => setCurrentPage((p) => (p === 3 ? 2 : 1))}
                       aria-label="Previous page"
                       className="text-[#f2f2f0]/70 hover:text-[#f2f2f0] transition-colors text-base sm:text-lg leading-none p-1 focus:outline-none"
                     >
                       ‹
                     </button>
                   )}
-                  {currentPage === 1 && (
+                  {currentPage < 3 && (
                     <button
                       type="button"
-                      onClick={() => setCurrentPage(2)}
+                      onClick={() => setCurrentPage((p) => (p === 1 ? 2 : 3))}
                       aria-label="Next page"
                       className="text-[#f2f2f0]/70 hover:text-[#f2f2f0] transition-colors text-base sm:text-lg leading-none p-1 focus:outline-none"
                     >
@@ -140,7 +140,7 @@ export default function RawTextPanel({ isOpen, onClose }: RawTextPanelProps) {
             <div
               ref={scrollContainerRef}
               className="bg-[#0a0a0c] text-[#f2f2f0] rounded-lg p-4 sm:p-5 flex flex-col max-h-[85vh] overflow-hidden"
-              style={currentPage === 2 && page1Height ? { height: `${page1Height}px` } : undefined}
+              style={currentPage !== 1 && page1Height ? { height: `${page1Height}px` } : undefined}
             >
               <RandomMarkdownBlock
                 isOpen={isOpen}

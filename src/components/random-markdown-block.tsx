@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Response } from "@/components/ai/response";
 import { TerminalExpertise } from "./TerminalExpertise";
+import githubStats from "../data/github-stats.json";
+import { formatStatNumber, LanguagesDistributionChart } from "./LanguageBar";
 // import { EasterEggHeatmap } from "./EasterEggHeatmap";
 
 export const content = `Hi lol supp?  
@@ -102,7 +104,7 @@ const PAGE_2_CHUNKS = [
 
 export interface RandomMarkdownBlockProps {
   isOpen?: boolean;
-  page?: 1 | 2;
+  page?: 1 | 2 | 3;
   className?: string;
   onPage1Complete?: () => void;
 }
@@ -118,7 +120,7 @@ export function RandomMarkdownBlock({
   const [page2Complete, setPage2Complete] = useState<boolean>(false);
   const timerRef = useRef<number | null>(null);
   const completeTimeoutRef = useRef<number | null>(null);
-  const streamedPagesRef = useRef<{ 1: boolean; 2: boolean }>({ 1: false, 2: false });
+  const streamedPagesRef = useRef<{ 1: boolean; 2: boolean; 3: boolean }>({ 1: false, 2: false, 3: false });
   const onPage1CompleteRef = useRef(onPage1Complete);
 
   useEffect(() => {
@@ -140,7 +142,14 @@ export function RandomMarkdownBlock({
       setDisplayedContent("");
       setIsAnimating(false);
       setPage2Complete(false);
-      streamedPagesRef.current = { 1: false, 2: false };
+      streamedPagesRef.current = { 1: false, 2: false, 3: false };
+      return;
+    }
+
+    if (page === 3) {
+      setDisplayedContent("");
+      setIsAnimating(false);
+      streamedPagesRef.current[3] = true;
       return;
     }
 
@@ -206,6 +215,16 @@ export function RandomMarkdownBlock({
     };
   }, [isOpen, page]);
 
+  const page3TableMarkdown = useMemo(() => {
+    const totals = githubStats.totals;
+    return `| Statistic | Value |
+|---|---|
+| Lines of code | ${formatStatNumber(totals.linesNet)} |
+| Total commits | ${formatStatNumber(totals.commits)} |
+| Lines added / deleted | +${formatStatNumber(totals.linesAdded)} / -${formatStatNumber(totals.linesDeleted)} |
+| Active days | ${formatStatNumber(totals.activeDays)} |`;
+  }, []);
+
   const isTerminalReady =
     page === 2 &&
     page2Complete &&
@@ -213,11 +232,26 @@ export function RandomMarkdownBlock({
 
   return (
     <div className={cn("flex flex-col flex-1 min-h-0", className)}>
-      <Response isAnimating={isAnimating} className={page === 2 ? "shrink-0" : undefined}>
-        {displayedContent}
-      </Response>
-      {isTerminalReady && (
-        <TerminalExpertise className="flex-1 min-h-0 mt-2" />
+      {page !== 3 && (
+        <>
+          <Response isAnimating={isAnimating} className={page === 2 ? "shrink-0" : undefined}>
+            {displayedContent}
+          </Response>
+          {isTerminalReady && (
+            <TerminalExpertise className="flex-1 min-h-0 mt-2" />
+          )}
+        </>
+      )}
+
+      {page === 3 && (
+        <div className="flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 [scrollbar-width:thin] scrollbar-thumb-zinc-700">
+          <LanguagesDistributionChart headerClassName="pr-12 sm:pr-14" />
+          <div className="mt-3">
+            <Response isAnimating={false}>
+              {page3TableMarkdown}
+            </Response>
+          </div>
+        </div>
       )}
       {/* {page === 2 && (
         <EasterEggHeatmap />
