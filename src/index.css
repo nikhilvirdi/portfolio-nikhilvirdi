@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Ensure Recharts SVGs have overflow: visible so axis ticks render outside the plotting boundary */
+svg.recharts-surface,
+.recharts-surface,
+.recharts-wrapper svg,
+#tech-stack svg,
+#tech-stack-mobile svg {
+  overflow: visible !important;
+}
+
+
 @layer base {
   * {
     scrollbar-width: thin;
@@ -23,6 +33,28 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: #3f3f46;
+  }
+
+  /* Prevent unwanted focus rings on Recharts SVG and containers */
+  .recharts-responsive-container,
+  .recharts-responsive-container:focus,
+  .recharts-responsive-container:focus-visible,
+  .recharts-wrapper,
+  .recharts-wrapper:focus,
+  .recharts-wrapper:focus-visible,
+  svg.recharts-surface,
+  .recharts-surface,
+  .recharts-surface:focus,
+  .recharts-surface:focus-visible,
+  .recharts-surface *:focus,
+  .recharts-surface *:focus-visible,
+  .recharts-wrapper svg,
+  .recharts-wrapper *:focus,
+  .recharts-wrapper *:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: visible !important;
   }
 
   body {

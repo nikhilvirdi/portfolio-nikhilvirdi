@@ -1,5 +1,12 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { motion, useMotionValue, useSpring } from 'framer-motion';
+import { useState, useCallback } from 'react';
+import {
+  ResponsiveContainer,
+  ScatterChart,
+  Scatter,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from 'recharts';
 
 import javaSvg from 'devicon/icons/java/java-original.svg';
 import typescriptSvg from 'devicon/icons/typescript/typescript-original.svg';
@@ -12,7 +19,6 @@ import dockerSvg from 'devicon/icons/docker/docker-original.svg';
 import nginxSvg from 'devicon/icons/nginx/nginx-original.svg';
 import githubactionsSvg from 'devicon/icons/githubactions/githubactions-original.svg';
 import gitSvg from 'devicon/icons/git/git-original.svg';
-import githubSvg from 'devicon/icons/github/github-original.svg';
 import html5Svg from 'devicon/icons/html5/html5-original.svg';
 import css3Svg from 'devicon/icons/css3/css3-original.svg';
 import expressSvg from 'devicon/icons/express/express-original.svg';
@@ -24,516 +30,325 @@ export interface TechDef {
   invert?: boolean;
 }
 
-interface TechItem extends TechDef {
-  x: number; // percentage
-  y: number; // percentage
-  driftX: number;
-  driftY: number;
-  driftR: number;
-  duration: number;
-  width?: number;
-  height?: number;
+export interface TechScatterPoint {
+  id: string;
+  name: string;
+  svg: string;
+  invert?: boolean;
+  x: number;
+  y: number;
+  cluster: string;
+  domain: string;
 }
 
-export const BASE_TECH_DEFS: TechDef[] = [
-  { name: 'Java', svg: javaSvg },
-  { name: 'TypeScript', svg: typescriptSvg },
-  { name: 'JavaScript', svg: javascriptSvg },
-  { name: 'Python', svg: pythonSvg },
-  { name: 'C', svg: '/icons/C.webp' },
-  {
-    name: 'Golang',
-    svg: '/logos/golang.png',
-  },
+// ============================================================================
+// Seven Organic Constellation Clusters (Exact 24 Technologies)
+// ============================================================================
 
-  { name: 'Node.js', svg: nodejsSvg },
-  { name: 'Express', svg: expressSvg, invert: true },
-  { name: 'Postman', svg: postmanSvg },
-  { name: 'Jest', svg: '/logos/jest.png' },
-  { name: 'Redis', svg: '/logos/redis.png' },
+export const TECH_SCATTER_DATA: TechScatterPoint[] = [
+  // --------------------------------------------------------------------------
+  // Cluster 1: Programming Languages (Upper-Left Constellation, Center ~ [21, 81])
+  // --------------------------------------------------------------------------
+  { id: 'c', name: 'C', svg: '/icons/C.webp', x: 13, y: 87, cluster: 'Programming Languages', domain: 'Programming' },
+  { id: 'python', name: 'Python', svg: pythonSvg, x: 24, y: 89, cluster: 'Programming Languages', domain: 'Programming' },
+  { id: 'java', name: 'Java', svg: javaSvg, x: 15, y: 72, cluster: 'Programming Languages', domain: 'Programming' },
+  { id: 'go', name: 'Go', svg: '/logos/golang.png', x: 29, y: 75, cluster: 'Programming Languages', domain: 'Programming' },
 
-  { name: 'PostgreSQL', svg: postgresqlSvg },
-  { name: 'Prisma', svg: prismaSvg, invert: true },
-  { name: 'HTML5', svg: html5Svg },
-  { name: 'CSS3', svg: css3Svg },
+  // --------------------------------------------------------------------------
+  // Cluster 2: Frontend & Web (Upper-Right Constellation, Center ~ [79, 81])
+  // --------------------------------------------------------------------------
+  { id: 'html5', name: 'HTML5', svg: html5Svg, x: 71, y: 88, cluster: 'Frontend & Web', domain: 'Frontend' },
+  { id: 'css3', name: 'CSS3', svg: css3Svg, x: 85, y: 86, cluster: 'Frontend & Web', domain: 'Frontend' },
+  { id: 'javascript', name: 'JavaScript', svg: javascriptSvg, x: 73, y: 75, cluster: 'Frontend & Web', domain: 'Programming' },
+  { id: 'typescript', name: 'TypeScript', svg: typescriptSvg, x: 87, y: 73, cluster: 'Frontend & Web', domain: 'Programming' },
 
-  { name: 'Docker', svg: dockerSvg },
-  { name: 'Nginx', svg: nginxSvg },
-  { name: 'GitHub Actions', svg: githubactionsSvg },
-  { name: 'Git', svg: gitSvg },
-  { name: 'GitHub', svg: githubSvg, invert: true },
-  {
-    name: 'JWT',
-    svg: '/icons/jwt.png',
-  },
-  {
-    name: 'NumPy',
-    svg: '/logos/numpy.png',
-  },
-  {
-    name: 'Kafka',
-    svg: '/logos/kafka.png',
-  },
-  {
-    name: 'GraphQL',
-    svg: '/logos/graphql.png',
-  },
-  {
-    name: 'gRPC',
-    svg: '/logos/grpc.png',
-  },
+  // --------------------------------------------------------------------------
+  // Cluster 3: Backend & API Engineering (Central Radial Constellation, Center ~ [38, 45])
+  // --------------------------------------------------------------------------
+  { id: 'express', name: 'Express', svg: expressSvg, invert: true, x: 36, y: 54, cluster: 'Backend & API Engineering', domain: 'Backend' },
+  { id: 'nodejs', name: 'Node.js', svg: nodejsSvg, x: 23, y: 48, cluster: 'Backend & API Engineering', domain: 'Backend' },
+  { id: 'prisma', name: 'Prisma', svg: prismaSvg, invert: true, x: 52, y: 51, cluster: 'Backend & API Engineering', domain: 'Database' },
+  { id: 'grpc', name: 'gRPC', svg: '/logos/grpc.png', x: 38, y: 44, cluster: 'Backend & API Engineering', domain: 'Backend & API Engineering' },
+  { id: 'graphql', name: 'GraphQL', svg: '/logos/graphql.png', x: 26, y: 36, cluster: 'Backend & API Engineering', domain: 'Backend & API Engineering' },
+  { id: 'jwt', name: 'JWT', svg: '/icons/jwt.png', x: 50, y: 37, cluster: 'Backend & API Engineering', domain: 'Authentication' },
+
+  // --------------------------------------------------------------------------
+  // Cluster 4: Databases & Data Engineering (Right-Middle Constellation, Center ~ [81, 45])
+  // --------------------------------------------------------------------------
+  { id: 'postgresql', name: 'PostgreSQL', svg: postgresqlSvg, x: 74, y: 47, cluster: 'Databases & Data Engineering', domain: 'Database' },
+  { id: 'redis', name: 'Redis', svg: '/logos/redis.png', x: 88, y: 51, cluster: 'Databases & Data Engineering', domain: 'Database' },
+  { id: 'kafka', name: 'Kafka', svg: '/logos/kafka.png', x: 82, y: 37, cluster: 'Databases & Data Engineering', domain: 'Data Streaming' },
+
+  // --------------------------------------------------------------------------
+  // Cluster 5: DevOps & Infrastructure (Lower-Left Constellation, Center ~ [22, 18])
+  // --------------------------------------------------------------------------
+  { id: 'docker', name: 'Docker', svg: dockerSvg, x: 13, y: 25, cluster: 'DevOps & Infrastructure', domain: 'DevOps' },
+  { id: 'nginx', name: 'Nginx', svg: nginxSvg, x: 28, y: 23, cluster: 'DevOps & Infrastructure', domain: 'Infrastructure' },
+  { id: 'git', name: 'Git', svg: gitSvg, x: 17, y: 13, cluster: 'DevOps & Infrastructure', domain: 'Version Control' },
+  { id: 'githubactions', name: 'GitHub Actions', svg: githubactionsSvg, x: 31, y: 11, cluster: 'DevOps & Infrastructure', domain: 'CI/CD' },
+
+  // --------------------------------------------------------------------------
+  // Cluster 6: Testing & API Tooling (Lower-Right Constellation, Center ~ [79, 16])
+  // --------------------------------------------------------------------------
+  { id: 'jest', name: 'Jest', svg: '/logos/jest.png', x: 72, y: 18, cluster: 'Testing & API Tooling', domain: 'Testing' },
+  { id: 'postman', name: 'Postman', svg: postmanSvg, x: 86, y: 15, cluster: 'Testing & API Tooling', domain: 'API Testing' },
+
+  // --------------------------------------------------------------------------
+  // Cluster 7: Scientific Computing & AI (Positioned immediately to the right of Python)
+  // --------------------------------------------------------------------------
+  { id: 'numpy', name: 'NumPy', svg: '/logos/numpy.png', x: 34, y: 87, cluster: 'Scientific Computing & AI', domain: 'Scientific Computing' },
 ];
 
-function getInitialEstimatedSize(name: string): { width: number; height: number } {
-  const labelWidth = Math.round(name.length * 7 + 20);
-  return {
-    width: Math.max(60, labelWidth),
-    height: 58,
-  };
+export const BASE_TECH_DEFS: TechDef[] = [
+  ...TECH_SCATTER_DATA.map((t) => ({
+    name: t.name,
+    svg: t.svg,
+    invert: t.invert,
+  })),
+  { name: 'Golang', svg: '/logos/golang.png' },
+];
+
+// ============================================================================
+// Custom Marker Components
+// ============================================================================
+
+export interface MarkerProps {
+  cx?: number;
+  cy?: number;
+  payload?: TechScatterPoint;
+  activeTechId?: string | null;
+  activeCluster?: string | null;
+  onHover?: (tech: TechScatterPoint | null) => void;
 }
 
-function generateFloatingItems(
-  containerWidth: number = 844,
-  containerHeight: number = 640,
-  iconSizes?: { [name: string]: { width: number; height: number } }
-): TechItem[] {
-  let maxHalfW = 55;
-  let maxHalfH = 30;
+export function TechLogoMarker(props: MarkerProps) {
+  const { cx, cy, payload, activeTechId, activeCluster, onHover } = props;
 
-  for (const def of BASE_TECH_DEFS) {
-    const s = iconSizes?.[def.name] ?? getInitialEstimatedSize(def.name);
-    if (s.width / 2 > maxHalfW) maxHalfW = s.width / 2;
-    if (s.height / 2 > maxHalfH) maxHalfH = s.height / 2;
+  if (cx === undefined || cy === undefined || !payload) {
+    return null;
   }
 
-  // Include drift and rotation safety buffer (14px) so no icon or label ever clips at container boundaries
-  const BUFFER = 14;
-  const X_MIN = maxHalfW + BUFFER;
-  const X_MAX = Math.max(X_MIN + 100, containerWidth - maxHalfW - BUFFER);
-  const Y_MIN = ((maxHalfH + BUFFER) / containerHeight) * 100;
-  const Y_MAX = ((containerHeight - maxHalfH - BUFFER) / containerHeight) * 100;
-  const cols = 5;
-  const rows = Math.max(4, Math.ceil(BASE_TECH_DEFS.length / cols));
-  const colStep = (X_MAX - X_MIN) / (cols - 1);
-  const rowStep = (Y_MAX - Y_MIN) / (rows - 1);
+  const isSelfHovered = activeTechId === payload.id;
+  const isSameCluster = activeCluster === payload.cluster;
+  const isDimmed = activeCluster !== null && !isSameCluster;
 
-  const slots: { x: number; y: number }[] = [];
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const rawX = X_MIN + c * colStep + (Math.random() - 0.5) * (colStep * 0.25);
-      const rawY = Y_MIN + r * rowStep + (Math.random() - 0.5) * (rowStep * 0.25);
-      slots.push({
-        x: Math.max(X_MIN, Math.min(X_MAX, Math.round(rawX))),
-        y: Math.max(Y_MIN, Math.min(Y_MAX, rawY)),
-      });
-    }
-  }
-
-  // Shuffle slots randomly so icons land in random cell positions
-  for (let i = slots.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const temp = slots[i];
-    slots[i] = slots[j];
-    slots[j] = temp;
-  }
-
-  return BASE_TECH_DEFS.map((def, idx) => {
-    const slot = slots[idx] || { x: (X_MIN + X_MAX) / 2, y: (Y_MIN + Y_MAX) / 2 };
-    const s = iconSizes?.[def.name] ?? getInitialEstimatedSize(def.name);
-    const halfW = s.width / 2 + BUFFER;
-    const halfH = s.height / 2 + BUFFER;
-
-    const clampedX = Math.max(halfW, Math.min(containerWidth - halfW, slot.x));
-    const minYPercent = (halfH / containerHeight) * 100;
-    const maxYPercent = ((containerHeight - halfH) / containerHeight) * 100;
-    const clampedY = Math.max(minYPercent, Math.min(maxYPercent, slot.y));
-
-    const signX = Math.random() > 0.5 ? 1 : -1;
-    const signY = Math.random() > 0.5 ? 1 : -1;
-    const signR = Math.random() > 0.5 ? 1 : -1;
-
-    return {
-      ...def,
-      x: clampedX,
-      y: clampedY,
-      width: s.width,
-      height: s.height,
-      driftX: (Math.random() * 3 + 6) * signX,
-      driftY: (Math.random() * 3 + 6) * signY,
-      driftR: (Math.random() * 2 + 4) * signR,
-      duration: Math.random() * 1.5 + 4.2,
-    };
-  });
-}
-
-interface FloatingIconProps {
-  item: TechItem;
-  mouseX: React.RefObject<number>;
-  mouseY: React.RefObject<number>;
-  containerRef: React.RefObject<HTMLElement | null>;
-  measureRef?: (el: HTMLDivElement | null) => void;
-  canTilt?: boolean;
-}
-
-function FloatingIcon({
-  item,
-  mouseX,
-  mouseY,
-  containerRef,
-  measureRef,
-  canTilt = false,
-}: FloatingIconProps) {
-  const localRef = useRef<HTMLDivElement | null>(null);
-  const logoRef = useRef<HTMLDivElement | null>(null);
-  const [isHovered, setIsHovered] = useState(false);
-
-  const offsetX = useMotionValue(0);
-  const offsetY = useMotionValue(0);
-  const springX = useSpring(offsetX, { damping: 20, stiffness: 200 });
-  const springY = useSpring(offsetY, { damping: 20, stiffness: 200 });
-
-  // 3D tilt & scale values
-  const tiltX = useMotionValue(0);
-  const tiltY = useMotionValue(0);
-  const scaleVal = useMotionValue(1);
-
-  const tiltSpringConfig = { damping: 18, stiffness: 240, mass: 0.4 };
-  const springRotateX = useSpring(tiltX, tiltSpringConfig);
-  const springRotateY = useSpring(tiltY, tiltSpringConfig);
-  const springScale = useSpring(scaleVal, tiltSpringConfig);
-
-  const handlePointerEnter = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!canTilt || e.pointerType === 'touch') return;
-    setIsHovered(true);
-    scaleVal.set(1.15);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!canTilt || e.pointerType === 'touch') return;
-    const el = logoRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return;
-
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-
-    const normX = Math.max(-1, Math.min(1, (e.clientX - centerX) / (rect.width / 2)));
-    const normY = Math.max(-1, Math.min(1, (e.clientY - centerY) / (rect.height / 2)));
-
-    const MAX_TILT = 16;
-    tiltX.set(normY * MAX_TILT);
-    tiltY.set(-normX * MAX_TILT);
-  };
-
-  const handlePointerLeave = () => {
-    setIsHovered(false);
-    tiltX.set(0);
-    tiltY.set(0);
-    scaleVal.set(1);
-  };
-
-  const setRef = (el: HTMLDivElement | null) => {
-    localRef.current = el;
-    measureRef?.(el);
-  };
-
-  useEffect(() => {
-    let animId: number;
-    const REPEL_RADIUS = 150;
-    const MAX_PUSH = 85;
-
-    const checkRepel = () => {
-      if (containerRef.current) {
-        const contRect = containerRef.current.getBoundingClientRect();
-        const baseCenterX = item.x;
-        const baseCenterY = (item.y / 100) * contRect.height;
-
-        const mx = mouseX.current;
-        const my = mouseY.current;
-
-        if (mx !== null && my !== null && mx !== -9999 && my !== -9999) {
-          const dx = baseCenterX - mx;
-          const dy = baseCenterY - my;
-          const dist = Math.hypot(dx, dy);
-
-          if (dist < REPEL_RADIUS) {
-            const force = 1 - dist / REPEL_RADIUS;
-            const push = force * MAX_PUSH;
-            const angle = Math.atan2(dy, dx);
-            let pushX = Math.cos(angle) * push;
-            let pushY = Math.sin(angle) * push;
-
-            // Measure this specific icon's own rendered bounding box
-            const iconEl = localRef.current;
-            const iconW = iconEl
-              ? Math.max(iconEl.offsetWidth, iconEl.getBoundingClientRect().width)
-              : (item.width || 80);
-            const iconH = iconEl
-              ? Math.max(iconEl.offsetHeight, iconEl.getBoundingClientRect().height)
-              : (item.height || 56);
-            const marginX = iconW / 2 + Math.abs(item.driftX) + 4;
-            const marginY = iconH / 2 + Math.abs(item.driftY) + 4;
-
-            // Clamp target position so this icon's own edge never crosses the container boundary
-            const targetX = baseCenterX + pushX;
-            const clampedX = Math.max(marginX, Math.min(contRect.width - marginX, targetX));
-            pushX = clampedX - baseCenterX;
-
-            const targetY = baseCenterY + pushY;
-            const clampedY = Math.max(marginY, Math.min(contRect.height - marginY, targetY));
-            pushY = clampedY - baseCenterY;
-
-            offsetX.set(pushX);
-            offsetY.set(pushY);
-          } else {
-            offsetX.set(0);
-            offsetY.set(0);
-          }
-        } else {
-          offsetX.set(0);
-          offsetY.set(0);
-        }
-      }
-      animId = requestAnimationFrame(checkRepel);
-    };
-
-    animId = requestAnimationFrame(checkRepel);
-    return () => cancelAnimationFrame(animId);
-  }, [containerRef, item.x, item.y, item.width, item.height, item.driftX, item.driftY, mouseX, mouseY, offsetX, offsetY]);
+  const size = 30;
 
   return (
-    <div
-      className="absolute select-none pointer-events-auto cursor-default -translate-x-1/2 -translate-y-1/2 z-10"
+    <g
+      transform={`translate(${cx}, ${cy})`}
+      className="cursor-pointer outline-none focus:outline-none"
+      onMouseEnter={() => onHover?.(payload)}
+      onMouseLeave={() => onHover?.(null)}
+      tabIndex={-1}
+      role="button"
+      aria-label={`${payload.name} (${payload.domain})`}
       style={{
-        left: `${item.x}px`,
-        top: `${item.y}%`,
+        outline: 'none',
+        opacity: isDimmed ? 0.35 : 1,
+        transition: 'opacity 180ms ease',
       }}
     >
-      <motion.div
+      {/* Subtle hover halo */}
+      {isSelfHovered && (
+        <circle
+          cx={0}
+          cy={-size / 2}
+          r={size * 0.75}
+          fill="rgba(255, 255, 255, 0.1)"
+          stroke="rgba(255, 255, 255, 0.25)"
+          strokeWidth={1}
+        />
+      )}
+
+      {/* Technology Logo */}
+      <image
+        href={payload.svg}
+        xlinkHref={payload.svg}
+        x={-size / 2}
+        y={-size + 2}
+        width={size}
+        height={size}
+        preserveAspectRatio="xMidYMid meet"
         style={{
-          x: springX,
-          y: springY,
+          filter: payload.invert ? 'invert(1)' : undefined,
+          transition: 'transform 150ms ease',
+          transform: isSelfHovered ? 'scale(1.15)' : 'scale(1)',
+          transformOrigin: '0px -13px',
+          outline: 'none',
         }}
+      />
+
+      {/* Technology Name directly beneath logo */}
+      <text
+        x={0}
+        y={14}
+        textAnchor="middle"
+        fill={isSelfHovered ? '#ffffff' : isSameCluster ? '#e4e4e7' : '#a1a1aa'}
+        fontSize={10.5}
+        fontWeight={isSelfHovered ? 600 : 500}
+        className="font-tag select-none tracking-wide transition-colors duration-150"
       >
-        <motion.div
-          ref={setRef}
-          animate={{
-            x: [-item.driftX, item.driftX],
-            y: [-item.driftY, item.driftY],
-            rotate: [-item.driftR, item.driftR],
-          }}
-          transition={{
-            duration: item.duration,
-            repeat: Infinity,
-            repeatType: 'mirror',
-            ease: 'easeInOut',
-          }}
-          className="relative flex flex-col items-center"
-        >
-          <div
-            className="flex flex-col items-center cursor-pointer group"
-            onPointerEnter={handlePointerEnter}
-            onPointerMove={handlePointerMove}
-            onPointerLeave={handlePointerLeave}
-          >
-            {/* Separate 3D tilt perspective wrapper */}
-            <div style={{ perspective: 600 }} className="flex items-center justify-center">
-              <motion.div
-                ref={logoRef}
-                style={{
-                  rotateX: springRotateX,
-                  rotateY: springRotateY,
-                  scale: springScale,
-                  transformStyle: 'preserve-3d',
-                }}
-                className="relative will-change-transform"
-              >
-                <img
-                  src={item.svg}
-                  alt={item.name}
-                  width={38}
-                  height={38}
-                  className={`w-[38px] h-[38px] select-none pointer-events-none object-contain transition-[filter] duration-200 ${
-                    item.invert ? 'invert' : ''
-                  } ${isHovered ? 'drop-shadow-[0_8px_16px_rgba(255,255,255,0.18)]' : ''}`}
-                  style={{ width: 38, height: 38 }}
-                />
-              </motion.div>
-            </div>
-            <span
-              className={`text-[10px] tracking-wide font-tag mt-1 whitespace-nowrap transition-colors duration-200 ${
-                isHovered ? 'text-white' : 'text-muted'
-              }`}
-            >
-              {item.name}
-            </span>
-          </div>
-        </motion.div>
-      </motion.div>
-    </div>
+        {payload.name}
+      </text>
+    </g>
   );
 }
 
-function useCanTilt() {
-  const [canTilt, setCanTilt] = useState(false);
+// ============================================================================
+// Redesigned Compact Tooltip
+// ============================================================================
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const hoverQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
-    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-
-    const update = () => {
-      setCanTilt(hoverQuery.matches && !motionQuery.matches);
-    };
-
-    update();
-
-    hoverQuery.addEventListener('change', update);
-    motionQuery.addEventListener('change', update);
-
-    return () => {
-      hoverQuery.removeEventListener('change', update);
-      motionQuery.removeEventListener('change', update);
-    };
-  }, []);
-
-  return canTilt;
+export interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    payload: TechScatterPoint;
+  }>;
 }
 
+export const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    if (!data || !data.domain) return null;
+
+    return (
+      <div
+        className="flex items-center gap-2.5 rounded border border-white/10 bg-black/95 px-3 py-2 shadow-2xl backdrop-blur-md pointer-events-none font-tag z-50 select-none"
+        style={{ outline: 'none' }}
+      >
+        {/* Small original technology logo */}
+        <img
+          src={data.svg}
+          alt=""
+          width={18}
+          height={18}
+          className={`w-[18px] h-[18px] object-contain shrink-0 ${data.invert ? 'invert' : ''}`}
+        />
+        {/* Technology Name & Functional Domain */}
+        <div className="flex flex-col justify-center leading-tight">
+          <span className="text-[12px] font-semibold text-white tracking-wide">
+            {data.name}
+          </span>
+          <span className="text-[10px] text-zinc-400 font-normal mt-0.5 tracking-normal">
+            {data.domain}
+          </span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+// ============================================================================
+// TechStackFloating Component
+// ============================================================================
+
 export default function TechStackFloating() {
-  const canTilt = useCanTilt();
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const mouseX = useRef<number>(-9999);
-  const mouseY = useRef<number>(-9999);
-  const iconRefs = useRef<{ [name: string]: HTMLElement | null }>({});
-  const prevWidthRef = useRef<number>(844);
-  const [items, setItems] = useState<TechItem[]>(() => generateFloatingItems(844, 640));
+  const [activeTech, setActiveTech] = useState<TechScatterPoint | null>(null);
 
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const measureAllIcons = (): { [name: string]: { width: number; height: number } } => {
-      const sizes: { [name: string]: { width: number; height: number } } = {};
-      for (const def of BASE_TECH_DEFS) {
-        const el = iconRefs.current[def.name];
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          const w = Math.max(el.offsetWidth, rect.width);
-          const h = Math.max(el.offsetHeight, rect.height);
-          if (w > 0 && h > 0) {
-            sizes[def.name] = { width: w, height: h };
-          }
-        }
-      }
-      return sizes;
-    };
-
-    const updateBounds = () => {
-      if (!containerRef.current) return;
-      const contRect = containerRef.current.getBoundingClientRect();
-      const measuredWidth = containerRef.current.clientWidth || contRect.width || 844;
-      const measuredHeight = containerRef.current.clientHeight || contRect.height || 640;
-      const prevW = prevWidthRef.current || measuredWidth;
-      prevWidthRef.current = measuredWidth;
-      const scaleX = measuredWidth / prevW;
-
-      const sizes = measureAllIcons();
-      const BUFFER = 14;
-
-      setItems((prevItems) => {
-        return prevItems.map((item) => {
-          const size = sizes[item.name];
-          const iconW = size ? size.width : (item.width || 80);
-          const iconH = size ? size.height : (item.height || 56);
-          const halfW = iconW / 2 + BUFFER;
-          const halfH = iconH / 2 + BUFFER;
-
-          const scaledX = prevW === measuredWidth ? item.x : item.x * scaleX;
-          const clampedX = Math.max(halfW, Math.min(measuredWidth - halfW, scaledX));
-
-          const minYPercent = (halfH / measuredHeight) * 100;
-          const maxYPercent = ((measuredHeight - halfH) / measuredHeight) * 100;
-          const clampedY = Math.max(minYPercent, Math.min(maxYPercent, item.y));
-
-          return {
-            ...item,
-            x: clampedX,
-            y: clampedY,
-            width: iconW,
-            height: iconH,
-          };
-        });
-      });
-    };
-
-    // Recompute on mount once layout settles
-    requestAnimationFrame(() => {
-      updateBounds();
-    });
-
-    const timer = setTimeout(() => {
-      updateBounds();
-    }, 150);
-
-    // Recompute on font load since label rendering width can shift with font loading
-    if (typeof document !== 'undefined' && 'fonts' in document) {
-      document.fonts.ready.then(() => {
-        updateBounds();
-      });
-    }
-
-    const ro = new ResizeObserver(() => {
-      updateBounds();
-    });
-    ro.observe(containerRef.current);
-    return () => {
-      clearTimeout(timer);
-      ro.disconnect();
-    };
+  const handleHover = useCallback((tech: TechScatterPoint | null) => {
+    setActiveTech(tech);
   }, []);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    mouseX.current = e.clientX - rect.left;
-    mouseY.current = e.clientY - rect.top;
-  };
-
-  const handleMouseLeave = () => {
-    mouseX.current = -9999;
-    mouseY.current = -9999;
-  };
 
   return (
     <section
       id="tech-stack"
-      className="py-16 px-16 bg-background font-heading"
+      className="py-16 px-16 bg-background font-heading outline-none focus:outline-none"
     >
-      <h2 className="font-heading text-5xl font-bold tracking-tight text-foreground mb-8">
+      <h2 className="font-heading text-5xl font-bold tracking-tight text-foreground">
         Tech Stack
       </h2>
       <div
-        ref={containerRef}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        className="relative w-[844px] max-w-full h-[640px] overflow-hidden"
-        style={{ width: '844px', height: '640px' }}
+        className="relative w-[844px] max-w-full h-[600px] mt-8 bg-background outline-none focus:outline-none select-none"
+        style={{ width: '844px', maxWidth: '100%', height: '600px', outline: 'none' }}
       >
-        {items.map((item) => (
-          <FloatingIcon
-            key={item.name}
-            item={item}
-            mouseX={mouseX}
-            mouseY={mouseY}
-            containerRef={containerRef}
-            canTilt={canTilt}
-            measureRef={(el) => {
-              if (el) iconRefs.current[item.name] = el;
+        <ResponsiveContainer width="100%" height="100%">
+          <ScatterChart
+            margin={{
+              top: 24,
+              right: 34,
+              bottom: 20,
+              left: -10,
             }}
-          />
-        ))}
+            style={{ outline: 'none', overflow: 'visible' }}
+            className="outline-none focus:outline-none overflow-visible"
+          >
+            <defs>
+              {/* Arrowhead marker for positive X-axis (rightmost endpoint) */}
+              <marker
+                id="tech-axis-arrow-x"
+                viewBox="0 0 10 10"
+                refX="6"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto"
+              >
+                <path d="M 0 2 L 7 5 L 0 8 z" fill="#B8B8B8" />
+              </marker>
+
+              {/* Arrowhead marker for positive Y-axis (topmost endpoint) */}
+              <marker
+                id="tech-axis-arrow-y"
+                viewBox="0 0 10 10"
+                refX="1"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto"
+              >
+                <path d="M 7 2 L 0 5 L 7 8 z" fill="#B8B8B8" />
+              </marker>
+            </defs>
+
+            {/* Note: CartesianGrid is omitted per visual design requirements */}
+            <XAxis
+              type="number"
+              dataKey="x"
+              name="X Coordinate"
+              domain={[0, 100]}
+              axisLine={{
+                stroke: '#B8B8B8',
+                strokeWidth: 1.4,
+                markerEnd: 'url(#tech-axis-arrow-x)',
+              }}
+              tickLine={false}
+              tick={false}
+            />
+            <YAxis
+              type="number"
+              dataKey="y"
+              name="Y Coordinate"
+              width={10}
+              domain={[0, 100]}
+              axisLine={{
+                stroke: '#B8B8B8',
+                strokeWidth: 1.4,
+                markerStart: 'url(#tech-axis-arrow-y)',
+              }}
+              tickLine={false}
+              tick={false}
+            />
+            <Tooltip
+              content={<CustomTooltip />}
+              cursor={false}
+            />
+
+            {/* Technology Scatter Points — Organic Constellations */}
+            <Scatter
+              name="Technologies"
+              data={TECH_SCATTER_DATA}
+              shape={
+                <TechLogoMarker
+                  activeTechId={activeTech?.id ?? null}
+                  activeCluster={activeTech?.cluster ?? null}
+                  onHover={handleHover}
+                />
+              }
+              isAnimationActive={false}
+            />
+          </ScatterChart>
+        </ResponsiveContainer>
       </div>
     </section>
   );
