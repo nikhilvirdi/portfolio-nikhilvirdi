@@ -294,10 +294,16 @@ const renderCustomTick = (props: any) => {
 };
 
 // ============================================================================
-// Main Component
+// Languages Distribution Chart
 // ============================================================================
 
-export default function LanguageBar({ className = '' }: { className?: string }) {
+export function LanguagesDistributionChart({
+  className = '',
+  headerClassName = '',
+}: {
+  className?: string;
+  headerClassName?: string;
+}) {
   const stats = githubStats as GitHubStatsData | undefined;
   const rawLanguages = stats?.languages ?? [];
 
@@ -341,6 +347,196 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
     }));
   }, [languages]);
 
+  const [activeLang, setActiveLang] = useState<string | null>(null);
+  const [isReduced, setIsReduced] = useState(false);
+  const tooltipId = useId();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsReduced(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    }
+  }, []);
+
+  const activeItem = chartData.find((l) => l.language === activeLang);
+
+  const ariaSummary = `Language distribution across repositories: ${languages
+    .map((l) => `${l.name} ${l.percent < 0.1 ? '<0.1%' : `${l.percent.toFixed(1)}%`}`)
+    .join(', ')}`;
+
+  if (!stats?.languages?.length) {
+    return null;
+  }
+
+  return (
+    <div
+      role="img"
+      aria-label={ariaSummary}
+      className={`w-full flex-shrink-0 flex flex-col justify-between font-tag ${className}`}
+    >
+      {/* Section header & live tooltip badge */}
+      <div className={`flex items-center justify-between mb-2 min-h-[24px] ${headerClassName}`}>
+        <span className="text-[13px] leading-tight font-normal" style={{ color: FOREGROUND }}>
+          Languages across my projects
+        </span>
+
+        {/* Hover / focus detail badge */}
+        <div
+          id={tooltipId}
+          role="status"
+          aria-live="polite"
+          className={`text-[11px] font-tag transition-opacity duration-150 tabular-nums px-2 py-0.5 rounded border border-white/10 bg-zinc-900/90 text-zinc-300 ${
+            activeItem ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+        >
+          {activeItem && (
+            <span>
+              <strong className="text-white font-medium">{activeItem.language}</strong>:{' '}
+              {activeItem.percentage < 0.1 ? '<0.1%' : `${activeItem.percentage.toFixed(1)}%`} (
+              {formatBytes(activeItem.bytes)})
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Chart Wrapper: responsive and horizontally scrollable on extra small screens */}
+      <div className="w-full min-w-0 overflow-x-auto overflow-y-hidden scrollbar-none">
+        <div className="w-full min-w-[340px] h-[200px] sm:h-[210px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={chartData}
+              margin={{
+                top: 22,
+                right: 6,
+                bottom: 24,
+                left: 6,
+              }}
+              barCategoryGap="16%"
+              onMouseMove={(state: any) => {
+                if (state && state.activePayload && state.activePayload.length) {
+                  setActiveLang(state.activePayload[0].payload.language);
+                }
+              }}
+              onMouseLeave={() => setActiveLang(null)}
+            >
+              <defs>
+                {chartData.map((item) => (
+                  <pattern
+                    key={item.patternId}
+                    id={item.patternId}
+                    patternUnits="userSpaceOnUse"
+                    width="8"
+                    height="8"
+                  >
+                    <rect
+                      width="8"
+                      height="8"
+                      fill={item.color}
+                      opacity="0.1"
+                    />
+                    <path
+                      d="M0,8 L8,0 M4,12 L12,4 M-4,4 L4,-4"
+                      stroke={item.color}
+                      strokeWidth="1.5"
+                      opacity="0.6"
+                    />
+                    <path
+                      d="M2,10 L10,2 M6,14 L14,6 M-2,6 L6,-2"
+                      stroke={item.color}
+                      strokeWidth="1"
+                      opacity="0.3"
+                    />
+                  </pattern>
+                ))}
+              </defs>
+
+              <YAxis hide domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.15)]} />
+
+              <XAxis
+                dataKey="language"
+                tick={renderCustomTick}
+                tickLine={false}
+                axisLine={false}
+                interval={0}
+              />
+
+              <Tooltip
+                cursor={false}
+                content={<CustomTooltip />}
+              />
+
+              <Bar
+                dataKey="percentage"
+                radius={[4, 4, 0, 0]}
+                minPointSize={6}
+                isAnimationActive={!isReduced}
+                animationDuration={900}
+                animationEasing="ease-out"
+              >
+                <LabelList dataKey="percentage" content={renderCustomLabel} />
+                {chartData.map((entry) => {
+                  const isHovered = activeLang === entry.language;
+                  const isDimmed = activeLang !== null && !isHovered;
+                  return (
+                    <Cell
+                      key={entry.language}
+                      fill={`url(#${entry.patternId})`}
+                      stroke={entry.color}
+                      strokeWidth={isHovered ? 1.5 : 1}
+                      opacity={isDimmed ? 0.35 : 1}
+                      style={{
+                        transition: 'opacity 150ms ease, stroke-width 150ms ease',
+                        cursor: 'pointer',
+                      }}
+                    />
+                  );
+                })}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Main Component
+// ============================================================================
+
+export default function LanguageBar({ className = '' }: { className?: string }) {
+  const stats = githubStats as GitHubStatsData | undefined;
+  const rawLanguages = stats?.languages ?? [];
+
+  // Group languages: > 0.1% shown individually, <= 0.1% grouped as "Other"
+  const languages: LanguageEntry[] = useMemo(() => {
+    const visible: LanguageEntry[] = [];
+    const hidden: LanguageEntry[] = [];
+
+    for (const lang of rawLanguages) {
+      if (lang.percent > 0.1) {
+        visible.push(lang);
+      } else {
+        hidden.push(lang);
+      }
+    }
+
+    // If there are hidden languages, create "Other" entry
+    if (hidden.length > 0) {
+      const otherBytes = hidden.reduce((sum, lang) => sum + lang.bytes, 0);
+      const otherPercent = hidden.reduce((sum, lang) => sum + lang.percent, 0);
+
+      if (otherPercent > 0) {
+        visible.push({
+          name: 'Other',
+          bytes: otherBytes,
+          percent: otherPercent,
+        });
+      }
+    }
+
+    return visible;
+  }, [rawLanguages]);
+
   const totals = stats?.totals ?? {
     linesNet: 0,
     commits: 0,
@@ -350,12 +546,10 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
   };
   const hasStats = Boolean(stats && stats.languages && stats.languages.length > 0 && stats.totals);
 
-  const [activeLang, setActiveLang] = useState<string | null>(null);
   const [hasEntered, setHasEntered] = useState(() => globalHasEntered);
   const [isReduced, setIsReduced] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const tooltipId = useId();
 
   // Scroll entrance trigger
   useEffect(() => {
@@ -439,8 +633,6 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
     };
   }, []);
 
-  const activeItem = chartData.find((l) => l.language === activeLang);
-
   // Animated stat values counting up on entrance
   const countUpDuration = isReduced ? 0 : 1000;
   const curLinesNet = useCountUp(totals.linesNet, hasEntered, countUpDuration);
@@ -448,10 +640,6 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
   const curLinesAdded = useCountUp(totals.linesAdded, hasEntered, countUpDuration);
   const curLinesDeleted = useCountUp(totals.linesDeleted, hasEntered, countUpDuration);
   const curActiveDays = useCountUp(totals.activeDays, hasEntered, countUpDuration);
-
-  const ariaSummary = `Language distribution across repositories: ${languages
-    .map((l) => `${l.name} ${l.percent < 0.1 ? '<0.1%' : `${l.percent.toFixed(1)}%`}`)
-    .join(', ')}`;
 
   if (!hasStats) {
     return null;
@@ -486,137 +674,7 @@ export default function LanguageBar({ className = '' }: { className?: string }) 
 
       {/* Two-column layout on desktop, stacked on mobile */}
       <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 items-stretch">
-        {/* ================================================================= */}
-        {/* Left ~55%: Dashed-Bar Language Distribution Chart                 */}
-        {/* ================================================================= */}
-        <div
-          role="img"
-          aria-label={ariaSummary}
-          className="w-full lg:w-[55%] flex-shrink-0 flex flex-col justify-between"
-        >
-          {/* Section header & live tooltip badge */}
-          <div className="flex items-center justify-between mb-2 min-h-[24px]">
-            <span className="text-[13px] leading-tight font-normal" style={{ color: FOREGROUND }}>
-              Languages across my projects
-            </span>
-
-            {/* Hover / focus detail badge */}
-            <div
-              id={tooltipId}
-              role="status"
-              aria-live="polite"
-              className={`text-[11px] font-tag transition-opacity duration-150 tabular-nums px-2 py-0.5 rounded border border-white/10 bg-zinc-900/90 text-zinc-300 ${
-                activeItem ? 'opacity-100' : 'opacity-0 pointer-events-none'
-              }`}
-            >
-              {activeItem && (
-                <span>
-                  <strong className="text-white font-medium">{activeItem.language}</strong>:{' '}
-                  {activeItem.percentage < 0.1 ? '<0.1%' : `${activeItem.percentage.toFixed(1)}%`} (
-                  {formatBytes(activeItem.bytes)})
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Chart Wrapper: responsive and horizontally scrollable on extra small screens */}
-          <div className="w-full min-w-0 overflow-x-auto overflow-y-hidden scrollbar-none">
-            <div className="w-full min-w-[340px] h-[200px] sm:h-[210px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartData}
-                  margin={{
-                    top: 22,
-                    right: 6,
-                    bottom: 24,
-                    left: 6,
-                  }}
-                  barCategoryGap="16%"
-                  onMouseMove={(state: any) => {
-                    if (state && state.activePayload && state.activePayload.length) {
-                      setActiveLang(state.activePayload[0].payload.language);
-                    }
-                  }}
-                  onMouseLeave={() => setActiveLang(null)}
-                >
-                  <defs>
-                    {chartData.map((item) => (
-                      <pattern
-                        key={item.patternId}
-                        id={item.patternId}
-                        patternUnits="userSpaceOnUse"
-                        width="8"
-                        height="8"
-                      >
-                        <rect
-                          width="8"
-                          height="8"
-                          fill={item.color}
-                          opacity="0.1"
-                        />
-                        <path
-                          d="M0,8 L8,0 M4,12 L12,4 M-4,4 L4,-4"
-                          stroke={item.color}
-                          strokeWidth="1.5"
-                          opacity="0.6"
-                        />
-                        <path
-                          d="M2,10 L10,2 M6,14 L14,6 M-2,6 L6,-2"
-                          stroke={item.color}
-                          strokeWidth="1"
-                          opacity="0.3"
-                        />
-                      </pattern>
-                    ))}
-                  </defs>
-
-                  <YAxis hide domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.15)]} />
-
-                  <XAxis
-                    dataKey="language"
-                    tick={renderCustomTick}
-                    tickLine={false}
-                    axisLine={false}
-                    interval={0}
-                  />
-
-                  <Tooltip
-                    cursor={false}
-                    content={<CustomTooltip />}
-                  />
-
-                  <Bar
-                    dataKey="percentage"
-                    radius={[4, 4, 0, 0]}
-                    minPointSize={6}
-                    isAnimationActive={!isReduced}
-                    animationDuration={900}
-                    animationEasing="ease-out"
-                  >
-                    <LabelList dataKey="percentage" content={renderCustomLabel} />
-                    {chartData.map((entry) => {
-                      const isHovered = activeLang === entry.language;
-                      const isDimmed = activeLang !== null && !isHovered;
-                      return (
-                        <Cell
-                          key={entry.language}
-                          fill={`url(#${entry.patternId})`}
-                          stroke={entry.color}
-                          strokeWidth={isHovered ? 1.5 : 1}
-                          opacity={isDimmed ? 0.35 : 1}
-                          style={{
-                            transition: 'opacity 150ms ease, stroke-width 150ms ease',
-                            cursor: 'pointer',
-                          }}
-                        />
-                      );
-                    })}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
+        <LanguagesDistributionChart className="lg:w-[55%]" />
 
         {/* ================================================================= */}
         {/* Right ~45%: 2x2 Grid of Stat Blocks                               */}

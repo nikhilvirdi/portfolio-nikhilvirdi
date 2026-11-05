@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { dayMs, mixRGB, resolvePalette, type ContributionDay, type RGB } from './GitHubActivity';
+import { dayMs, mixRGB, type ContributionDay, type RGB } from './GitHubActivity';
 import leetcodeSnapshot from '../data/leetcode-activity.json';
 
 const rgb = (c: number[]) => `rgb(${c.map(Math.round).join(',')})`;
@@ -385,11 +385,23 @@ const PROJECTILE_MAP = new Map<ProjectileId, ProjectileConfig>(
   PROJECTILES.map((proj) => [proj.id, proj])
 );
 
+// LeetCode red contribution palette: Level 0 (dark grey) through Level 4 (vivid red)
+export const LEETCODE_PALETTE: string[] = [
+  '#1b1b1b', // Level 0: Dark grey background for no activity
+  '#4c1414', // Level 1: Dark muted red
+  '#8c1d1d', // Level 2: Medium-dark red
+  '#d62828', // Level 3: Bright red
+  '#ff3333', // Level 4: Vivid, saturated red
+];
+
+// Active contribution levels (1..4)
+export const LEETCODE_ACTIVE_PALETTE = LEETCODE_PALETTE.slice(1);
+
 // Predefined palette colors for level interpolation (0..4)
 const fgRGB: RGB = [242, 242, 240];
 const bgRGB: RGB = [0, 0, 0];
 const emptyRGB = mixRGB(bgRGB, fgRGB, 0.11);
-const GAME_COLORS: RGB[] = [emptyRGB, ...resolvePalette('github', true).map(hex)];
+const GAME_COLORS: RGB[] = [emptyRGB, ...LEETCODE_ACTIVE_PALETTE.map(hex)];
 
 export function interpolateLevelColor(palette: RGB[], level: number): RGB {
   if (level <= 0) return palette[0];
@@ -586,26 +598,26 @@ function buildMessagePixels(
 const MESSAGE_1 = buildMessagePixels(MSG1_TOKENS, MSG1_PATHS, MSG1_WIDTHS);
 const MESSAGE_2 = buildMessagePixels(MSG2_TOKENS, MSG2_PATHS, MSG2_WIDTHS);
 
-// Discrete green levels for Phase 2 blinking (4 blinks across 2 seconds)
+// Discrete red levels for Phase 2 blinking (4 blinks across 2 seconds)
 // Exactly maps the heatmap contribution levels from brightest to darkest
 const PHASE_2_PALETTE = [
-  '#39d353', // Blink 1: Level 4 (brightest green)
-  '#26a641', // Blink 2: Level 3 (medium green)
-  '#006d32', // Blink 3: Level 2 (darker green)
-  '#0e4429', // Blink 4: Level 1 (darkest green)
+  '#ff3333', // Blink 1: Level 4 (vivid saturated red)
+  '#d62828', // Blink 2: Level 3 (bright red)
+  '#8c1d1d', // Blink 3: Level 2 (medium-dark red)
+  '#4c1414', // Blink 4: Level 1 (dark muted red)
 ];
 
-// Discrete green levels for Phase 4 blinking (8 blinks across 4 seconds)
+// Discrete red levels for Phase 4 blinking (8 blinks across 4 seconds)
 // Stepped discretely per blink from Level 4 down to Level 1
 const PHASE_4_PALETTE = [
-  '#39d353', // Blink 1: Level 4 (brightest green)
-  '#30ba49', // Blink 2
-  '#26a641', // Blink 3: Level 3 (medium green)
-  '#1b923c', // Blink 4
-  '#0d7c35', // Blink 5
-  '#006d32', // Blink 6: Level 2 (darker green)
-  '#07592e', // Blink 7
-  '#0e4429', // Blink 8: Level 1 (darkest green)
+  '#ff3333', // Blink 1: Level 4 (vivid saturated red)
+  '#ea2e2e', // Blink 2
+  '#d62828', // Blink 3: Level 3 (bright red)
+  '#b12323', // Blink 4
+  '#9e1f1f', // Blink 5
+  '#8c1d1d', // Blink 6: Level 2 (medium-dark red)
+  '#6c1919', // Blink 7
+  '#4c1414', // Blink 8: Level 1 (dark muted red)
 ];
 
 function Heatmap({ data }: { data: ContributionDay[] }) {
@@ -675,7 +687,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     const fg: RGB = [242, 242, 240];
     const bg: RGB = [0, 0, 0];
     const empty = mixRGB(bg, fg, 0.11);
-    const colors: RGB[] = [empty, ...resolvePalette('github', true).map(hex)];
+    const colors: RGB[] = [empty, ...LEETCODE_ACTIVE_PALETTE.map(hex)];
     const ex = empty[0];
     const ey = empty[1];
     const ez = empty[2];
@@ -1149,7 +1161,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     let completionStartTime = 0;
     let currentPixelIndex = 0;
     let flashVisible = true;
-    let currentFlashColor = '#39d353';
+    let currentFlashColor = '#ff3333';
 
     const PIXEL_INTERVAL = reduced ? 14 : 22;
     const PAUSE_DURATION = 200;
@@ -1497,17 +1509,17 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
         };
 
         if (completionPhase === 'p1_draw') {
-          drawMessagePixels(MESSAGE_1, startCol1, currentPixelIndex, '#39d353', true);
+          drawMessagePixels(MESSAGE_1, startCol1, currentPixelIndex, '#ff3333', true);
         } else if (completionPhase === 'p1_pause') {
-          drawMessagePixels(MESSAGE_1, startCol1, MESSAGE_1.pixels.length, '#39d353', false);
+          drawMessagePixels(MESSAGE_1, startCol1, MESSAGE_1.pixels.length, '#ff3333', false);
         } else if (completionPhase === 'p2_blink') {
           if (flashVisible) {
             drawMessagePixels(MESSAGE_1, startCol1, MESSAGE_1.pixels.length, currentFlashColor, false);
           }
         } else if (completionPhase === 'p3_draw') {
-          drawMessagePixels(MESSAGE_2, startCol2, currentPixelIndex, '#39d353', true);
+          drawMessagePixels(MESSAGE_2, startCol2, currentPixelIndex, '#ff3333', true);
         } else if (completionPhase === 'p3_pause') {
-          drawMessagePixels(MESSAGE_2, startCol2, MESSAGE_2.pixels.length, '#39d353', false);
+          drawMessagePixels(MESSAGE_2, startCol2, MESSAGE_2.pixels.length, '#ff3333', false);
         } else if (completionPhase === 'p4_blink') {
           if (flashVisible) {
             drawMessagePixels(MESSAGE_2, startCol2, MESSAGE_2.pixels.length, currentFlashColor, false);
@@ -1603,7 +1615,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     };
   }, [gameMode, model]);
 
-  const colors = ['#1b1b1b', '#0e4429', '#006d32', '#26a641', '#39d353'];
+  const colors = LEETCODE_PALETTE;
 
   return (
     <div ref={root} className="relative w-full font-tag text-xs text-muted">
@@ -1796,7 +1808,7 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
                 isCompleting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
               }`}
               style={{
-                backgroundColor: gameMode ? '#22c55e' : '#27272a',
+                backgroundColor: gameMode ? '#dc2626' : '#27272a',
                 outlineColor: '#f2f2f0',
               }}
             >

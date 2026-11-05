@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import LanguageBar from "./LanguageBar"
+// import LanguageBar from "./LanguageBar"
 // Circular GitHub contribution wheel (commented out):
 // import RoundTheYear from "./RoundTheYear"
 // import { Orbit } from "lucide-react"
@@ -1498,8 +1498,6 @@ function ContributionSkyline({
           )}
         </div>
         </div>
-
-        <LanguageBar />
       </div>
 
       <p aria-live="polite" className="sr-only">
