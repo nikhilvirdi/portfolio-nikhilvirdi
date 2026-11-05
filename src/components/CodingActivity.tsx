@@ -1125,13 +1125,16 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     type Bullet = { x: number; y: number; vy: number; width: number; height: number; type: ProjectileId; attack: number };
     type Particle = { x: number; y: number; vx: number; vy: number; color: string; size: number; alpha: number; life: number; maxLife: number };
 
-    const stars: Star[] = Array.from({ length: reduced ? 70 : 140 }).map(() => ({
+    const starCount = reduced ? 70 : 140;
+    const createStar = (initialY?: number): Star => ({
       x: Math.random() * width,
-      y: Math.random() * gameHeight,
+      y: initialY !== undefined ? initialY : Math.random() * (gameHeight - 4),
       speed: (Math.random() * 0.4 + 0.1) * motionScale,
       size: Math.random() * 1.2 + 0.5,
       alpha: Math.random() * 0.5 + 0.1,
-    }));
+    });
+
+    let stars: Star[] = Array.from({ length: starCount }).map(() => createStar());
 
     const player = {
       x: width / 2 - 15,
@@ -1303,14 +1306,14 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
           return;
         }
 
-        // Keep background stars drifting
+        // Keep background stars drifting and remove when reaching bottom boundary
         stars.forEach((star) => {
           star.y += star.speed;
-          if (star.y > gameHeight) {
-            star.y = 0;
-            star.x = Math.random() * width;
-          }
         });
+        stars = stars.filter((star) => star.y + star.size < gameHeight);
+        while (stars.length < starCount) {
+          stars.push(createStar(-Math.random() * 6));
+        }
 
         return;
       }
@@ -1359,14 +1362,14 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
         return;
       }
 
-      // Update stars
+      // Update stars and remove particles that reach the bottom boundary
       stars.forEach((star) => {
         star.y += star.speed;
-        if (star.y > gameHeight) {
-          star.y = 0;
-          star.x = Math.random() * width;
-        }
       });
+      stars = stars.filter((star) => star.y + star.size < gameHeight);
+      while (stars.length < starCount) {
+        stars.push(createStar(-Math.random() * 6));
+      }
 
       // Update bullets
       bullets = bullets.filter((b) => {
@@ -1467,15 +1470,22 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
     };
 
     const render = () => {
+      // Clear entire canvas across all device pixels to eliminate subpixel artifacts
+      gCtx.save();
+      gCtx.setTransform(1, 0, 0, 1, 0, 0);
+      gCtx.clearRect(0, 0, gCanvas.width, gCanvas.height);
+      gCtx.restore();
+
       gCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
       gCtx.imageSmoothingEnabled = false;
-      gCtx.clearRect(0, 0, width, gameHeight);
 
-      // Draw stars
+      // Draw stars (strictly within viewport boundaries)
       gCtx.fillStyle = '#ffffff';
       stars.forEach((star) => {
-        gCtx.globalAlpha = star.alpha;
-        gCtx.fillRect(star.x, star.y, star.size, star.size);
+        if (star.y + star.size < gameHeight) {
+          gCtx.globalAlpha = star.alpha;
+          gCtx.fillRect(star.x, star.y, star.size, star.size);
+        }
       });
       gCtx.globalAlpha = 1.0;
 
@@ -1608,7 +1618,10 @@ function Heatmap({ data }: { data: ContributionDay[] }) {
 
     return () => {
       cancelAnimationFrame(animationFrameId);
-      gCtx.clearRect(0, 0, width, gameHeight);
+      gCtx.save();
+      gCtx.setTransform(1, 0, 0, 1, 0, 0);
+      gCtx.clearRect(0, 0, gCanvas.width, gCanvas.height);
+      gCtx.restore();
       box.style.height = `${height}px`;
       cellHealthRef.current = null;
       isCompletingRef.current = false;
