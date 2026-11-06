@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   ResponsiveContainer,
   ScatterChart,
@@ -77,7 +77,8 @@ export const TECH_SCATTER_DATA: TechScatterPoint[] = [
   // --------------------------------------------------------------------------
   { id: 'postgresql', name: 'PostgreSQL', svg: postgresqlSvg, x: 74, y: 47, cluster: 'Databases & Data Engineering', domain: 'Database' },
   { id: 'redis', name: 'Redis', svg: '/logos/redis.png', x: 88, y: 51, cluster: 'Databases & Data Engineering', domain: 'Database' },
-  { id: 'kafka', name: 'Kafka', svg: '/logos/kafka.png', x: 82, y: 37, cluster: 'Databases & Data Engineering', domain: 'Data Streaming' },
+  // Temporarily hidden: Apache Kafka logo and label commented out to preserve coordinates and domain metadata
+  // { id: 'kafka', name: 'Kafka', svg: '/logos/kafka.png', x: 82, y: 37, cluster: 'Databases & Data Engineering', domain: 'Data Streaming' },
 
   // --------------------------------------------------------------------------
   // Cluster 5: DevOps & Infrastructure (Lower-Left Constellation, Center ~ [22, 18])
@@ -245,6 +246,24 @@ export const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
 
 export default function TechStackFloating() {
   const [activeTech, setActiveTech] = useState<TechScatterPoint | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const stripSvgFocus = () => {
+      const svgs = el.querySelectorAll('svg');
+      svgs.forEach((svg) => {
+        if (svg.getAttribute('tabindex') === '0') {
+          svg.setAttribute('tabindex', '-1');
+        }
+      });
+    };
+    stripSvgFocus();
+    const observer = new MutationObserver(stripSvgFocus);
+    observer.observe(el, { childList: true, subtree: true, attributes: true, attributeFilter: ['tabindex'] });
+    return () => observer.disconnect();
+  }, []);
 
   const handleHover = useCallback((tech: TechScatterPoint | null) => {
     setActiveTech(tech);
@@ -259,11 +278,13 @@ export default function TechStackFloating() {
         Tech Stack
       </h2>
       <div
+        ref={containerRef}
         className="relative w-[844px] max-w-full h-[600px] mt-8 bg-background outline-none focus:outline-none select-none"
         style={{ width: '844px', maxWidth: '100%', height: '600px', outline: 'none' }}
       >
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart
+            tabIndex={-1}
             margin={{
               top: 24,
               right: 34,
@@ -309,7 +330,7 @@ export default function TechStackFloating() {
               domain={[0, 100]}
               axisLine={{
                 stroke: '#B8B8B8',
-                strokeWidth: 1.4,
+                strokeWidth: 2.8,
                 markerEnd: 'url(#tech-axis-arrow-x)',
               }}
               tickLine={false}
@@ -323,7 +344,7 @@ export default function TechStackFloating() {
               domain={[0, 100]}
               axisLine={{
                 stroke: '#B8B8B8',
-                strokeWidth: 1.4,
+                strokeWidth: 2.8,
                 markerStart: 'url(#tech-axis-arrow-y)',
               }}
               tickLine={false}

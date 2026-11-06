@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   ResponsiveContainer,
   ScatterChart,
@@ -20,6 +20,24 @@ export { BASE_TECH_DEFS, type TechDef };
 
 export default function TechStackMobile() {
   const [activeTech, setActiveTech] = useState<TechScatterPoint | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const stripSvgFocus = () => {
+      const svgs = el.querySelectorAll('svg');
+      svgs.forEach((svg) => {
+        if (svg.getAttribute('tabindex') === '0') {
+          svg.setAttribute('tabindex', '-1');
+        }
+      });
+    };
+    stripSvgFocus();
+    const observer = new MutationObserver(stripSvgFocus);
+    observer.observe(el, { childList: true, subtree: true, attributes: true, attributeFilter: ['tabindex'] });
+    return () => observer.disconnect();
+  }, []);
 
   const handleHover = useCallback((tech: TechScatterPoint | null) => {
     setActiveTech(tech);
@@ -35,11 +53,13 @@ export default function TechStackMobile() {
       </h2>
       <div className="w-full min-w-0 overflow-x-auto overflow-y-hidden scrollbar-none outline-none focus:outline-none select-none">
         <div
+          ref={containerRef}
           className="w-full min-w-[520px] h-[520px] outline-none focus:outline-none"
           style={{ outline: 'none' }}
         >
           <ResponsiveContainer width="100%" height="100%">
             <ScatterChart
+              tabIndex={-1}
               margin={{
                 top: 20,
                 right: 28,
@@ -81,7 +101,7 @@ export default function TechStackMobile() {
                 domain={[0, 100]}
                 axisLine={{
                   stroke: '#B8B8B8',
-                  strokeWidth: 1.4,
+                  strokeWidth: 2.8,
                   markerEnd: 'url(#tech-axis-arrow-mobile-x)',
                 }}
                 tickLine={false}
@@ -95,7 +115,7 @@ export default function TechStackMobile() {
                 domain={[0, 100]}
                 axisLine={{
                   stroke: '#B8B8B8',
-                  strokeWidth: 1.4,
+                  strokeWidth: 2.8,
                   markerStart: 'url(#tech-axis-arrow-mobile-y)',
                 }}
                 tickLine={false}

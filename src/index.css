@@ -11,6 +11,45 @@ svg.recharts-surface,
   overflow: visible !important;
 }
 
+/* Completely eliminate any outline, focus ring, border, or shadow on Tech Stack and Recharts elements */
+#tech-stack,
+#tech-stack *,
+#tech-stack *:focus,
+#tech-stack *:focus-visible,
+#tech-stack *:active,
+#tech-stack-mobile,
+#tech-stack-mobile *,
+#tech-stack-mobile *:focus,
+#tech-stack-mobile *:focus-visible,
+#tech-stack-mobile *:active,
+.recharts-responsive-container,
+.recharts-responsive-container:focus,
+.recharts-responsive-container:focus-visible,
+.recharts-responsive-container:active,
+.recharts-wrapper,
+.recharts-wrapper:focus,
+.recharts-wrapper:focus-visible,
+.recharts-wrapper:active,
+svg.recharts-surface,
+svg.recharts-surface:focus,
+svg.recharts-surface:focus-visible,
+svg.recharts-surface:active,
+.recharts-surface,
+.recharts-surface:focus,
+.recharts-surface:focus-visible,
+.recharts-surface:active,
+.recharts-surface *,
+.recharts-surface *:focus,
+.recharts-surface *:focus-visible,
+.recharts-surface *:active {
+  outline: none !important;
+  outline-width: 0 !important;
+  outline-style: none !important;
+  outline-color: transparent !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
 
 @layer base {
   * {
@@ -35,27 +74,7 @@ svg.recharts-surface,
     background: #3f3f46;
   }
 
-  /* Prevent unwanted focus rings on Recharts SVG and containers */
-  .recharts-responsive-container,
-  .recharts-responsive-container:focus,
-  .recharts-responsive-container:focus-visible,
-  .recharts-wrapper,
-  .recharts-wrapper:focus,
-  .recharts-wrapper:focus-visible,
-  svg.recharts-surface,
-  .recharts-surface,
-  .recharts-surface:focus,
-  .recharts-surface:focus-visible,
-  .recharts-surface *:focus,
-  .recharts-surface *:focus-visible,
-  .recharts-wrapper svg,
-  .recharts-wrapper *:focus,
-  .recharts-wrapper *:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
-    border: none !important;
-    overflow: visible !important;
-  }
+
 
   body {
     @apply bg-background text-foreground font-body;
