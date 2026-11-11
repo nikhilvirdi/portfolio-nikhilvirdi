@@ -1,30 +1,30 @@
 {
-  "generatedAt": "2026-11-06T06:47:00.690Z",
+  "generatedAt": "2026-11-11T06:21:52.542Z",
   "languages": [
     {
       "name": "Python",
-      "bytes": 5556088,
-      "percent": 40.8
+      "bytes": 6109557,
+      "percent": 43.1
     },
     {
       "name": "TypeScript",
-      "bytes": 4755050,
-      "percent": 34.9
+      "bytes": 4756606,
+      "percent": 33.6
     },
     {
       "name": "JavaScript",
-      "bytes": 1103550,
-      "percent": 8.1
+      "bytes": 1102785,
+      "percent": 7.8
     },
     {
       "name": "HTML",
       "bytes": 899075,
-      "percent": 6.6
+      "percent": 6.3
     },
     {
       "name": "Java",
       "bytes": 857691,
-      "percent": 6.3
+      "percent": 6.1
     },
     {
       "name": "Kotlin",
@@ -38,7 +38,7 @@
     },
     {
       "name": "CSS",
-      "bytes": 91797,
+      "bytes": 92282,
       "percent": 0.7
     },
     {
@@ -72,21 +72,21 @@
       "percent": 0
     },
     {
-      "name": "PowerShell",
-      "bytes": 1168,
+      "name": "Dockerfile",
+      "bytes": 1110,
       "percent": 0
     },
     {
-      "name": "Dockerfile",
-      "bytes": 1110,
+      "name": "Makefile",
+      "bytes": 556,
       "percent": 0
     }
   ],
   "totals": {
-    "linesNet": 153766,
-    "linesAdded": 256893,
-    "linesDeleted": 103127,
-    "commits": 2215,
-    "activeDays": 153
+    "linesNet": 154246,
+    "linesAdded": 257484,
+    "linesDeleted": 103238,
+    "commits": 2250,
+    "activeDays": 158
   }
 }
