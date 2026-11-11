@@ -37,18 +37,17 @@ const philosophy = getRandomPhilosophy(philosophies);
 console.log(philosophy);
 \`\`\`
 
-schro's equation:
-$$i\\hbar \\frac{\\partial}{\\partial t} \\Psi(x,t) = \\hat{H} \\Psi(x,t)$$
+**NP-hardness** [https://en.wikipedia.org/wiki/NP-hardness](https://en.wikipedia.org/wiki/NP-hardness)
 `;
 
 // Previous artwork section (preserved so it can be restored later):
 // some piece of random art from me:
 // ![some piece of random art from me](/art/pieceOfArt.jpeg)
 
-export const page2Content = `i write docs tooo, wanna read ?  
-dw i'll be releasing them sooon.
+export const page2Content = `**I write docs too, wanna read ??**  
+dw, i will be realising it soon.
 
-**NP-hardness** [https://en.wikipedia.org/wiki/NP-hardness](https://en.wikipedia.org/wiki/NP-hardness)
+till then click: [larpislife.com](/random-image)
 
 me in real world:
 
@@ -82,14 +81,13 @@ const CHUNKS = [
   "const philosophy = getRandomPhilosophy(philosophies);\n",
   "console.log(philosophy);\n",
   "```\n\n",
-  "schro's ", "equation:\n",
-  "$$i\\hbar \\frac{\\partial}{\\partial t} \\Psi(x,t) = \\hat{H} \\Psi(x,t)$$\n"
+  "**NP-hardness** ", "[https://en.wikipedia.org/wiki/NP-hardness](https://en.wikipedia.org/wiki/NP-hardness)\n"
 ];
 
 const PAGE_2_CHUNKS = [
-  "i ", "write ", "docs ", "tooo, ", "wanna ", "read ?  \n",
-  "dw ", "i'll ", "be ", "releasing ", "them ", "sooon.\n\n",
-  "**NP-hardness** ", "[https://en.wikipedia.org/wiki/NP-hardness](https://en.wikipedia.org/wiki/NP-hardness)\n\n",
+  "**I ", "write ", "docs ", "too, ", "wanna ", "read ", "??**  \n",
+  "dw, ", "i ", "will ", "be ", "realising ", "it ", "soon.\n\n",
+  "till ", "then ", "click: ", "[larpislife.com](/random-image)\n\n",
   // Previous artwork chunks (preserved so they can be restored later):
   // "some ", "piece ", "of ", "random ", "art ", "from ", "me:\n\n",
   // "![some piece of random art from me](/art/pieceOfArt.jpeg)\n\n",
