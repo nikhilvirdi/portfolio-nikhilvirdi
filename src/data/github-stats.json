@@ -1,44 +1,44 @@
 {
-  "generatedAt": "2026-11-11T06:21:52.542Z",
+  "generatedAt": "2026-11-11T19:37:05.892Z",
   "languages": [
     {
       "name": "Python",
       "bytes": 6109557,
-      "percent": 43.1
+      "percent": 41.9
     },
     {
       "name": "TypeScript",
-      "bytes": 4756606,
-      "percent": 33.6
-    },
-    {
-      "name": "JavaScript",
-      "bytes": 1102785,
-      "percent": 7.8
-    },
-    {
-      "name": "HTML",
-      "bytes": 899075,
-      "percent": 6.3
+      "bytes": 4771210,
+      "percent": 32.7
     },
     {
       "name": "Java",
-      "bytes": 857691,
-      "percent": 6.1
+      "bytes": 1172931,
+      "percent": 8
+    },
+    {
+      "name": "JavaScript",
+      "bytes": 1158947,
+      "percent": 8
+    },
+    {
+      "name": "HTML",
+      "bytes": 903518,
+      "percent": 6.2
     },
     {
       "name": "Kotlin",
       "bytes": 193216,
-      "percent": 1.4
+      "percent": 1.3
+    },
+    {
+      "name": "CSS",
+      "bytes": 108218,
+      "percent": 0.7
     },
     {
       "name": "C",
       "bytes": 96232,
-      "percent": 0.7
-    },
-    {
-      "name": "CSS",
-      "bytes": 92282,
       "percent": 0.7
     },
     {
@@ -83,10 +83,10 @@
     }
   ],
   "totals": {
-    "linesNet": 154246,
-    "linesAdded": 257484,
-    "linesDeleted": 103238,
-    "commits": 2250,
+    "linesNet": 166334,
+    "linesAdded": 270734,
+    "linesDeleted": 104400,
+    "commits": 2333,
     "activeDays": 158
   }
 }
