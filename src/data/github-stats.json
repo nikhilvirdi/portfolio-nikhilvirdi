@@ -1,30 +1,35 @@
 {
-  "generatedAt": "2026-11-13T06:47:16.336Z",
+  "generatedAt": "2026-11-13T19:43:54.454Z",
   "languages": [
     {
       "name": "Python",
-      "bytes": 6109557,
-      "percent": 41.9
+      "bytes": 6213993,
+      "percent": 41.4
     },
     {
       "name": "TypeScript",
       "bytes": 4771210,
-      "percent": 32.7
+      "percent": 31.8
+    },
+    {
+      "name": "JavaScript",
+      "bytes": 1188785,
+      "percent": 7.9
     },
     {
       "name": "Java",
       "bytes": 1172931,
-      "percent": 8
-    },
-    {
-      "name": "JavaScript",
-      "bytes": 1158947,
-      "percent": 8
+      "percent": 7.8
     },
     {
       "name": "HTML",
       "bytes": 903518,
-      "percent": 6.2
+      "percent": 6
+    },
+    {
+      "name": "Go",
+      "bytes": 331603,
+      "percent": 2.2
     },
     {
       "name": "Kotlin",
@@ -39,17 +44,17 @@
     {
       "name": "C",
       "bytes": 96232,
-      "percent": 0.7
-    },
-    {
-      "name": "Go",
-      "bytes": 30710,
-      "percent": 0.2
+      "percent": 0.6
     },
     {
       "name": "MATLAB",
       "bytes": 16068,
       "percent": 0.1
+    },
+    {
+      "name": "PowerShell",
+      "bytes": 4183,
+      "percent": 0
     },
     {
       "name": "VHDL",
@@ -83,10 +88,10 @@
     }
   ],
   "totals": {
-    "linesNet": 166334,
-    "linesAdded": 270734,
-    "linesDeleted": 104400,
-    "commits": 2335,
+    "linesNet": 180137,
+    "linesAdded": 285023,
+    "linesDeleted": 104886,
+    "commits": 2359,
     "activeDays": 160
   }
 }
