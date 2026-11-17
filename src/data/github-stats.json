@@ -1,34 +1,34 @@
 {
-  "generatedAt": "2026-11-17T07:56:10.273Z",
+  "generatedAt": "2026-11-17T20:56:41.441Z",
   "languages": [
     {
       "name": "Python",
-      "bytes": 6464172,
-      "percent": 41.6
+      "bytes": 6720927,
+      "percent": 42.2
     },
     {
       "name": "TypeScript",
       "bytes": 4871970,
-      "percent": 31.4
-    },
-    {
-      "name": "JavaScript",
-      "bytes": 1240802,
-      "percent": 8
+      "percent": 30.6
     },
     {
       "name": "Java",
-      "bytes": 1186779,
-      "percent": 7.6
+      "bytes": 1287431,
+      "percent": 8.1
+    },
+    {
+      "name": "JavaScript",
+      "bytes": 1268311,
+      "percent": 8
     },
     {
       "name": "HTML",
-      "bytes": 901842,
-      "percent": 5.8
+      "bytes": 901696,
+      "percent": 5.7
     },
     {
       "name": "Go",
-      "bytes": 419705,
+      "bytes": 431130,
       "percent": 2.7
     },
     {
@@ -38,7 +38,7 @@
     },
     {
       "name": "CSS",
-      "bytes": 109470,
+      "bytes": 104561,
       "percent": 0.7
     },
     {
@@ -57,6 +57,11 @@
       "percent": 0.1
     },
     {
+      "name": "TeX",
+      "bytes": 6869,
+      "percent": 0
+    },
+    {
       "name": "PowerShell",
       "bytes": 4183,
       "percent": 0
@@ -72,13 +77,13 @@
       "percent": 0
     },
     {
-      "name": "Assembly",
-      "bytes": 2864,
+      "name": "Dockerfile",
+      "bytes": 3047,
       "percent": 0
     },
     {
-      "name": "Dockerfile",
-      "bytes": 2675,
+      "name": "Assembly",
+      "bytes": 2864,
       "percent": 0
     },
     {
@@ -88,7 +93,7 @@
     },
     {
       "name": "Makefile",
-      "bytes": 556,
+      "bytes": 862,
       "percent": 0
     },
     {
@@ -98,10 +103,10 @@
     }
   ],
   "totals": {
-    "linesNet": 191757,
-    "linesAdded": 304137,
-    "linesDeleted": 112380,
-    "commits": 2397,
+    "linesNet": 194208,
+    "linesAdded": 311952,
+    "linesDeleted": 117744,
+    "commits": 2421,
     "activeDays": 164
   }
 }
