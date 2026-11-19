@@ -36,6 +36,10 @@ export const LOGO_SCALE_OVERRIDES: Record<
     wheel: "max-w-[60%] max-h-[55%]",
     overlay: "max-h-[95px] sm:max-h-[120px] max-w-[55%]",
   },
+  "RetroAmp98": {
+    wheel: "max-w-[78%] max-h-[60%]",
+    overlay: "max-h-[90px] sm:max-h-[110px] max-w-[70%]",
+  },
 };
 
 const CARD_H = 0.38;

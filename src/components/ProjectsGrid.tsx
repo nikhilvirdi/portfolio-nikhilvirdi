@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WorksWheel, LOGO_SCALE_OVERRIDES, DEFAULT_LOGO_SIZE } from './ui/works-wheel';
 import JHuskTimeline from './JHuskTimeline';
+import RetroAmpGallery from './RetroAmpGallery';
 
 // ============================================================================
 // Types & Project Data (preserved exactly from existing portfolio)
@@ -133,6 +134,18 @@ const PROJECTS: Project[] = [
     howItWorks:
       "Node.js and TypeScript in strict mode, Express 5, and Octokit for the GitHub integration, with Zod handling payload validation. There are no LLM calls anywhere in the pipeline. Every check is a plain, deterministic function over file content, so the same diff always produces the same result. It's benchmarked against a 139-scenario adversarial test corpus, currently sitting at 1.000 precision and 1.000 recall.",
     links: [{ label: 'GitHub', url: 'https://github.com/nikhilvirdi/RedFlag-CI' }],
+  },
+  {
+    title: 'RetroAmp98',
+    logo: '/logos/retroamp98.png',
+    status: 'Shipped',
+    whatItIs:
+      'A retro-inspired desktop music player inspired by the classic Windows Media Player 8/9 era. Built with Java, Swing, and JavaFX, it recreates the nostalgic feel of early desktop media software while providing essential music playback functionality, playlist management, and customizable playback behavior.',
+    whatItDoes:
+      'Provides a nostalgic retro desktop interface inspired by classic Windows-era media players. Key capabilities include audio playback with essential controls for managing the listening experience, playlist management to organize music collections, support for shuffle and repeat playback modes, and persistent application preferences preserved across sessions.',
+    howItWorks:
+      'Built with Java 21, combining Java Swing for the classic desktop UI and window management with JavaFX for audio playback capabilities, structured and managed with Maven.',
+    links: [{ label: 'GitHub', url: 'https://github.com/nikhilvirdi/RetroAmp98' }],
   },
   {
     title: 'CI/CD Pipeline Anatomy',
@@ -470,6 +483,8 @@ export default function ProjectsGrid() {
                   </div>
                 ) : selectedProject.title === 'JHusk' ? (
                   <JHuskTimeline scrollerId="project-details-card" />
+                ) : selectedProject.title === 'RetroAmp98' ? (
+                  <RetroAmpGallery />
                 ) : (
                   <div className="py-8 sm:py-12 flex items-center justify-center border border-transparent rounded-lg bg-black">
                     {selectedProject.logo ? (
