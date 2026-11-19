@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WorksWheel, LOGO_SCALE_OVERRIDES, DEFAULT_LOGO_SIZE } from './ui/works-wheel';
 import JHuskTimeline from './JHuskTimeline';
-import RetroAmpGallery from './RetroAmpGallery';
 
 // ============================================================================
 // Types & Project Data (preserved exactly from existing portfolio)
@@ -140,11 +139,11 @@ const PROJECTS: Project[] = [
     logo: '/logos/retroamp98.png',
     status: 'Shipped',
     whatItIs:
-      'A retro-inspired desktop music player inspired by the classic Windows Media Player 8/9 era. Built with Java, Swing, and JavaFX, it recreates the nostalgic feel of early desktop media software while providing essential music playback functionality, playlist management, and customizable playback behavior.',
+      'RetroAmp98 is a retro-inspired desktop music player that brings back the look and feel of classic Windows Media Player 8/9. Built with Java, it combines a nostalgic interface with modern desktop audio playback functionality.',
     whatItDoes:
-      'Provides a nostalgic retro desktop interface inspired by classic Windows-era media players. Key capabilities include audio playback with essential controls for managing the listening experience, playlist management to organize music collections, support for shuffle and repeat playback modes, and persistent application preferences preserved across sessions.',
+      'Supports music playback, playlist management, shuffle and repeat modes, and persistent application preferences. Its retro interface includes track information, album artwork, playback controls, and an integrated playlist.',
     howItWorks:
-      'Built with Java 21, combining Java Swing for the classic desktop UI and window management with JavaFX for audio playback capabilities, structured and managed with Maven.',
+      "Built with Java 21, using Swing for the desktop interface and JavaFX for audio playback. Maven manages the project's dependencies and build configuration.",
     links: [{ label: 'GitHub', url: 'https://github.com/nikhilvirdi/RetroAmp98' }],
   },
   {
@@ -484,7 +483,18 @@ export default function ProjectsGrid() {
                 ) : selectedProject.title === 'JHusk' ? (
                   <JHuskTimeline scrollerId="project-details-card" />
                 ) : selectedProject.title === 'RetroAmp98' ? (
-                  <RetroAmpGallery />
+                  <div className="w-full shrink-0 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 py-2">
+                    <img
+                      src="/projects/retroamp98/photo-left.png"
+                      alt="RetroAmp98 player interface"
+                      className="max-h-[320px] sm:max-h-[400px] w-auto max-w-full object-contain"
+                    />
+                    <img
+                      src="/projects/retroamp98/photo-right.png"
+                      alt="RetroAmp98 context menu"
+                      className="max-h-[320px] sm:max-h-[400px] w-auto max-w-full object-contain"
+                    />
+                  </div>
                 ) : (
                   <div className="py-8 sm:py-12 flex items-center justify-center border border-transparent rounded-lg bg-black">
                     {selectedProject.logo ? (
