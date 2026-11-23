@@ -1,35 +1,35 @@
 {
-  "generatedAt": "2026-11-23T07:39:44.232Z",
+  "generatedAt": "2026-11-23T23:54:34.877Z",
   "languages": [
     {
       "name": "Python",
-      "bytes": 6752508,
-      "percent": 42
+      "bytes": 6436966,
+      "percent": 40.8
     },
     {
       "name": "TypeScript",
       "bytes": 4873683,
-      "percent": 30.3
+      "percent": 30.9
     },
     {
       "name": "JavaScript",
       "bytes": 1308118,
-      "percent": 8.1
+      "percent": 8.3
     },
     {
       "name": "Java",
       "bytes": 1307403,
-      "percent": 8.1
+      "percent": 8.3
     },
     {
       "name": "HTML",
       "bytes": 902394,
-      "percent": 5.6
+      "percent": 5.7
     },
     {
       "name": "Go",
       "bytes": 474002,
-      "percent": 2.9
+      "percent": 3
     },
     {
       "name": "Kotlin",
@@ -39,7 +39,7 @@
     {
       "name": "CSS",
       "bytes": 118717,
-      "percent": 0.7
+      "percent": 0.8
     },
     {
       "name": "C",
@@ -55,11 +55,6 @@
       "name": "C++",
       "bytes": 15487,
       "percent": 0.1
-    },
-    {
-      "name": "TeX",
-      "bytes": 6869,
-      "percent": 0
     },
     {
       "name": "PowerShell",
@@ -92,11 +87,6 @@
       "percent": 0
     },
     {
-      "name": "Makefile",
-      "bytes": 862,
-      "percent": 0
-    },
-    {
       "name": "Shell",
       "bytes": 326,
       "percent": 0
@@ -106,7 +96,7 @@
     "linesNet": 197625,
     "linesAdded": 319494,
     "linesDeleted": 121869,
-    "commits": 2444,
-    "activeDays": 170
+    "commits": 2446,
+    "activeDays": 171
   }
 }
