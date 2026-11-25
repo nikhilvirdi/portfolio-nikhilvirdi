@@ -1,35 +1,35 @@
 {
-  "generatedAt": "2026-11-24T22:27:38.638Z",
+  "generatedAt": "2026-11-25T08:35:30.679Z",
   "languages": [
     {
       "name": "Python",
-      "bytes": 5240788,
-      "percent": 36
+      "bytes": 5481371,
+      "percent": 37
     },
     {
       "name": "TypeScript",
       "bytes": 4873683,
-      "percent": 33.5
+      "percent": 32.9
     },
     {
       "name": "JavaScript",
       "bytes": 1308118,
-      "percent": 9
+      "percent": 8.8
     },
     {
       "name": "Java",
       "bytes": 1307403,
-      "percent": 9
+      "percent": 8.8
     },
     {
       "name": "HTML",
       "bytes": 902394,
-      "percent": 6.2
+      "percent": 6.1
     },
     {
       "name": "Go",
       "bytes": 474002,
-      "percent": 3.3
+      "percent": 3.2
     },
     {
       "name": "Kotlin",
@@ -44,7 +44,7 @@
     {
       "name": "C",
       "bytes": 96232,
-      "percent": 0.7
+      "percent": 0.6
     },
     {
       "name": "MATLAB",
