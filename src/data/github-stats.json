@@ -1,35 +1,35 @@
 {
-  "generatedAt": "2026-11-27T08:34:54.489Z",
+  "generatedAt": "2026-11-27T21:18:27.656Z",
   "languages": [
     {
       "name": "Python",
-      "bytes": 5479867,
-      "percent": 37
+      "bytes": 5651784,
+      "percent": 37.6
     },
     {
       "name": "TypeScript",
       "bytes": 4873683,
-      "percent": 32.9
+      "percent": 32.4
     },
     {
       "name": "JavaScript",
-      "bytes": 1334398,
-      "percent": 9
+      "bytes": 1381720,
+      "percent": 9.2
     },
     {
       "name": "Java",
       "bytes": 1307403,
-      "percent": 8.8
+      "percent": 8.7
     },
     {
       "name": "HTML",
-      "bytes": 902805,
-      "percent": 6.1
+      "bytes": 902282,
+      "percent": 6
     },
     {
       "name": "Go",
       "bytes": 474002,
-      "percent": 3.2
+      "percent": 3.1
     },
     {
       "name": "Kotlin",
@@ -38,7 +38,7 @@
     },
     {
       "name": "CSS",
-      "bytes": 118717,
+      "bytes": 119157,
       "percent": 0.8
     },
     {
@@ -62,6 +62,11 @@
       "percent": 0
     },
     {
+      "name": "Dockerfile",
+      "bytes": 3404,
+      "percent": 0
+    },
+    {
       "name": "VHDL",
       "bytes": 3194,
       "percent": 0
@@ -69,11 +74,6 @@
     {
       "name": "M",
       "bytes": 3185,
-      "percent": 0
-    },
-    {
-      "name": "Dockerfile",
-      "bytes": 3047,
       "percent": 0
     },
     {
@@ -93,10 +93,10 @@
     }
   ],
   "totals": {
-    "linesNet": 210133,
-    "linesAdded": 332330,
-    "linesDeleted": 122197,
-    "commits": 2465,
-    "activeDays": 173
+    "linesNet": 214726,
+    "linesAdded": 337010,
+    "linesDeleted": 122284,
+    "commits": 2245,
+    "activeDays": 174
   }
 }
